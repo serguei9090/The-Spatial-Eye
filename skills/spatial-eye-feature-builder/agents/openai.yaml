@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spatial Eye Feature Builder"
+  short_description: "Build features using Spatial Eye architecture patterns."
+  default_prompt: "Use $spatial-eye-feature-builder to implement a new feature in this codebase."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spatial Eye Gemini Live"
+  short_description: "Implement and debug Gemini Live WebSocket flows."
+  default_prompt: "Use $spatial-eye-gemini-live to wire Gemini Live API streaming in this app."

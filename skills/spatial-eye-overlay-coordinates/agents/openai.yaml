@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spatial Eye Overlay Coordinates"
+  short_description: "Convert 0-1000 coords into accurate SVG overlays."
+  default_prompt: "Use $spatial-eye-overlay-coordinates to implement responsive object highlight overlays."

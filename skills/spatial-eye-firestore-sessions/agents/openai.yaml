@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spatial Eye Firestore Sessions"
+  short_description: "Model sessions and detections with privacy-safe rules."
+  default_prompt: "Use $spatial-eye-firestore-sessions to add Firestore persistence for detections."
