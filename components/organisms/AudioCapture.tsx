@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from "react";
 
-import { Button } from "@/components/atoms/Button";
+import { Button } from "@/components/ui/button";
 
 interface AudioCaptureProps {
   onAudioChunk?: (blob: Blob) => void;
