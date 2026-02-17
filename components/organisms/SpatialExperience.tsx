@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 import { AudioCapture } from "@/components/organisms/AudioCapture";
 import { HUDPanel } from "@/components/organisms/HUDPanel";
@@ -18,7 +19,7 @@ export function SpatialExperience() {
     activeHighlights,
     isConnected,
     isConnecting,
-    error,
+    errorMessage,
     connect,
     disconnect,
     sendVideoFrame,
@@ -69,6 +70,14 @@ export function SpatialExperience() {
     };
   }, [isConnected, isListening, sendVideoFrame]);
 
+  useEffect(() => {
+    if (!errorMessage) {
+      return;
+    }
+
+    toast.error(errorMessage);
+  }, [errorMessage]);
+
   const onToggleListening = useCallback(() => {
     if (isListening) {
       disconnect();
@@ -89,10 +98,10 @@ export function SpatialExperience() {
     <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
       <div className="space-y-4">
         <HUDPanel
-          isConnected={isConnected || isConnecting}
+          isConnected={isConnected}
+          isConnecting={isConnecting}
           isListening={isListening}
           activeHighlight={activeHighlight}
-          error={error}
           onToggleListening={onToggleListening}
         />
         <AudioCapture />

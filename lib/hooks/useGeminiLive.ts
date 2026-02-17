@@ -12,23 +12,32 @@ import type { Highlight } from "@/lib/types";
 export function useGeminiLive() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef(0);
+  const manualCloseRef = useRef(false);
 
   const [activeHighlights, setActiveHighlights] = useState<Highlight[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | undefined>(undefined);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
 
   const disconnect = useCallback(() => {
+    manualCloseRef.current = true;
     wsRef.current?.close();
     wsRef.current = null;
     setIsConnected(false);
+    setIsConnecting(false);
   }, []);
 
   const connect = useCallback(async (): Promise<boolean> => {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+    manualCloseRef.current = false;
 
     if (!apiKey) {
-      setError("Missing NEXT_PUBLIC_GOOGLE_API_KEY in environment.");
+      const message = "Missing NEXT_PUBLIC_GOOGLE_API_KEY in environment.";
+      setError(message);
+      setErrorCode("MISSING_API_KEY");
+      setErrorMessage(message);
       return false;
     }
 
@@ -39,6 +48,8 @@ export function useGeminiLive() {
 
     setIsConnecting(true);
     setError(null);
+    setErrorCode(undefined);
+    setErrorMessage(undefined);
 
     return new Promise((resolve) => {
       const ws = new WebSocket(buildGeminiWsUrl(apiKey));
@@ -61,14 +72,17 @@ export function useGeminiLive() {
       };
 
       ws.onerror = () => {
-        setError("Gemini Live connection error.");
+        const message = "Gemini Live connection error.";
+        setError(message);
+        setErrorCode("WS_ERROR");
+        setErrorMessage(message);
       };
 
       ws.onclose = () => {
         setIsConnected(false);
         setIsConnecting(false);
 
-        if (reconnectRef.current < 4) {
+        if (!manualCloseRef.current && reconnectRef.current < 4) {
           const delay = Math.min(500 * 2 ** reconnectRef.current, 5000);
           reconnectRef.current += 1;
           window.setTimeout(() => {
@@ -103,6 +117,8 @@ export function useGeminiLive() {
     isConnected,
     isConnecting,
     error,
+    errorCode,
+    errorMessage,
     connect,
     disconnect,
     sendVideoFrame,

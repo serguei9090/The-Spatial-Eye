@@ -1,10 +1,9 @@
 "use client";
 
-import { Mic, MicOff, Wifi, WifiOff } from "lucide-react";
+import { Loader2, Mic, MicOff, Wifi, WifiOff } from "lucide-react";
 
 import { AIOrb } from "@/components/molecules/AIOrb";
 import { CoordinateDisplay } from "@/components/molecules/CoordinateDisplay";
-import { ErrorToast } from "@/components/molecules/ErrorToast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,19 +17,21 @@ import type { Highlight } from "@/lib/types";
 
 interface HUDPanelProps {
   isConnected: boolean;
+  isConnecting: boolean;
   isListening: boolean;
   activeHighlight?: Highlight;
-  error: string | null;
   onToggleListening: () => void;
 }
 
 export function HUDPanel({
   isConnected,
+  isConnecting,
   isListening,
   activeHighlight,
-  error,
   onToggleListening,
 }: HUDPanelProps) {
+  const connectionLabel = isConnecting ? "Connecting" : isConnected ? "Connected" : "Offline";
+
   return (
     <Card>
       <CardHeader className="space-y-4">
@@ -42,8 +43,12 @@ export function HUDPanel({
               <CardDescription>Realtime visual grounding with Gemini Live</CardDescription>
             </div>
           </div>
-          <Badge variant={isConnected ? "secondary" : "outline"}>
-            {isConnected ? (
+          <Badge variant={isConnecting || isConnected ? "secondary" : "outline"}>
+            {isConnecting ? (
+              <span className="inline-flex items-center gap-1">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Connecting
+              </span>
+            ) : isConnected ? (
               <span className="inline-flex items-center gap-1">
                 <Wifi className="h-3.5 w-3.5" /> Connected
               </span>
@@ -58,10 +63,14 @@ export function HUDPanel({
 
       <CardContent className="space-y-4">
         <div className="flex flex-wrap items-center gap-3">
-          <Button onClick={onToggleListening}>
+          <Button onClick={onToggleListening} disabled={isConnecting}>
             {isListening ? (
               <span className="inline-flex items-center gap-2">
                 <MicOff className="h-4 w-4" /> Stop Listening
+              </span>
+            ) : isConnecting ? (
+              <span className="inline-flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Connecting
               </span>
             ) : (
               <span className="inline-flex items-center gap-2">
@@ -69,10 +78,10 @@ export function HUDPanel({
               </span>
             )}
           </Button>
+          <Badge variant="outline">{connectionLabel}</Badge>
         </div>
 
         <CoordinateDisplay highlight={activeHighlight} />
-        {error ? <ErrorToast message={error} /> : null}
       </CardContent>
     </Card>
   );
