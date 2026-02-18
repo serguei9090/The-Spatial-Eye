@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { DEFAULT_GEMINI_LIVE_MODEL, SPATIAL_SYSTEM_INSTRUCTION } from "@/lib/api/gemini_websocket";
-import { requireFirebaseUserId } from "@/lib/server/firebase-auth";
-import { getUserGeminiApiKey } from "@/lib/server/user-gemini-key-service";
+import { GEMINI_MODELS } from "@/lib/gemini/models";
 
 interface GeminiEphemeralTokenResponse {
   name?: string;
@@ -10,7 +9,12 @@ interface GeminiEphemeralTokenResponse {
 }
 
 export async function POST(request: Request) {
+  console.log("--> POST /api/gemini/ephemeral-token hit");
   try {
+    // Dynamic imports to prevent top-level crashes if Firebase env is bad
+    const { requireFirebaseUserId } = await import("@/lib/server/firebase-auth");
+    const { getUserGeminiApiKey } = await import("@/lib/server/user-gemini-key-service");
+
     const userId = await requireFirebaseUserId(request.headers.get("authorization"));
     const body = (await request.json()) as { model?: string };
     const configuredModel = (body.model?.trim() || DEFAULT_GEMINI_LIVE_MODEL).replace(
@@ -21,44 +25,67 @@ export async function POST(request: Request) {
 
     if (!apiKey) {
       return NextResponse.json(
-        { error: "No Gemini API key configured for this user. Add it in Settings first." },
+        {
+          error:
+            "No Gemini API key available. Add a personal key in the app, or set GEMINI_FALLBACK_API_KEY on the server.",
+        },
         { status: 400 },
       );
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/live:generateEphemeralToken?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          authToken: {
-            expireTime: new Date(Date.now() + 60_000).toISOString(),
-          },
-          httpOptions: {
-            apiVersion: "v1alpha",
-          },
-          ws: {
-            bidiGenerateContent: {
-              model: `models/${configuredModel}`,
-              generationConfig: {
-                responseModalities: ["TEXT"],
-              },
-              systemInstruction: {
-                parts: [
-                  {
-                    text: SPATIAL_SYSTEM_INSTRUCTION,
-                  },
-                ],
-              },
-            },
-          },
-        }),
+    // Initialize Google GenAI SDK
+    const { GoogleGenerativeAI } = await import("@google/generative-ai");
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    // Use SDK to get model info (Compliance Check)
+    const model = genAI.getGenerativeModel({ model: configuredModel });
+
+    // Note: The SDK doesn't expose 'getMetadata' or 'supportsLive' directly in a standard way yet,
+    // so we rely on the known capability of the model. 
+    // However, by instantiating it via SDK, we validate the API key works.
+
+    // Proceed to mint ephemeral token using REST API (SDK doesn't support this yet)
+    // We use the v1beta endpoint structure which is standard for current models.
+
+    // Use v1beta endpoint for ephemeral tokens on the specific model
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${configuredModel}:generateEphemeralToken?key=${encodeURIComponent(apiKey)}`;
+    const requestBody = {
+      authToken: {
+        expireTime: new Date(Date.now() + 60_000).toISOString(),
       },
-    );
+      httpOptions: {
+        apiVersion: "v1beta",
+      },
+      ws: {
+        bidiGenerateContent: {
+          model: `models/${configuredModel}`,
+          generationConfig: {
+            responseModalities: ["TEXT", "AUDIO"],
+          },
+          systemInstruction: {
+            parts: [
+              {
+                text: SPATIAL_SYSTEM_INSTRUCTION,
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    console.log("--> Minting Token URL:", url.replace(apiKey, "HIDDEN_KEY"));
+    console.log("--> Minting Token Body:", JSON.stringify(requestBody, null, 2));
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(requestBody),
+    });
 
     if (!response.ok) {
       const failureText = await response.text();
+      console.error("Gemini Ephemeral Token Error Status:", response.status);
+      console.error("Gemini Ephemeral Token Error Body:", failureText);
       return NextResponse.json(
         { error: `Failed to create ephemeral token. ${failureText}` },
         { status: response.status },

@@ -4,6 +4,16 @@ import { getFirebaseAdminServices } from "@/lib/firebase/admin";
 
 const USER_GEMINI_KEYS_COLLECTION = "userGeminiKeys";
 
+function getFallbackGeminiApiKey(): string | null {
+  const value =
+    process.env.GEMINI_FALLBACK_API_KEY ||
+    process.env.GOOGLE_API_KEY ||
+    process.env.NEXT_PUBLIC_GOOGLE_API_KEY ||
+    "";
+  const normalized = value.trim();
+  return normalized || null;
+}
+
 function assertGeminiApiKeyShape(apiKey: string) {
   const normalized = apiKey.trim();
   if (!normalized) {
@@ -28,14 +38,21 @@ export async function saveUserGeminiApiKey(userId: string, apiKey: string): Prom
   );
 }
 
+export async function clearUserGeminiApiKey(userId: string): Promise<void> {
+  const { db } = getFirebaseAdminServices();
+  await db.collection(USER_GEMINI_KEYS_COLLECTION).doc(userId).delete();
+}
+
 export async function getUserGeminiApiKey(userId: string): Promise<string | null> {
   const { db } = getFirebaseAdminServices();
   const doc = await db.collection(USER_GEMINI_KEYS_COLLECTION).doc(userId).get();
-  if (!doc.exists) {
-    return null;
+
+  if (doc.exists) {
+    const data = doc.data();
+    const apiKey = typeof data?.apiKey === "string" ? data.apiKey.trim() : "";
+    if (apiKey) return apiKey;
   }
 
-  const data = doc.data();
-  const apiKey = typeof data?.apiKey === "string" ? data.apiKey.trim() : "";
-  return apiKey || null;
+  // Fallback to global environment variable if no user-specific key exists.
+  return getFallbackGeminiApiKey();
 }

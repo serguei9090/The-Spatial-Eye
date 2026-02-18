@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 
-import { SpatialOverlay } from "@/components/organisms/SpatialOverlay";
+import { SpatialOverlay } from "@/components/molecules/SpatialOverlay";
 
 describe("SpatialOverlay", () => {
   test("renders a highlight circle for valid coordinates", () => {

@@ -9,6 +9,13 @@ Realtime multimodal assistant built with Next.js 15, React 19, Gemini Live API s
 - The backend stores keys per Firebase UID and mints short-lived Live API tokens.
 - The browser uses ephemeral tokens for Live API websocket auth instead of a long-lived public key.
 
+## Model Mapping
+
+- Brand copy + grounded search: `gemini-3-pro-preview`
+- Image synthesis: `gemini-2.5-flash-image`
+- Live audio/video session: `gemini-2.5-flash-native-audio-preview-12-2025`
+- Video synthesis: disabled in this project (free-tier compatibility)
+
 ## Quick Start
 
 1. Install dependencies:
