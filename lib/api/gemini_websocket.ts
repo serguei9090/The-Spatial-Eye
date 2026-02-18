@@ -1,12 +1,16 @@
 import type { Highlight } from "@/lib/types";
 
 export type CoordinatesTuple = [number, number, number, number];
+export const DEFAULT_GEMINI_LIVE_MODEL = "gemini-2.5-flash-native-audio-preview-12-2025";
+export const DEFAULT_GEMINI_TTS_MODEL = "gemini-2.5-pro-preview-tts";
+export const SPATIAL_SYSTEM_INSTRUCTION =
+  "When identifying objects, output coordinates in the format [ymin, xmin, ymax, xmax] normalized to 0-1000 range.";
 
 const COORDINATE_PATTERN =
   /\[(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)\]/g;
 
 export function buildGeminiWsUrl(apiKey: string): string {
-  return `wss://generativelanguage.googleapis.com/google.ai.generativelanguage.v1alpha.GenerativeService/BidiGenerateContent?key=${apiKey}`;
+  return `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
 }
 
 export function extractCoordinateTuples(content: string): CoordinatesTuple[] {
@@ -47,4 +51,30 @@ export function tupleToHighlight(tuple: CoordinatesTuple, index: number): Highli
     xmax: tuple[3],
     timestamp: Date.now(),
   };
+}
+
+export function extractTextsFromLiveServerMessage(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw) as {
+      serverContent?: {
+        modelTurn?: {
+          parts?: Array<{ text?: string }>;
+        };
+      };
+      text?: string;
+    };
+
+    const texts =
+      parsed.serverContent?.modelTurn?.parts
+        ?.map((part) => part.text)
+        .filter((text): text is string => Boolean(text)) ?? [];
+
+    if (parsed.text) {
+      texts.push(parsed.text);
+    }
+
+    return texts;
+  } catch {
+    return [raw];
+  }
 }

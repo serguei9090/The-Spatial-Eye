@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 
 interface AudioCaptureProps {
   onAudioChunk?: (blob: Blob) => void;
+  inputDeviceId?: string;
 }
 
-export function AudioCapture({ onAudioChunk }: AudioCaptureProps) {
+export function AudioCapture({ onAudioChunk, inputDeviceId }: AudioCaptureProps) {
   const recorderRef = useRef<MediaRecorder | null>(null);
   const [isRecording, setIsRecording] = useState(false);
 
@@ -17,7 +18,10 @@ export function AudioCapture({ onAudioChunk }: AudioCaptureProps) {
       return;
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+    const stream = await navigator.mediaDevices.getUserMedia({
+      audio: inputDeviceId ? { deviceId: { exact: inputDeviceId } } : true,
+      video: false,
+    });
     const recorder = new MediaRecorder(stream);
 
     recorder.ondataavailable = (event) => {
@@ -29,7 +33,7 @@ export function AudioCapture({ onAudioChunk }: AudioCaptureProps) {
     recorder.start(1000);
     recorderRef.current = recorder;
     setIsRecording(true);
-  }, [isRecording, onAudioChunk]);
+  }, [inputDeviceId, isRecording, onAudioChunk]);
 
   const stopRecording = useCallback(() => {
     const recorder = recorderRef.current;

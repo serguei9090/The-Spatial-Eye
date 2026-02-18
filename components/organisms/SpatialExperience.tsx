@@ -7,6 +7,7 @@ import { AudioCapture } from "@/components/organisms/AudioCapture";
 import { HUDPanel } from "@/components/organisms/HUDPanel";
 import { SpatialOverlay } from "@/components/organisms/SpatialOverlay";
 import { VideoFeed } from "@/components/organisms/VideoFeed";
+import { useAudioDevices } from "@/lib/hooks/useAudioDevices";
 import { useGeminiLive } from "@/lib/hooks/useGeminiLive";
 import { useHighlightDetection } from "@/lib/hooks/useHighlightDetection";
 
@@ -14,12 +15,23 @@ export function SpatialExperience() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 1280, height: 720 });
   const [isListening, setIsListening] = useState(false);
+  const {
+    inputDevices,
+    outputDevices,
+    selectedInputId,
+    selectedOutputId,
+    outputSelectionSupported,
+    setSelectedInputId,
+    setSelectedOutputId,
+  } = useAudioDevices();
 
   const {
     activeHighlights,
     isConnected,
     isConnecting,
     errorMessage,
+    modelAvailability,
+    checkModelAvailability,
     connect,
     disconnect,
     sendVideoFrame,
@@ -36,6 +48,10 @@ export function SpatialExperience() {
     const height = videoRef.current.videoHeight || videoRef.current.clientHeight || 720;
     setVideoSize({ width, height });
   }, []);
+
+  useEffect(() => {
+    void checkModelAvailability();
+  }, [checkModelAvailability]);
 
   useEffect(() => {
     if (!isListening || !isConnected) {
@@ -71,6 +87,12 @@ export function SpatialExperience() {
   }, [isConnected, isListening, sendVideoFrame]);
 
   useEffect(() => {
+    if (!isConnected && !isConnecting && isListening) {
+      setIsListening(false);
+    }
+  }, [isConnected, isConnecting, isListening]);
+
+  useEffect(() => {
     if (!errorMessage) {
       return;
     }
@@ -101,10 +123,18 @@ export function SpatialExperience() {
           isConnected={isConnected}
           isConnecting={isConnecting}
           isListening={isListening}
+          modelAvailability={modelAvailability}
+          inputDevices={inputDevices}
+          outputDevices={outputDevices}
+          selectedInputId={selectedInputId}
+          selectedOutputId={selectedOutputId}
+          outputSelectionSupported={outputSelectionSupported}
           activeHighlight={activeHighlight}
           onToggleListening={onToggleListening}
+          onInputDeviceChange={setSelectedInputId}
+          onOutputDeviceChange={setSelectedOutputId}
         />
-        <AudioCapture />
+        <AudioCapture inputDeviceId={selectedInputId} />
       </div>
 
       <section className="relative">
