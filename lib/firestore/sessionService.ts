@@ -11,8 +11,8 @@ import {
   where,
 } from "firebase/firestore";
 
-import type { DetectionRecord, SessionRecord } from "@/lib/types";
 import { getFirebaseServices } from "@/lib/firebase/config";
+import type { DetectionRecord, SessionRecord } from "@/lib/types";
 
 interface NewDetection {
   objectName: string;
@@ -33,7 +33,11 @@ export async function startSession(userId: string): Promise<string> {
   return sessionRef.id;
 }
 
-export async function appendDetection(sessionId: string, userId: string, payload: NewDetection): Promise<void> {
+export async function appendDetection(
+  sessionId: string,
+  userId: string,
+  payload: NewDetection,
+): Promise<void> {
   const { db } = getFirebaseServices();
 
   await addDoc(collection(db, "sessions", sessionId, "detections"), {

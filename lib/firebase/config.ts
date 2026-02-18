@@ -1,4 +1,4 @@
-import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
+import { type FirebaseApp, getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -7,13 +7,17 @@ const firebaseConfig = {
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
   projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
 };
 
 export const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean);
 
 export function getFirebaseApp(): FirebaseApp {
   if (!hasFirebaseConfig) {
-    throw new Error("Missing Firebase config. Populate NEXT_PUBLIC_FIREBASE_* environment variables.");
+    throw new Error(
+      "Missing Firebase config. Populate NEXT_PUBLIC_FIREBASE_* environment variables.",
+    );
   }
 
   if (getApps().length > 0) {

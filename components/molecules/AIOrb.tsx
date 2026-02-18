@@ -14,7 +14,11 @@ export function AIOrb({ isActive }: AIOrbProps) {
         scale: isActive ? [1, 1.08, 1] : 1,
         opacity: isActive ? [0.85, 1, 0.85] : 0.45,
       }}
-      transition={{ repeat: isActive ? Infinity : 0, duration: 1.4, ease: "easeInOut" }}
+      transition={{
+        repeat: isActive ? Number.POSITIVE_INFINITY : 0,
+        duration: 1.4,
+        ease: "easeInOut",
+      }}
       aria-label={isActive ? "AI active" : "AI idle"}
     />
   );

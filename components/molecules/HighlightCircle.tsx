@@ -28,7 +28,7 @@ export function HighlightCircle({ highlight, videoWidth, videoHeight }: Highligh
       strokeWidth={3}
       fill="rgba(21,255,129,0.14)"
       animate={{ opacity: [0.8, 1, 0.8] }}
-      transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+      transition={{ duration: 1.2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
     />
   );
 }

@@ -2,7 +2,8 @@ import type { Highlight } from "@/lib/types";
 
 export type CoordinatesTuple = [number, number, number, number];
 
-const COORDINATE_PATTERN = /\[(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)\]/g;
+const COORDINATE_PATTERN =
+  /\[(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)\]/g;
 
 export function buildGeminiWsUrl(apiKey: string): string {
   return `wss://generativelanguage.googleapis.com/google.ai.generativelanguage.v1alpha.GenerativeService/BidiGenerateContent?key=${apiKey}`;
@@ -28,18 +29,14 @@ export function extractCoordinateTuples(content: string): CoordinatesTuple[] {
 }
 
 export function isCoordinateTupleValid([ymin, xmin, ymax, xmax]: CoordinatesTuple): boolean {
-  return (
-    ymin >= 0 &&
-    xmin >= 0 &&
-    ymax <= 1000 &&
-    xmax <= 1000 &&
-    ymax > ymin &&
-    xmax > xmin
-  );
+  return ymin >= 0 && xmin >= 0 && ymax <= 1000 && xmax <= 1000 && ymax > ymin && xmax > xmin;
 }
 
 export function tupleToHighlight(tuple: CoordinatesTuple, index: number): Highlight {
-  const id = typeof crypto !== "undefined" && "randomUUID" in crypto ? crypto.randomUUID() : `${Date.now()}-${index}`;
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now()}-${index}`;
 
   return {
     id,

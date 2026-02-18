@@ -24,10 +24,7 @@ export default function SessionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const userId = useMemo(
-    () => process.env.NEXT_PUBLIC_DEMO_USER_ID ?? "demo-user",
-    [],
-  );
+  const userId = useMemo(() => process.env.NEXT_PUBLIC_DEMO_USER_ID ?? "demo-user", []);
 
   useEffect(() => {
     let active = true;

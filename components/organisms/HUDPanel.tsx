@@ -6,13 +6,7 @@ import { AIOrb } from "@/components/molecules/AIOrb";
 import { CoordinateDisplay } from "@/components/molecules/CoordinateDisplay";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Highlight } from "@/lib/types";
 
 interface HUDPanelProps {

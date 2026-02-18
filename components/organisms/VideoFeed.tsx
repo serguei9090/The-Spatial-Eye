@@ -33,13 +33,20 @@ export function VideoFeed({ videoRef, onVideoReady }: VideoFeedProps) {
 
     return () => {
       mounted = false;
-      stream?.getTracks().forEach((track) => track.stop());
+      for (const track of stream?.getTracks() ?? []) {
+        track.stop();
+      }
     };
   }, [onVideoReady, videoRef]);
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-black">
-      <video ref={videoRef} className="h-full min-h-[360px] w-full object-cover" playsInline muted />
+      <video
+        ref={videoRef}
+        className="h-full min-h-[360px] w-full object-cover"
+        playsInline
+        muted
+      />
     </div>
   );
 }

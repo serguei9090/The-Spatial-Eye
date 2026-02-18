@@ -38,7 +38,9 @@ export function AudioCapture({ onAudioChunk }: AudioCaptureProps) {
     }
 
     recorder.stop();
-    recorder.stream.getTracks().forEach((track) => track.stop());
+    for (const track of recorder.stream.getTracks()) {
+      track.stop();
+    }
     recorderRef.current = null;
     setIsRecording(false);
   }, []);
