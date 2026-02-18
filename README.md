@@ -2,6 +2,13 @@
 
 Realtime multimodal assistant built with Next.js 15, React 19, Gemini Live API streaming, and Firestore.
 
+## Authentication + Gemini Key Flow
+
+- Users sign in with Firebase Google Authentication.
+- Each user stores their own Gemini API key from `Settings`.
+- The backend stores keys per Firebase UID and mints short-lived Live API tokens.
+- The browser uses ephemeral tokens for Live API websocket auth instead of a long-lived public key.
+
 ## Quick Start
 
 1. Install dependencies:
@@ -18,14 +25,16 @@ Copy-Item .env.example .env.local
 
 3. Fill values in `.env.local`:
 
-- `NEXT_PUBLIC_GOOGLE_API_KEY`
 - `NEXT_PUBLIC_FIREBASE_API_KEY`
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
 - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
 - `NEXT_PUBLIC_FIREBASE_APP_ID`
 - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
-- `NEXT_PUBLIC_DEMO_USER_ID` (optional, defaults to `demo-user` for sessions page lookup)
+- `FIREBASE_ADMIN_PROJECT_ID`
+- `FIREBASE_ADMIN_CLIENT_EMAIL`
+- `FIREBASE_ADMIN_PRIVATE_KEY` (replace newlines with `\n`)
+- `NEXT_PUBLIC_GEMINI_LIVE_MODEL` (optional)
 
 4. Start development server:
 

@@ -9,8 +9,8 @@ export const SPATIAL_SYSTEM_INSTRUCTION =
 const COORDINATE_PATTERN =
   /\[(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)\]/g;
 
-export function buildGeminiWsUrl(apiKey: string): string {
-  return `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent?key=${apiKey}`;
+export function buildGeminiWsUrl(ephemeralToken: string): string {
+  return `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(ephemeralToken)}`;
 }
 
 export function extractCoordinateTuples(content: string): CoordinatesTuple[] {

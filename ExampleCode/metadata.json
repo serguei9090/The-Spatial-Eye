@@ -1,0 +1,8 @@
+{
+  "name": "OmniSight Studio",
+  "description": "Catchy multimodal creative engine combining Live Vision, Storyboarding, and UI Navigation.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}

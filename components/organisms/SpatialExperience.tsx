@@ -7,11 +7,21 @@ import { AudioCapture } from "@/components/organisms/AudioCapture";
 import { HUDPanel } from "@/components/organisms/HUDPanel";
 import { SpatialOverlay } from "@/components/organisms/SpatialOverlay";
 import { VideoFeed } from "@/components/organisms/VideoFeed";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuth } from "@/lib/auth/auth-context";
 import { useAudioDevices } from "@/lib/hooks/useAudioDevices";
 import { useGeminiLive } from "@/lib/hooks/useGeminiLive";
 import { useHighlightDetection } from "@/lib/hooks/useHighlightDetection";
 
 export function SpatialExperience() {
+  const {
+    user,
+    isLoading: authLoading,
+    error: authError,
+    signInWithGoogle,
+    signOutUser,
+  } = useAuth();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 1280, height: 720 });
   const [isListening, setIsListening] = useState(false);
@@ -116,35 +126,77 @@ export function SpatialExperience() {
 
   const activeHighlight = useMemo(() => visibleHighlights[0], [visibleHighlights]);
 
+  if (authLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Checking authentication...</CardTitle>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Sign in with Google to use The Spatial Eye</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Authentication is required before Gemini Live sessions can start.
+          </p>
+          {authError ? (
+            <p className="rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+              {authError}
+            </p>
+          ) : null}
+          <Button onClick={() => void signInWithGoogle()}>Continue with Google</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
-      <div className="space-y-4">
-        <HUDPanel
-          isConnected={isConnected}
-          isConnecting={isConnecting}
-          isListening={isListening}
-          modelAvailability={modelAvailability}
-          inputDevices={inputDevices}
-          outputDevices={outputDevices}
-          selectedInputId={selectedInputId}
-          selectedOutputId={selectedOutputId}
-          outputSelectionSupported={outputSelectionSupported}
-          activeHighlight={activeHighlight}
-          onToggleListening={onToggleListening}
-          onInputDeviceChange={setSelectedInputId}
-          onOutputDeviceChange={setSelectedOutputId}
-        />
-        <AudioCapture inputDeviceId={selectedInputId} />
+    <div className="space-y-4">
+      <div className="flex items-center justify-between rounded-lg border bg-card/60 px-4 py-2">
+        <p className="text-sm text-muted-foreground">
+          Signed in as <span className="font-medium text-foreground">{user.email ?? user.uid}</span>
+        </p>
+        <Button variant="outline" onClick={() => void signOutUser()}>
+          Sign out
+        </Button>
       </div>
 
-      <section className="relative">
-        <VideoFeed videoRef={videoRef} onVideoReady={updateVideoSize} />
-        <SpatialOverlay
-          highlights={visibleHighlights}
-          videoWidth={videoSize.width}
-          videoHeight={videoSize.height}
-        />
-      </section>
+      <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
+        <div className="space-y-4">
+          <HUDPanel
+            isConnected={isConnected}
+            isConnecting={isConnecting}
+            isListening={isListening}
+            modelAvailability={modelAvailability}
+            inputDevices={inputDevices}
+            outputDevices={outputDevices}
+            selectedInputId={selectedInputId}
+            selectedOutputId={selectedOutputId}
+            outputSelectionSupported={outputSelectionSupported}
+            activeHighlight={activeHighlight}
+            onToggleListening={onToggleListening}
+            onInputDeviceChange={setSelectedInputId}
+            onOutputDeviceChange={setSelectedOutputId}
+          />
+          <AudioCapture inputDeviceId={selectedInputId} />
+        </div>
+
+        <section className="relative">
+          <VideoFeed videoRef={videoRef} onVideoReady={updateVideoSize} />
+          <SpatialOverlay
+            highlights={visibleHighlights}
+            videoWidth={videoSize.width}
+            videoHeight={videoSize.height}
+          />
+        </section>
+      </div>
     </div>
   );
 }

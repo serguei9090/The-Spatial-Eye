@@ -4,18 +4,26 @@ import { useCallback, useRef, useState } from "react";
 
 import {
   DEFAULT_GEMINI_LIVE_MODEL,
-  SPATIAL_SYSTEM_INSTRUCTION,
   buildGeminiWsUrl,
   extractCoordinateTuples,
   extractTextsFromLiveServerMessage,
   tupleToHighlight,
 } from "@/lib/api/gemini_websocket";
+import { useAuth } from "@/lib/auth/auth-context";
 import type { Highlight } from "@/lib/types";
+
+interface EphemeralTokenResponse {
+  token: string;
+  expireTime?: string;
+  model: string;
+}
 
 export function useGeminiLive() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectRef = useRef(0);
   const manualCloseRef = useRef(false);
+  const tokenRef = useRef<EphemeralTokenResponse | null>(null);
+  const { user, getIdToken } = useAuth();
 
   const [activeHighlights, setActiveHighlights] = useState<Highlight[]>([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -32,49 +40,48 @@ export function useGeminiLive() {
     [],
   );
 
-  const checkModelAvailability = useCallback(async (): Promise<boolean> => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-    const configuredModel = getConfiguredModel().replace(/^models\//, "");
+  const mintEphemeralToken = useCallback(async (): Promise<EphemeralTokenResponse> => {
+    const idToken = await getIdToken();
+    if (!idToken) {
+      throw new Error("Sign in required before connecting to Gemini Live.");
+    }
 
-    if (!apiKey) {
+    const configuredModel = getConfiguredModel();
+    const response = await fetch("/api/gemini/ephemeral-token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify({ model: configuredModel }),
+    });
+
+    if (!response.ok) {
+      const payload = (await response.json()) as { error?: string };
+      throw new Error(payload.error ?? "Unable to mint ephemeral Gemini token.");
+    }
+
+    const tokenPayload = (await response.json()) as EphemeralTokenResponse;
+    tokenRef.current = tokenPayload;
+    return tokenPayload;
+  }, [getConfiguredModel, getIdToken]);
+
+  const checkModelAvailability = useCallback(async (): Promise<boolean> => {
+    if (!user) {
       setModelAvailability("unavailable");
       return false;
     }
 
     try {
       setModelAvailability("checking");
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${configuredModel}?key=${apiKey}`,
-        { method: "GET" },
-      );
-
-      if (!response.ok) {
-        setModelAvailability("unavailable");
-        return false;
-      }
-
-      const modelInfo = (await response.json()) as {
-        supportedGenerationMethods?: string[];
-      };
-
-      const supportsLive =
-        modelInfo.supportedGenerationMethods?.includes("bidiGenerateContent") ?? false;
-      if (!supportsLive) {
-        setModelAvailability("unavailable");
-        const message = `Model "${configuredModel}" does not support Live API (bidiGenerateContent).`;
-        setError(message);
-        setErrorCode("MODEL_NOT_LIVE");
-        setErrorMessage(message);
-        return false;
-      }
-
+      await mintEphemeralToken();
       setModelAvailability("available");
       return true;
     } catch {
       setModelAvailability("unavailable");
       return false;
     }
-  }, [getConfiguredModel]);
+  }, [mintEphemeralToken, user]);
 
   const disconnect = useCallback(() => {
     manualCloseRef.current = true;
@@ -85,14 +92,12 @@ export function useGeminiLive() {
   }, []);
 
   const connect = useCallback(async (): Promise<boolean> => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-    const configuredModel = getConfiguredModel();
     manualCloseRef.current = false;
 
-    if (!apiKey) {
-      const message = "Missing NEXT_PUBLIC_GOOGLE_API_KEY in environment.";
+    if (!user) {
+      const message = "Sign in required before connecting to Gemini Live.";
       setError(message);
-      setErrorCode("MISSING_API_KEY");
+      setErrorCode("AUTH_REQUIRED");
       setErrorMessage(message);
       return false;
     }
@@ -102,39 +107,36 @@ export function useGeminiLive() {
       return true;
     }
 
-    const modelAvailable = await checkModelAvailability();
-    if (!modelAvailable) {
-      const message = `Configured live model "${configuredModel}" is not available for this API key.`;
-      setError(message);
-      setErrorCode("MODEL_UNAVAILABLE");
-      setErrorMessage(message);
-      return false;
-    }
-
     setIsConnecting(true);
     setError(null);
     setErrorCode(undefined);
     setErrorMessage(undefined);
 
+    let token = tokenRef.current;
+    const expiresAtMs = token?.expireTime ? new Date(token.expireTime).getTime() : 0;
+    const isTokenStale =
+      !token || !Number.isFinite(expiresAtMs) || expiresAtMs <= Date.now() + 10_000;
+
+    try {
+      if (isTokenStale) {
+        token = await mintEphemeralToken();
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Unable to mint ephemeral token for Gemini Live.";
+      setIsConnecting(false);
+      setError(message);
+      setErrorCode("TOKEN_MINT_FAILED");
+      setErrorMessage(message);
+      return false;
+    }
+
     return new Promise((resolve) => {
-      const ws = new WebSocket(buildGeminiWsUrl(apiKey));
+      const ws = new WebSocket(buildGeminiWsUrl(token.token));
       wsRef.current = ws;
 
       ws.onopen = () => {
         reconnectRef.current = 0;
-        ws.send(
-          JSON.stringify({
-            setup: {
-              model: `models/${configuredModel}`,
-              generationConfig: {
-                responseModalities: ["TEXT"],
-              },
-              systemInstruction: {
-                parts: [{ text: SPATIAL_SYSTEM_INSTRUCTION }],
-              },
-            },
-          }),
-        );
         setIsConnecting(false);
         setIsConnected(true);
         resolve(true);
@@ -160,6 +162,7 @@ export function useGeminiLive() {
       ws.onclose = (event) => {
         setIsConnected(false);
         setIsConnecting(false);
+        tokenRef.current = null;
 
         const shouldRetry =
           !manualCloseRef.current &&
@@ -177,7 +180,7 @@ export function useGeminiLive() {
         resolve(false);
       };
     });
-  }, [checkModelAvailability, getConfiguredModel]);
+  }, [mintEphemeralToken, user]);
 
   const sendVideoFrame = useCallback((base64Data: string, mimeType = "image/webp") => {
     if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {

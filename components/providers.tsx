@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/lib/auth/auth-context";
 
 interface ProvidersProps {
   children: ReactNode;
@@ -13,10 +14,12 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
-      <TooltipProvider>
-        {children}
-        <Toaster position="top-right" richColors />
-      </TooltipProvider>
+      <AuthProvider>
+        <TooltipProvider>
+          {children}
+          <Toaster position="top-right" richColors />
+        </TooltipProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 }

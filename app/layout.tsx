@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { PremiumParticlesBackground } from "@/components/premium-particles-background";
 import { Providers } from "@/components/providers";
 
 import "./globals.css";
@@ -18,6 +19,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="min-h-screen bg-background text-foreground antialiased">
         <Providers>{children}</Providers>
+        <PremiumParticlesBackground />
       </body>
     </html>
   );

@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/lib/auth/auth-context";
 import { listSessions } from "@/lib/firestore/sessionService";
 import type { SessionRecord } from "@/lib/types";
 
@@ -20,13 +22,23 @@ function formatSessionDate(date?: Date): string {
 }
 
 export default function SessionsPage() {
+  const { user, isLoading: authLoading, signInWithGoogle } = useAuth();
   const [sessions, setSessions] = useState<SessionRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const userId = useMemo(() => process.env.NEXT_PUBLIC_DEMO_USER_ID ?? "demo-user", []);
+  const userId = useMemo(() => user?.uid ?? null, [user]);
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!userId) {
+      setSessions([]);
+      setLoading(false);
+      return;
+    }
+
     let active = true;
 
     const loadSessions = async () => {
@@ -54,7 +66,23 @@ export default function SessionsPage() {
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [authLoading, userId]);
+
+  if (!authLoading && !userId) {
+    return (
+      <main className="mx-auto max-w-4xl p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Session History</CardTitle>
+            <CardDescription>Sign in to load your personal session history.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => void signInWithGoogle()}>Continue with Google</Button>
+          </CardContent>
+        </Card>
+      </main>
+    );
+  }
 
   return (
     <main className="mx-auto max-w-4xl p-6">
