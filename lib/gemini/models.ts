@@ -12,8 +12,7 @@ export const GEMINI_MODELS = {
    * Used for general text / search tasks and brand copy generation.
    * gemini-2.5-flash-lite is cost-efficient and has wide context support.
    */
-  brandCopyAndSearch:
-    process.env.NEXT_PUBLIC_GEMINI_MODEL_COPY_SEARCH || "gemini-2.5-flash-lite",
+  brandCopyAndSearch: process.env.NEXT_PUBLIC_GEMINI_MODEL_COPY_SEARCH || "gemini-2.5-flash-lite",
 
   /**
    * Inline image understanding (describe, annotate). Uses gemini-2.5-flash
@@ -27,7 +26,7 @@ export const GEMINI_MODELS = {
    * available (as of 2026-02).
    */
   liveAudioVideoSession:
-    process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL || "gemini-2.5-flash",
+    process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-latest",
 
   /**
    * Text-to-Speech synthesis. Uses Gemini 1.5 Flash which has TTS capability

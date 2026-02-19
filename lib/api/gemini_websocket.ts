@@ -1,5 +1,5 @@
-import type { Highlight } from "@/lib/types";
 import { GEMINI_MODELS } from "@/lib/gemini/models";
+import type { Highlight } from "@/lib/types";
 
 export type CoordinatesTuple = [number, number, number, number];
 export const DEFAULT_GEMINI_LIVE_MODEL = GEMINI_MODELS.liveAudioVideoSession;
@@ -40,17 +40,22 @@ export function buildGeminiWsUrl(keyOrToken: string): string {
  * will not respond correctly.
  */
 export function sendSetupMessage(ws: WebSocket, model: string): void {
+  const modelId = model.startsWith("models/") ? model : `models/${model}`;
   const setupPayload = {
     setup: {
-      model: model.startsWith("models/") ? model : `models/${model}`,
+      model: modelId,
       generation_config: {
-        response_modalities: ["TEXT", "AUDIO"],
+        response_modalities: ["AUDIO"],
       },
       system_instruction: {
         parts: [{ text: SPATIAL_SYSTEM_INSTRUCTION }],
       },
+      // input_audio_transcription and output_audio_transcription are omitted
+      // when empty to avoid "invalid argument" errors on some API versions.
     },
   };
+
+  console.log("[GeminiLive] Sending Setup Payload:", JSON.stringify(setupPayload, null, 2));
   ws.send(JSON.stringify(setupPayload));
 }
 
@@ -108,6 +113,8 @@ interface LiveServerMessage {
       parts?: Array<{ text?: string; inlineData?: { mimeType: string; data: string } }>;
     };
     interrupted?: boolean;
+    inputTranscription?: { text: string };
+    outputTranscription?: { text: string };
   };
   text?: string;
 }
@@ -124,11 +131,25 @@ export function extractTextsFromLiveServerMessage(raw: string): string[] {
   const parsed = parseLiveMessage(raw);
   if (!parsed) return [raw];
 
-  const texts =
+  const texts: string[] = [];
+
+  // 1. Text Parts from Model Turn
+  const modelTextParts =
     parsed.serverContent?.modelTurn?.parts
       ?.map((part) => part.text)
       .filter((text): text is string => Boolean(text)) ?? [];
+  texts.push(...modelTextParts);
 
+  // 2. Transcriptions
+  if (parsed.serverContent?.outputTranscription?.text) {
+    texts.push(parsed.serverContent.outputTranscription.text);
+  }
+  if (parsed.serverContent?.inputTranscription?.text) {
+    // Optionally include input transcription (what the user said)
+    // console.log("[GeminiLive] User said:", parsed.serverContent.inputTranscription.text);
+  }
+
+  // 3. Simple text field (deprecated or used for basic turns)
   if (parsed.text) {
     texts.push(parsed.text);
   }
@@ -140,8 +161,8 @@ export function extractAudioFromLiveServerMessage(raw: string): string | null {
   const parsed = parseLiveMessage(raw);
   if (!parsed) return null;
 
-  const part = parsed.serverContent?.modelTurn?.parts?.find(
-    (p) => p.inlineData && p.inlineData.mimeType.startsWith("audio/"),
+  const part = parsed.serverContent?.modelTurn?.parts?.find((p) =>
+    p.inlineData?.mimeType.startsWith("audio/"),
   );
 
   return part?.inlineData?.data ?? null;

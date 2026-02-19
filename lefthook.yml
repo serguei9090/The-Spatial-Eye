@@ -1,0 +1,14 @@
+# lefthook.yml
+
+pre-commit:
+  parallel: true
+  commands:
+    # 1. Biome: Format and Lint staged files
+    biome:
+      glob: "*.{js,ts,jsx,tsx,json}"
+      run: npx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
+
+    # 2. TypeScript: Type check the entire project (tsc does not support staged only)
+    type-check:
+      glob: "*.{ts,tsx}"
+      run: npx tsc --noEmit

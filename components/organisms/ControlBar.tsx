@@ -1,16 +1,10 @@
 "use client";
 
-import {
-  Camera,
-  Loader2,
-  Mic,
-  MicOff,
-  Speaker,
-} from "lucide-react";
+import { Camera, Loader2, Mic, MicOff, Speaker } from "lucide-react";
 
 import { AIOrb } from "@/components/atoms/AIOrb";
-import { DeviceSelector } from "@/components/molecules/DeviceSelector";
 import { CoordinateDisplay } from "@/components/molecules/CoordinateDisplay";
+import { DeviceSelector } from "@/components/molecules/DeviceSelector";
 import { Button } from "@/components/ui/button";
 import type { Highlight } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -58,10 +52,12 @@ export function ControlBar({
       {/* Top Status Bar (Mobile Friendly) */}
       <div className="flex items-center gap-3 rounded-full bg-background/60 px-4 py-2 text-sm font-medium shadow-sm backdrop-blur-md transition-all">
         <AIOrb isActive={isConnected} className="flex items-center justify-center p-0.5" />
-        <span className={cn(
-          "transition-colors",
-          isConnected ? "text-emerald-400" : "text-muted-foreground"
-        )}>
+        <span
+          className={cn(
+            "transition-colors",
+            isConnected ? "text-emerald-400" : "text-muted-foreground",
+          )}
+        >
           {connectionLabel}
         </span>
         {activeHighlight && (
@@ -76,16 +72,18 @@ export function ControlBar({
 
       {/* Main Dock / Control Bar */}
       <div className="group flex items-center gap-3 rounded-2xl border bg-background/80 p-3 shadow-2xl backdrop-blur-xl transition-all hover:scale-[1.01] hover:bg-background/90">
-
         {/* Connection Toggle (Primary Action) */}
         <Button
           size="lg"
           variant={isListening ? "destructive" : "default"}
           className={cn(
             "h-12 w-12 rounded-xl shadow-md transition-all sm:w-auto sm:px-6",
-            isListening && "animate-pulse ring-4 ring-destructive/20"
+            isListening && "animate-pulse ring-4 ring-destructive/20",
           )}
-          onClick={onToggleListening}
+          onClick={() => {
+            console.log("[ControlBar] Toggle button clicked");
+            onToggleListening();
+          }}
           disabled={isConnecting}
         >
           {isConnecting ? (
