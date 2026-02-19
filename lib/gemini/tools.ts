@@ -7,32 +7,39 @@ import { type FunctionDeclaration, Type } from "@google/genai";
 export const highlightTool: FunctionDeclaration = {
   name: "track_and_highlight",
   description:
-    "REQUIRED for Spatial Awareness: Pinpoint and circle an object. You MUST calculate a TIGHT bounding box around the visible object. The box should encompass the object precisely with minimal background margin. If the object moves, re-calculate coordinates (0-1000) based on the latest video frame.",
+    "REQUIRED for Spatial Awareness: precise object locating. Instead of a bounding box, find the CENTER POINT of the object. Return the normalized center coordinates (0-1000). Also return a 'render_scale' (0-1000) that represents the approximate radius or size of the object relative to the screen, but keep it tight. Supports identifying MULTIPLE objects at once.",
   parameters: {
     type: Type.OBJECT,
     properties: {
-      ymin: {
-        type: Type.NUMBER,
-        description: "Top Y coordinate (0-1000)",
-      },
-      xmin: {
-        type: Type.NUMBER,
-        description: "Left X coordinate (0-1000)",
-      },
-      ymax: {
-        type: Type.NUMBER,
-        description: "Bottom Y coordinate (0-1000)",
-      },
-      xmax: {
-        type: Type.NUMBER,
-        description: "Right X coordinate (0-1000)",
-      },
-      label: {
-        type: Type.STRING,
-        description: "Label of the object (e.g. 'Coffee Cup')",
+      objects: {
+        type: Type.ARRAY,
+        description: "List of objects to highlight",
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            label: {
+              type: Type.STRING,
+              description: "Label of the object (e.g. 'Coffee Cup')",
+            },
+            center_x: {
+              type: Type.NUMBER,
+              description: "Center X coordinate (0-1000)",
+            },
+            center_y: {
+              type: Type.NUMBER,
+              description: "Center Y coordinate (0-1000)",
+            },
+            render_scale: {
+              type: Type.NUMBER,
+              description:
+                "Approximate size/radius of the object (0-1000). Keep it tight to the object.",
+            },
+          },
+          required: ["label", "center_x", "center_y", "render_scale"],
+        },
       },
     },
-    required: ["ymin", "xmin", "ymax", "xmax", "label"],
+    required: ["objects"],
   },
 };
 

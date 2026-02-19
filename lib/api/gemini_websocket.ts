@@ -11,7 +11,7 @@ export const DEFAULT_GEMINI_TTS_MODEL = GEMINI_MODELS.tts;
  * SpatialOverlay to draw highlight circles on detected objects.
  */
 export const SPATIAL_SYSTEM_INSTRUCTION =
-  "You are a spatial assistant with the ability to see and locate objects in the video feed. When the user asks you to find, locate, circle, or mark an object, you MUST call the 'track_and_highlight' function. Ensure the bounding box TIGHTLY encloses the object with minimal margin. Precision is key for the spatial overlay. Provide a natural verbal confirmation like 'I see it here.' while the tool highlights the object.";
+  "You are a spatial assistant with the ability to see and locate objects in the video feed. When the user asks you to find, locate, circle, or mark an object, you MUST call the 'track_and_highlight' function. Do NOT use bounding boxes. Instead, find the precise CENTER POINT of the object (center_x, center_y) and estimated size (render_scale). Precision is key. Provide a natural verbal confirmation like 'I see it here.' while the tool highlights the object. IMPORTANT: you are in a busy environment. DO NOT respond to background chatter or distant voices. Only respond to the clear, nearby voice of the primary user. CRITICAL: Objects move. ALWAYS treat each request as a fresh visual search. Do NOT rely on past locations. Re-scan the current video frame every time. NEVER assume an object is 'already selected'.";
 
 const COORDINATE_PATTERN =
   /\[(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)\]/g;

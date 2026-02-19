@@ -17,11 +17,12 @@ import { decode, decodeAudioData, encode } from "@/lib/utils/audio";
 type LiveSession = Awaited<ReturnType<GoogleGenAI["live"]["connect"]>>;
 
 interface TrackAndHighlightArgs {
-  ymin: number | string;
-  xmin: number | string;
-  ymax: number | string;
-  xmax: number | string;
-  label: string;
+  objects: {
+    label: string;
+    center_x: number | string;
+    center_y: number | string;
+    render_scale: number | string;
+  }[];
 }
 
 // ---------------------------------------------------------------------------
@@ -217,15 +218,6 @@ export function useGeminiLive() {
     return new Promise((resolve) => {
       const ai = new GoogleGenAI({ apiKey });
 
-      /**
-       * The @google/genai SDK handles all wire-format details:
-       * - Correct JSON field names (realtimeInput vs realtime_input)
-       * - Correct mime types and payload structure
-       * - Session setup and handshake
-       *
-       * Reference (working AI Studio implementation):
-       * https://ai.google.dev/gemini-api/docs/live
-       */
       ai.live
         .connect({
           model: DEFAULT_GEMINI_LIVE_MODEL,
@@ -236,8 +228,6 @@ export function useGeminiLive() {
                 prebuiltVoiceConfig: { voiceName: "Puck" },
               },
             },
-            // Enable transcription of model output (what Gemini says)
-            // Enable transcription of model output (what Gemini says)
             outputAudioTranscription: {},
             inputAudioTranscription: {},
             systemInstruction: SPATIAL_SYSTEM_INSTRUCTION,
@@ -308,32 +298,40 @@ export function useGeminiLive() {
                 }
               }
 
-              // 4. Handle Tool Calls (Highlighting)
+              // 4. Handle Tool Calls (Highlighting) - Multi-Object Supported
               if (msg.toolCall?.functionCalls) {
                 console.log("[GeminiLive] Tool Call received:", msg.toolCall);
                 for (const fc of msg.toolCall.functionCalls) {
                   if (fc.name === "track_and_highlight") {
-                    const { ymin, xmin, ymax, xmax, label } =
-                      fc.args as unknown as TrackAndHighlightArgs;
-                    console.log("[GeminiLive] Highlighter Tool:", {
-                      label,
-                      ymin,
-                      xmin,
-                      ymax,
-                      xmax,
-                    });
+                    const { objects } = fc.args as unknown as TrackAndHighlightArgs;
 
-                    const newHighlight: Highlight = {
-                      id: crypto.randomUUID(),
-                      objectName: label || "Detected Object",
-                      ymin: Number(ymin),
-                      xmin: Number(xmin),
-                      ymax: Number(ymax),
-                      xmax: Number(xmax),
-                      timestamp: Date.now(),
-                    };
+                    if (Array.isArray(objects)) {
+                      console.log("[GeminiLive] Highlighter Tool (Multi):", objects);
 
-                    setActiveHighlights((prev) => [...prev, newHighlight]);
+                      const newHighlights = objects.map((obj) => {
+                        const cx = Number(obj.center_x);
+                        const cy = Number(obj.center_y);
+                        const r = Number(obj.render_scale) / 2;
+
+                        return {
+                          id: crypto.randomUUID(),
+                          objectName: obj.label || "Detected Object",
+                          ymin: Math.max(0, cy - r),
+                          xmin: Math.max(0, cx - r),
+                          ymax: Math.min(1000, cy + r),
+                          xmax: Math.min(1000, cx + r),
+                          timestamp: Date.now(),
+                        };
+                      });
+
+                      setActiveHighlights((prev) => [...prev, ...newHighlights]);
+
+                      // clear highlights after 3 seconds
+                      setTimeout(() => {
+                        const idsToRemove = new Set(newHighlights.map((h) => h.id));
+                        setActiveHighlights((prev) => prev.filter((h) => !idsToRemove.has(h.id)));
+                      }, 3000);
+                    }
 
                     // Send response back to model so it knows the tool executed
                     if (sessionRef.current) {
@@ -351,7 +349,7 @@ export function useGeminiLive() {
                 }
               }
 
-              // 5. Output transcription (what the model says — streamed text)
+              // 5. Output transcription
               if (msg.serverContent?.outputTranscription?.text) {
                 const transcriptText = msg.serverContent.outputTranscription.text;
                 setLatestTranscript((prev) => prev + transcriptText);
@@ -359,7 +357,6 @@ export function useGeminiLive() {
 
               // 6. Clear transcript on turn complete
               if (msg.serverContent?.turnComplete) {
-                // Short delay so the UI shows the final transcript before clearing
                 setTimeout(() => setLatestTranscript(""), 3000);
               }
             },
@@ -382,7 +379,6 @@ export function useGeminiLive() {
               setIsConnecting(false);
               stopAudio(0);
 
-              // Only report error if this wasn't a manual disconnect
               if (!manualCloseRef.current && e?.code && [1002, 1003, 1007, 1008].includes(e.code)) {
                 const message = `Connection closed with error: ${e.reason || e.code}`;
                 setError(message);
@@ -407,7 +403,7 @@ export function useGeminiLive() {
   }, [user, stopAudio]);
 
   // ---------------------------------------------------------------------------
-  // sendVideoFrame — delegates to SDK (handles wire format automatically)
+  // sendVideoFrame
   // ---------------------------------------------------------------------------
 
   const sendVideoFrame = useCallback((base64Data: string, mimeType = "image/jpeg") => {
@@ -415,11 +411,6 @@ export function useGeminiLive() {
 
     isSendingRef.current = true;
     try {
-      /**
-       * SDK sendRealtimeInput with { media: ... } is the verified working format
-       * from the official AI Studio reference implementation. The SDK maps this
-       * correctly to realtimeInput.video on the wire.
-       */
       sessionRef.current.sendRealtimeInput({
         media: {
           data: base64Data,
@@ -436,7 +427,7 @@ export function useGeminiLive() {
   }, []);
 
   // ---------------------------------------------------------------------------
-  // sendAudioChunk — delegates to SDK (handles wire format automatically)
+  // sendAudioChunk
   // ---------------------------------------------------------------------------
 
   const sendAudioChunk = useCallback((data: Blob | Int16Array) => {
@@ -449,18 +440,11 @@ export function useGeminiLive() {
       if (data instanceof Int16Array) {
         base64Data = encode(new Uint8Array(data.buffer));
       } else {
-        // Blob path — convert sync via FileReader for non-async callback compat
-        // (AudioWorklet postMessage delivers Float32Array, so this path is rare)
         console.warn("[GeminiLive] Blob audio path invoked — consider passing Int16Array.");
         isSendingRef.current = false;
         return;
       }
 
-      /**
-       * SDK sendRealtimeInput with { media: ... } — verified against AI Studio.
-       * The SDK maps this to realtimeInput.audio on the wire with the correct
-       * mimeType. Input spec: 16-bit PCM, 16kHz, mono.
-       */
       sessionRef.current.sendRealtimeInput({
         media: {
           data: base64Data,
