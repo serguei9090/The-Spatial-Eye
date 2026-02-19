@@ -1,30 +1,32 @@
-"use client";
-
 import { Camera, Loader2, Mic, MicOff, Speaker } from "lucide-react";
 
 import { AIOrb } from "@/components/atoms/AIOrb";
 import { CoordinateDisplay } from "@/components/molecules/CoordinateDisplay";
 import { DeviceSelector } from "@/components/molecules/DeviceSelector";
+import { SettingsMenu } from "@/components/organisms/SettingsMenu";
 import { Button } from "@/components/ui/button";
+import { useSettings } from "@/lib/store/settings-context";
 import type { Highlight } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
-interface ControlBarProps {
-  isConnected: boolean;
-  isConnecting: boolean;
-  isListening: boolean;
-  inputDevices: MediaDeviceInfo[];
-  outputDevices: MediaDeviceInfo[];
-  videoDevices: MediaDeviceInfo[];
-  selectedInputId: string;
-  selectedOutputId: string;
-  selectedVideoId: string;
-  outputSelectionSupported: boolean;
-  activeHighlight?: Highlight;
-  onToggleListening: () => void;
-  onInputDeviceChange: (deviceId: string) => void;
-  onOutputDeviceChange: (deviceId: string) => void;
-  onVideoDeviceChange: (deviceId: string) => void;
+export interface ControlBarProps {
+  readonly isConnected: boolean;
+  readonly isConnecting: boolean;
+  readonly isListening: boolean;
+  readonly inputDevices: MediaDeviceInfo[];
+  readonly outputDevices: MediaDeviceInfo[];
+  readonly videoDevices: MediaDeviceInfo[];
+  readonly selectedInputId: string;
+  readonly selectedOutputId: string;
+  readonly selectedVideoId: string;
+  readonly outputSelectionSupported: boolean;
+  readonly activeHighlight?: Highlight;
+  readonly mode: "spatial" | "storyteller";
+  readonly onToggleListening: () => void;
+  readonly onInputDeviceChange: (deviceId: string) => void;
+  readonly onOutputDeviceChange: (deviceId: string) => void;
+  readonly onVideoDeviceChange: (deviceId: string) => void;
+  readonly onModeChange: (mode: "spatial" | "storyteller") => void;
 }
 
 export function ControlBar({
@@ -39,12 +41,26 @@ export function ControlBar({
   selectedVideoId,
   outputSelectionSupported,
   activeHighlight,
+  mode,
   onToggleListening,
   onInputDeviceChange,
   onOutputDeviceChange,
   onVideoDeviceChange,
+  onModeChange,
 }: ControlBarProps) {
-  const connectionLabel = isConnecting ? "Connecting..." : isConnected ? "Live" : "Ready";
+  const { t } = useSettings();
+
+  const connectionLabel = isConnecting
+    ? t.status.connecting
+    : isConnected
+      ? t.status.live
+      : t.status.ready;
+
+  const renderMicIcon = () => {
+    if (isConnecting) return <Loader2 className="h-6 w-6 animate-spin" />;
+    if (isListening) return <MicOff className="h-6 w-6" />;
+    return <Mic className="h-6 w-6" />;
+  };
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
@@ -69,6 +85,32 @@ export function ControlBar({
         )}
       </div>
 
+      {/* Mode Selector */}
+      <div className="flex items-center gap-1 rounded-xl border bg-background/50 p-1 backdrop-blur-md">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onModeChange("spatial")}
+          className={cn(
+            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-white/10",
+            mode === "spatial" && "bg-primary/20 text-primary hover:bg-primary/30",
+          )}
+        >
+          {t.modes.live}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onModeChange("storyteller")}
+          className={cn(
+            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-white/10",
+            mode === "storyteller" && "bg-primary/20 text-primary hover:bg-primary/30",
+          )}
+        >
+          {t.modes.storyteller}
+        </Button>
+      </div>
+
       {/* Main Dock / Control Bar */}
       <div className="group flex items-center gap-3 rounded-2xl border bg-background/80 p-3 shadow-2xl backdrop-blur-xl transition-all hover:scale-[1.01] hover:bg-background/90">
         {/* Connection Toggle (Primary Action) */}
@@ -85,15 +127,9 @@ export function ControlBar({
           }}
           disabled={isConnecting}
         >
-          {isConnecting ? (
-            <Loader2 className="h-6 w-6 animate-spin" />
-          ) : isListening ? (
-            <MicOff className="h-6 w-6" />
-          ) : (
-            <Mic className="h-6 w-6" />
-          )}
+          {renderMicIcon()}
           <span className="hidden text-base font-semibold sm:inline-block sm:ml-2">
-            {isListening ? "End Session" : "Start Session"}
+            {isListening ? t.controls.end : t.controls.start}
           </span>
         </Button>
 
@@ -102,7 +138,7 @@ export function ControlBar({
         <div className="flex items-center gap-1">
           <DeviceSelector
             icon={Camera}
-            label="Camera"
+            label={t.devices.camera}
             devices={videoDevices}
             selectedId={selectedVideoId}
             onDeviceChange={onVideoDeviceChange}
@@ -110,7 +146,7 @@ export function ControlBar({
 
           <DeviceSelector
             icon={Mic}
-            label="Microphone"
+            label={t.devices.microphone}
             devices={inputDevices}
             selectedId={selectedInputId}
             onDeviceChange={onInputDeviceChange}
@@ -118,12 +154,17 @@ export function ControlBar({
 
           <DeviceSelector
             icon={Speaker}
-            label="Speaker"
+            label={t.devices.speaker}
             devices={outputDevices}
             selectedId={selectedOutputId}
             onDeviceChange={onOutputDeviceChange}
             disabled={!outputSelectionSupported}
           />
+
+          <div className="mx-1 h-8 w-px bg-border/50" />
+
+          {/* Settings Menu (Popover) */}
+          <SettingsMenu />
         </div>
       </div>
 

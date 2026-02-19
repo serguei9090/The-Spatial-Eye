@@ -1,0 +1,63 @@
+﻿{
+  "summary": {
+    "changed": 0,
+    "unchanged": 1,
+    "matches": 0,
+    "duration": { "secs": 0, "nanos": 36794300 },
+    "errors": 1,
+    "warnings": 0,
+    "skipped": 0,
+    "suggestedFixesSkipped": 0,
+    "diagnosticsNotPrinted": 0
+  },
+  "diagnostics": [
+    {
+      "category": "format",
+      "severity": "error",
+      "description": "Formatter would have printed the following content:",
+      "message": [
+        { "elements": [], "content": "Formatter would have printed the following content:" }
+      ],
+      "advices": {
+        "advices": [
+          {
+            "diff": {
+              "dictionary": "import { GEMINI_MODELS } from \"@/lib/gemini/models\";\nimport type { StoryItem } from \"@/lib/types\";\nimport { GoogleGenAI, type LiveServerMessage } from \"@google/genai\";              item.id === id\n                ? {\n                                      ...item,\nisGenerating: false,\ncontent: \"https://loremflickr.com/800/600/glitch,error\", // Fallback\nmetadata: { ...item.metadata, error: \"Generation Failed\" },\n}\n                : item,\n            ),  }\n}\n",
+              "ops": [
+                { "diffOp": { "equal": { "range": [0, 167] } } },
+                { "equalLines": { "line_count": 81 } },
+                { "diffOp": { "equal": { "range": [167, 216] } } },
+                { "diffOp": { "delete": { "range": [216, 234] } } },
+                { "diffOp": { "insert": { "range": [234, 254] } } },
+                { "diffOp": { "equal": { "range": [254, 263] } } },
+                { "diffOp": { "delete": { "range": [234, 252] } } },
+                { "diffOp": { "insert": { "range": [234, 254] } } },
+                { "diffOp": { "equal": { "range": [263, 284] } } },
+                { "diffOp": { "delete": { "range": [234, 252] } } },
+                { "diffOp": { "insert": { "range": [234, 254] } } },
+                { "diffOp": { "equal": { "range": [284, 353] } } },
+                { "diffOp": { "delete": { "range": [234, 252] } } },
+                { "diffOp": { "insert": { "range": [234, 254] } } },
+                { "diffOp": { "equal": { "range": [353, 413] } } },
+                { "diffOp": { "delete": { "range": [234, 250] } } },
+                { "diffOp": { "insert": { "range": [234, 252] } } },
+                { "diffOp": { "equal": { "range": [413, 453] } } },
+                { "equalLines": { "line_count": 28 } },
+                { "diffOp": { "equal": { "range": [453, 459] } } }
+              ]
+            }
+          }
+        ]
+      },
+      "verboseAdvices": { "advices": [] },
+      "location": {
+        "path": { "file": "lib/gemini/storyteller-handlers.ts" },
+        "span": null,
+        "sourceCode": "import { GEMINI_MODELS } from \"@/lib/gemini/models\";\nimport type { StoryItem } from \"@/lib/types\";\nimport { GoogleGenAI, type LiveServerMessage } from \"@google/genai\";\nimport type { Dispatch, SetStateAction } from \"react\";\n\n// Helper to create a UUID (simple version for browser)\nconst generateId = () => crypto.randomUUID();\n\n/**\n * Handles 'Director' tool calls for the Storyteller mode.\n * - render_visual: Adds a placeholder, then (mock) generates an image.\n * - ambient_audio: Adds an audio event item.\n * - define_world_rule: Adds a rule event item.\n */\nexport function handleDirectorToolCall(\n  toolCall: LiveServerMessage[\"toolCall\"],\n  setStoryStream: Dispatch<SetStateAction<StoryItem[]>>,\n) {\n  if (!toolCall?.functionCalls) return;\n\n  for (const fc of toolCall.functionCalls) {\n    // biome-ignore lint/suspicious/noExplicitAny: Args vary by tool\n    const args = fc.args as any;\n\n    if (fc.name === \"render_visual\") {\n      const { asset_type, subject, visual_context } = args;\n      const id = generateId();\n\n      // 1. Add Placeholder\n      setStoryStream((prev) => [\n        ...prev,\n        {\n          id,\n          type: \"image\",\n          content: `Visualizing: ${subject}`,\n          isGenerating: true,\n          metadata: { asset_type, visual_context },\n          timestamp: Date.now(),\n        },\n      ]);\n\n      // 2. Trigger Generation (Real Gemini API)\n      console.log(`[Director] Generating with ${GEMINI_MODELS.imageSynthesis}: ${subject}`);\n\n      (async () => {\n        try {\n          const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;\n          if (!apiKey) throw new Error(\"No API Key\");\n\n          const client = new GoogleGenAI({ apiKey });\n          const response = await client.models.generateContent({\n            model: GEMINI_MODELS.imageSynthesis,\n            contents: [\n              {\n                parts: [\n                  {\n                    text: `Generate a detailed, cinematic, high-quality image of: ${subject}. Context: ${visual_context}. Style: Photorealistic, 8k resolution, dramatic lighting.`,\n                  },\n                ],\n              },\n            ],\n          });\n\n          // Extract Image\n          const candidates = response.candidates;\n          const imagePart = candidates?.[0]?.content?.parts?.find(\n            (p) => \"inlineData\" in p && p.inlineData?.mimeType?.startsWith(\"image\"),\n          ) as { inlineData: { mimeType: string; data: string } } | undefined;\n\n          if (imagePart?.inlineData) {\n            const base64Image = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;\n\n            setStoryStream((prev) =>\n              prev.map((item) =>\n                item.id === id ? { ...item, isGenerating: false, content: base64Image } : item,\n              ),\n            );\n          } else {\n            throw new Error(\"No image data in response\");\n          }\n        } catch (error) {\n          console.error(\"[Director] Image Gen Failed:\", error);\n          setStoryStream((prev) =>\n            prev.map((item) =>\n              item.id === id\n                ? {\n                  ...item,\n                  isGenerating: false,\n                  content: \"https://loremflickr.com/800/600/glitch,error\", // Fallback\n                  metadata: { ...item.metadata, error: \"Generation Failed\" },\n                }\n                : item,\n            ),\n          );\n        }\n      })();\n    } else if (fc.name === \"ambient_audio\") {\n      const { preset, vibe_description } = args;\n      setStoryStream((prev) => [\n        ...prev,\n        {\n          id: generateId(),\n          type: \"audio_event\",\n          content: vibe_description,\n          metadata: { preset },\n          timestamp: Date.now(),\n        },\n      ]);\n    } else if (fc.name === \"define_world_rule\") {\n      const { rule_name, description, consequence } = args;\n      setStoryStream((prev) => [\n        ...prev,\n        {\n          id: generateId(),\n          type: \"rule_event\",\n          content: rule_name,\n          metadata: { description, consequence },\n          timestamp: Date.now(),\n        },\n      ]);\n    }\n  }\n}\n"
+      },
+      "tags": [],
+      "source": null
+    }
+  ],
+  "command": "check"
+}

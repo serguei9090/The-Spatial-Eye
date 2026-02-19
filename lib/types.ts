@@ -32,3 +32,23 @@ export interface UIState {
   isConnected: boolean;
   error: string | null;
 }
+
+export interface StoryWorldRule {
+  id: string;
+  name: string;
+  description: string;
+  consequence: string;
+  active: boolean;
+}
+
+export type StoryItemType = "text" | "image" | "audio_event" | "rule_event";
+
+export interface StoryItem {
+  id: string;
+  type: StoryItemType;
+  content: string; // URL for image, Text for text, Description for audio
+  metadata?: Record<string, string | number | boolean | undefined>; // Extra data like rule details
+  isGenerating?: boolean; // For loading states
+  timestamp: number;
+  isStory?: boolean; // True if it's actual narrative content
+}

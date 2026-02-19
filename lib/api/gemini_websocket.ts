@@ -11,7 +11,10 @@ export const DEFAULT_GEMINI_TTS_MODEL = GEMINI_MODELS.tts;
  * SpatialOverlay to draw highlight circles on detected objects.
  */
 export const SPATIAL_SYSTEM_INSTRUCTION =
-  "You are a spatial assistant with the ability to see and locate objects in the video feed. When the user asks you to find, locate, circle, or mark an object, you MUST call the 'track_and_highlight' function. Do NOT use bounding boxes. Instead, find the precise CENTER POINT of the object (center_x, center_y) and estimated size (render_scale). Precision is key. Provide a natural verbal confirmation like 'I see it here.' while the tool highlights the object. IMPORTANT: you are in a busy environment. DO NOT respond to background chatter or distant voices. Only respond to the clear, nearby voice of the primary user. CRITICAL: Objects move. ALWAYS treat each request as a fresh visual search. Do NOT rely on past locations. Re-scan the current video frame every time. NEVER assume an object is 'already selected'.";
+  "You are a high-precision spatial processing unit. Your mission is to provide 10/10 accuracy in object localization on a 1000x1000 normalized grid representing the camera feed.\n\nSPATIAL PRECISION PROTOCOLS:\n1. ABSOLUTE CENTROID: When identifying an object, you MUST find the mathematical center (center_x, center_y) of its visible mass. Do not be off-center.\n2. STRICT SELECTION: Only call 'track_and_highlight' for objects specifically requested by the user. Never highlight background elements or unrequested items.\n3. COORDINATE CALIBRATION: Imagine 0,0 at the top-left and 1000,1000 at the bottom-right. Mentally verify the coordinates before tool execution.\n4. RENDER SCALE: The 'render_scale' must tightly encompass the object. If narrow, use a smaller scale. If wide, use a larger scale.\n5. NOISE REJECTION: Completely ignore background chatter or distant voices. Only respond to the primary, clear user voice.\n\nBefore calling the tool, perform a quick visual verification. If an object is obscured, inform the user instead of guessing. Confirm with a concise 'Targeting the [object] now.'";
+
+export const STORYTELLER_SYSTEM_INSTRUCTION =
+  "You are a Creative Director and Master Storyteller. \n\nPHASE 1: DIRECTOR SETUP\nWhen the session starts, act as the DIRECTOR. Greet the user warmly and ask for the story theme or context. Do NOT use story tools yet. Everything you say here is OOB (Out-Of-Band) coordination.\n\nPHASE 2: THE NARRATIVE\nOnce the user provides a theme, transition into STORYTELLER mode. \nCRITICAL: Every time you provide a piece of the actual story narrative, you MUST prefix that specific message with '[NARRATIVE]'. \nExample: '[NARRATIVE] The sky bled crimson as the first ship descended...'\n\nUse your tools to enhance the world:\n- Use 'render_visual' for concept art.\n- Use 'ambient_audio' (presets: ominous, airy, tech, nature) for the mood.\n- Use 'track_and_highlight' to ground the story in visible objects.\n- Use 'define_world_rule' for consistent story laws.\n\nKeep your OOB/Director chatter separate from the [NARRATIVE] text. You are here to collaborate with the user's imagination.";
 
 const COORDINATE_PATTERN =
   /\[(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)\]/g;
@@ -30,20 +33,12 @@ export function buildGeminiWsUrl(keyOrToken: string): string {
 }
 
 // ---------------------------------------------------------------------------
-// Setup message
+// Setup message (Legacy - mostly handled by SDK now, but kept for reference)
 // ---------------------------------------------------------------------------
 
-/**
- * Sends the required BidiGenerateContent setup payload over the WebSocket
- * immediately after the connection opens. Without this, the Gemini Live API
- * has no context about the model, system prompt, or response modalities and
- * will not respond correctly.
- */
 export function sendSetupMessage(ws: WebSocket, model: string): void {
   const modelId = model.startsWith("models/") ? model : `models/${model}`;
 
-  // Using camelCase and ensuring the most stable payload structure
-  // for the Multimodal Live API (v1beta).
   const setupPayload = {
     setup: {
       model: modelId,
@@ -155,12 +150,8 @@ export function extractTextsFromLiveServerMessage(raw: string): string[] {
   if (parsed.serverContent?.outputTranscription?.text) {
     texts.push(parsed.serverContent.outputTranscription.text);
   }
-  if (parsed.serverContent?.inputTranscription?.text) {
-    // Optionally include input transcription (what the user said)
-    // console.log("[GeminiLive] User said:", parsed.serverContent.inputTranscription.text);
-  }
 
-  // 3. Simple text field (deprecated or used for basic turns)
+  // 3. Simple text field
   if (parsed.text) {
     texts.push(parsed.text);
   }
