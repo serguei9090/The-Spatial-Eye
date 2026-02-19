@@ -1,32 +1,44 @@
 "use client";
 
+import { GoogleGenAI, type LiveServerMessage, Modality } from "@google/genai";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   DEFAULT_GEMINI_LIVE_MODEL,
-  buildGeminiWsUrl,
-  extractAudioFromLiveServerMessage,
+  SPATIAL_SYSTEM_INSTRUCTION,
   extractCoordinateTuples,
-  extractTextsFromLiveServerMessage,
-  isInterrupted,
-  sendSetupMessage,
   tupleToHighlight,
 } from "@/lib/api/gemini_websocket";
 import { useAuth } from "@/lib/auth/auth-context";
+import { GEMINI_TOOLS } from "@/lib/gemini/tools";
 import type { Highlight } from "@/lib/types";
-import { decode, decodeAudioData } from "@/lib/utils/audio";
+import { decode, decodeAudioData, encode } from "@/lib/utils/audio";
+
+type LiveSession = Awaited<ReturnType<GoogleGenAI["live"]["connect"]>>;
+
+interface TrackAndHighlightArgs {
+  ymin: number | string;
+  xmin: number | string;
+  ymax: number | string;
+  xmax: number | string;
+  label: string;
+}
+
+// ---------------------------------------------------------------------------
+// Hook
+// ---------------------------------------------------------------------------
 
 export function useGeminiLive() {
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectRef = useRef(0);
+  // SDK session ref — replaces the raw WebSocket ref
+  const sessionRef = useRef<LiveSession | null>(null);
   const manualCloseRef = useRef(false);
-  // Track whether the socket has successfully opened so the onclose handler
-  // knows whether to attempt a reconnect or just surface the error.
-  const hasOpenedRef = useRef(false);
 
-  // Audio Output State
+  // Audio Output State (SDK delivers PCM at 24kHz)
   const audioContextRef = useRef<AudioContext | null>(null);
-  const activeSourcesRef = useRef<Set<AudioBufferSourceNode>>(new Set());
+  // Store tuple of [Source, Gain] to handle fades
+  const activeSourcesRef = useRef<Set<{ source: AudioBufferSourceNode; gain: GainNode }>>(
+    new Set(),
+  );
   const nextStartTimeRef = useRef<number>(0);
 
   const { user } = useAuth();
@@ -42,30 +54,54 @@ export function useGeminiLive() {
   >("unknown");
   const [latestTranscript, setLatestTranscript] = useState<string>("");
 
+  // Sending lock — prevents simultaneous audio + video frames from racing
+  const isSendingRef = useRef(false);
+
   // ---------------------------------------------------------------------------
   // Audio helpers
   // ---------------------------------------------------------------------------
 
-  const stopAudio = useCallback(() => {
-    for (const source of activeSourcesRef.current) {
+  const stopAudio = useCallback((fadeOutDuration = 0) => {
+    const ctx = audioContextRef.current;
+    if (!ctx || ctx.state === "closed") {
+      activeSourcesRef.current.clear();
+      nextStartTimeRef.current = 0;
+      return;
+    }
+
+    for (const { source, gain } of activeSourcesRef.current) {
       try {
-        source.stop();
+        if (fadeOutDuration > 0) {
+          // Fade out gracefully
+          const currentTime = ctx.currentTime;
+          gain.gain.cancelScheduledValues(currentTime);
+          gain.gain.setValueAtTime(gain.gain.value, currentTime);
+          gain.gain.linearRampToValueAtTime(0, currentTime + fadeOutDuration);
+          source.stop(currentTime + fadeOutDuration);
+        } else {
+          // Stop immediately
+          source.stop();
+        }
       } catch {
-        // Ignore errors if source is already stopped
+        // Ignore errors for already-stopped sources
       }
     }
-    activeSourcesRef.current.clear();
-    nextStartTimeRef.current = 0;
+
+    // If fading, we let the sources naturally clear themselves via onended.
+    // If immediate, we clear ref.
+    if (fadeOutDuration === 0) {
+      activeSourcesRef.current.clear();
+      nextStartTimeRef.current = 0;
+    } else {
+      // Reset next start time immediately so new audio starts "fresh"
+      nextStartTimeRef.current = 0;
+    }
   }, []);
 
   // ---------------------------------------------------------------------------
-  // Model availability check
+  // Model availability check (REST ping to validate API key)
   // ---------------------------------------------------------------------------
 
-  /**
-   * Pings the Gemini REST API to verify the API key is valid and the Live
-   * model is accessible. Falls back gracefully if the network call fails.
-   */
   const checkModelAvailability = useCallback(async (): Promise<boolean> => {
     const key = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
     console.log("[GeminiLive] Checking model availability...", {
@@ -82,7 +118,6 @@ export function useGeminiLive() {
 
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_GEMINI_LIVE_MODEL}?key=${encodeURIComponent(key)}`;
-      console.log("[GeminiLive] Fetching URL:", url);
       const response = await fetch(url, { method: "GET" });
       console.log("[GeminiLive] Model check response:", response.status, response.statusText);
 
@@ -91,7 +126,7 @@ export function useGeminiLive() {
         return true;
       }
 
-      // 429 = quota exceeded but key and model are valid
+      // 429 = quota exceeded, but key and model are valid
       if (response.status === 429) {
         console.warn("[GeminiLive] Quota exceeded (429), treating as available.");
         setModelAvailability("available");
@@ -102,9 +137,8 @@ export function useGeminiLive() {
       setModelAvailability("unavailable");
       return false;
     } catch (e) {
-      // Network offline — assume available so we don't block the user, the
-      // WebSocket connection attempt will surface the real error.
-      console.error("[GeminiLive] checks failed (network error?), assuming available.", e);
+      // Network offline — let the connect attempt surface the real error
+      console.warn("[GeminiLive] Availability check failed (network?), assuming available.", e);
       setModelAvailability("available");
       return true;
     }
@@ -117,12 +151,18 @@ export function useGeminiLive() {
   const disconnect = useCallback(() => {
     console.log("[GeminiLive] Disconnecting...");
     manualCloseRef.current = true;
-    wsRef.current?.close();
-    wsRef.current = null;
+
+    try {
+      sessionRef.current?.close();
+    } catch {
+      // ignore
+    }
+    sessionRef.current = null;
+
     setIsConnected(false);
     setIsConnecting(false);
 
-    stopAudio();
+    stopAudio(0); // Immediate stop on disconnect
     if (audioContextRef.current?.state !== "closed") {
       void audioContextRef.current?.close();
       audioContextRef.current = null;
@@ -130,13 +170,12 @@ export function useGeminiLive() {
   }, [stopAudio]);
 
   // ---------------------------------------------------------------------------
-  // Connect
+  // Connect (via @google/genai SDK — no raw WebSocket payload management)
   // ---------------------------------------------------------------------------
 
   const connect = useCallback(async (): Promise<boolean> => {
     console.log("[GeminiLive] Connect called.");
     manualCloseRef.current = false;
-    hasOpenedRef.current = false;
 
     if (!user) {
       const message = "Sign in required before connecting to Gemini Live.";
@@ -147,7 +186,7 @@ export function useGeminiLive() {
       return false;
     }
 
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+    if (sessionRef.current) {
       console.log("[GeminiLive] Already connected.");
       setIsConnected(true);
       return true;
@@ -167,7 +206,7 @@ export function useGeminiLive() {
       return false;
     }
 
-    // Initialise AudioContext on connect (must be triggered by user gesture)
+    // Initialise output AudioContext (24kHz — model outputs at 24kHz)
     if (!audioContextRef.current || audioContextRef.current.state === "closed") {
       const AudioContextClass =
         window.AudioContext ||
@@ -176,209 +215,264 @@ export function useGeminiLive() {
     }
 
     return new Promise((resolve) => {
-      const wsUrl = buildGeminiWsUrl(apiKey);
-      console.log("[GeminiLive] Connecting to WebSocket:", wsUrl);
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
+      const ai = new GoogleGenAI({ apiKey });
 
-      ws.onopen = () => {
-        console.log("[GeminiLive] WebSocket Opened.");
-        hasOpenedRef.current = true;
-        reconnectRef.current = 0;
+      /**
+       * The @google/genai SDK handles all wire-format details:
+       * - Correct JSON field names (realtimeInput vs realtime_input)
+       * - Correct mime types and payload structure
+       * - Session setup and handshake
+       *
+       * Reference (working AI Studio implementation):
+       * https://ai.google.dev/gemini-api/docs/live
+       */
+      ai.live
+        .connect({
+          model: DEFAULT_GEMINI_LIVE_MODEL,
+          config: {
+            responseModalities: [Modality.AUDIO],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: "Puck" },
+              },
+            },
+            // Enable transcription of model output (what Gemini says)
+            // Enable transcription of model output (what Gemini says)
+            outputAudioTranscription: {},
+            inputAudioTranscription: {},
+            systemInstruction: SPATIAL_SYSTEM_INSTRUCTION,
+            tools: [GEMINI_TOOLS],
+          },
+          callbacks: {
+            onopen: () => {
+              console.log("[GeminiLive] SDK session opened.");
+              setIsConnecting(false);
+              setIsConnected(true);
+              resolve(true);
+            },
 
-        // ✅ FIX: Send the BidiGenerateContent setup message so Gemini knows
-        // the model, system instructions, and response modalities.
-        console.log("[GeminiLive] Sending setup message...", { model: DEFAULT_GEMINI_LIVE_MODEL });
-        sendSetupMessage(ws, DEFAULT_GEMINI_LIVE_MODEL);
+            onmessage: async (msg: LiveServerMessage) => {
+              // 1. Handle interruption
+              if (msg.serverContent?.interrupted) {
+                console.log("[GeminiLive] Interrupted.");
+                stopAudio(0.5); // Graceful 500ms fade out
+                return;
+              }
 
-        setIsConnecting(false);
-        setIsConnected(true);
-        resolve(true);
-      };
+              // 2. Play audio parts
+              const parts = msg.serverContent?.modelTurn?.parts ?? [];
+              for (const part of parts) {
+                if (part.inlineData?.data && part.inlineData.mimeType?.startsWith("audio/")) {
+                  try {
+                    const ctx = audioContextRef.current;
+                    if (!ctx) continue;
+                    if (ctx.state === "suspended") await ctx.resume();
 
-      ws.onmessage = async (event) => {
-        let rawMessage = "";
+                    const audioBuffer = await decodeAudioData(
+                      decode(part.inlineData.data),
+                      ctx,
+                      24000,
+                    );
 
-        if (event.data instanceof Blob) {
-          console.log("[GeminiLive] Received Blob message:", event.data.size, "bytes");
-          rawMessage = await event.data.text();
-          console.log("[GeminiLive] Blob content as text (start):", rawMessage.slice(0, 100));
-        } else if (typeof event.data === "string") {
-          console.log("[GeminiLive] Received String message:", event.data.length, "chars");
-          rawMessage = event.data;
-        } else {
-          console.log("[GeminiLive] Received unknown message type:", typeof event.data);
-          return;
-        }
+                    const startTime = Math.max(nextStartTimeRef.current, ctx.currentTime);
+                    const source = ctx.createBufferSource();
+                    const gain = ctx.createGain();
 
-        // 1. Handle Interruption
-        if (isInterrupted(rawMessage)) {
-          console.log("[GeminiLive] Interruption received.");
-          stopAudio();
-          return;
-        }
+                    source.buffer = audioBuffer;
+                    source.connect(gain);
+                    gain.connect(ctx.destination);
 
-        // 2. Handle Audio
-        const audioData = extractAudioFromLiveServerMessage(rawMessage);
-        if (audioData && audioContextRef.current) {
-          // console.log("[GeminiLive] Audio data extracted:", audioData.slice(0, 50), "...");
-          try {
-            const ctx = audioContextRef.current;
-            // Resume context if suspended by browser auto-play policy
-            if (ctx.state === "suspended") {
-              await ctx.resume();
-            }
+                    const unit = { source, gain };
 
-            const decodedBuffer = await decodeAudioData(decode(audioData), ctx, 24000);
+                    source.onended = () => {
+                      activeSourcesRef.current.delete(unit);
+                    };
 
-            // Schedule audio chunks sequentially to avoid gaps / overlaps
-            const startTime = Math.max(nextStartTimeRef.current, ctx.currentTime);
-            const source = ctx.createBufferSource();
-            source.buffer = decodedBuffer;
-            source.connect(ctx.destination);
+                    source.start(startTime);
+                    nextStartTimeRef.current = startTime + audioBuffer.duration;
+                    activeSourcesRef.current.add(unit);
+                  } catch (e) {
+                    console.error("[GeminiLive] Audio playback error:", e);
+                  }
+                }
 
-            source.onended = () => {
-              activeSourcesRef.current.delete(source);
-            };
+                // 3. Handle text parts for coordinate extraction (Legacy/Fallback)
+                if (part.text) {
+                  console.log("[GeminiLive] Text response:", part.text);
+                  setLatestTranscript(part.text);
 
-            source.start(startTime);
-            nextStartTimeRef.current = startTime + decodedBuffer.duration;
-            activeSourcesRef.current.add(source);
-          } catch (e) {
-            console.error("[GeminiLive] Audio playback error", e);
-          }
-        }
+                  const tuples = extractCoordinateTuples(part.text);
+                  if (tuples.length) {
+                    setActiveHighlights(tuples.map((t, i) => tupleToHighlight(t, i)));
+                  }
+                }
+              }
 
-        // 3. Handle Coordinates (Spatial Eye) and Text
-        const responseText = extractTextsFromLiveServerMessage(rawMessage).join("\n");
-        if (responseText && responseText !== "[object Blob]") {
-          console.log("[GeminiLive] Response Text:", responseText);
-          setLatestTranscript(responseText);
-        }
+              // 4. Handle Tool Calls (Highlighting)
+              if (msg.toolCall?.functionCalls) {
+                console.log("[GeminiLive] Tool Call received:", msg.toolCall);
+                for (const fc of msg.toolCall.functionCalls) {
+                  if (fc.name === "track_and_highlight") {
+                    const { ymin, xmin, ymax, xmax, label } =
+                      fc.args as unknown as TrackAndHighlightArgs;
+                    console.log("[GeminiLive] Highlighter Tool:", {
+                      label,
+                      ymin,
+                      xmin,
+                      ymax,
+                      xmax,
+                    });
 
-        const tuples = extractCoordinateTuples(responseText);
-        if (tuples.length) {
-          console.log("[GeminiLive] Detected coordinates:", tuples);
-          setActiveHighlights(tuples.map((tuple, index) => tupleToHighlight(tuple, index)));
-        }
-      };
+                    const newHighlight: Highlight = {
+                      id: crypto.randomUUID(),
+                      objectName: label || "Detected Object",
+                      ymin: Number(ymin),
+                      xmin: Number(xmin),
+                      ymax: Number(ymax),
+                      xmax: Number(xmax),
+                      timestamp: Date.now(),
+                    };
 
-      ws.onerror = (ev) => {
-        console.error("[GeminiLive] WebSocket Error:", ev);
-        const message = "Gemini Live connection error.";
-        setError(message);
-        setErrorCode("WS_ERROR");
-        setErrorMessage(message);
-        // Do not resolve here — onclose will always fire after onerror
-      };
+                    setActiveHighlights((prev) => [...prev, newHighlight]);
 
-      ws.onclose = (event) => {
-        console.log("[GeminiLive] WebSocket Closed:", event.code, event.reason);
-        wsRef.current = null;
-        setIsConnected(false);
-        setIsConnecting(false);
+                    // Send response back to model so it knows the tool executed
+                    if (sessionRef.current) {
+                      sessionRef.current.sendToolResponse({
+                        functionResponses: [
+                          {
+                            id: fc.id,
+                            name: fc.name,
+                            response: { result: { success: true } },
+                          },
+                        ],
+                      });
+                    }
+                  }
+                }
+              }
 
-        // Only auto-reconnect if:
-        // - The user did not manually disconnect
-        // - We haven't exceeded the retry limit
-        // - The close code is not a protocol/auth error (which retrying won't fix)
-        const isProtocolError = [1002, 1003, 1007, 1008].includes(event.code);
-        const shouldRetry = !manualCloseRef.current && reconnectRef.current < 4 && !isProtocolError;
+              // 5. Output transcription (what the model says — streamed text)
+              if (msg.serverContent?.outputTranscription?.text) {
+                const transcriptText = msg.serverContent.outputTranscription.text;
+                setLatestTranscript((prev) => prev + transcriptText);
+              }
 
-        if (shouldRetry) {
-          const delay = Math.min(500 * 2 ** reconnectRef.current, 5000);
-          console.log(
-            `[GeminiLive] Retrying in ${delay}ms... (Attempt ${reconnectRef.current + 1})`,
-          );
-          reconnectRef.current += 1;
-          window.setTimeout(() => {
-            void connect();
-          }, delay);
-        } else {
-          stopAudio();
-        }
+              // 6. Clear transcript on turn complete
+              if (msg.serverContent?.turnComplete) {
+                // Short delay so the UI shows the final transcript before clearing
+                setTimeout(() => setLatestTranscript(""), 3000);
+              }
+            },
 
-        // Only resolve(false) if the socket never successfully opened —
-        // otherwise this Promise was already resolved(true) in onopen.
-        if (!hasOpenedRef.current) {
+            onerror: (e) => {
+              console.error("[GeminiLive] SDK error:", e);
+              const message = e instanceof Error ? e.message : "Gemini Live connection error.";
+              setError(message);
+              setErrorCode("SDK_ERROR");
+              setErrorMessage(message);
+              setIsConnected(false);
+              setIsConnecting(false);
+              resolve(false);
+            },
+
+            onclose: (e) => {
+              console.log("[GeminiLive] SDK session closed.", e?.reason ?? "");
+              sessionRef.current = null;
+              setIsConnected(false);
+              setIsConnecting(false);
+              stopAudio(0);
+
+              // Only report error if this wasn't a manual disconnect
+              if (!manualCloseRef.current && e?.code && [1002, 1003, 1007, 1008].includes(e.code)) {
+                const message = `Connection closed with error: ${e.reason || e.code}`;
+                setError(message);
+                setErrorCode(`WS_${e.code}`);
+                setErrorMessage(message);
+              }
+            },
+          },
+        })
+        .then((session) => {
+          sessionRef.current = session;
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : "Failed to connect to Gemini Live.";
+          console.error("[GeminiLive] Connect failed:", message);
+          setError(message);
+          setErrorCode("CONNECT_FAILED");
+          setIsConnecting(false);
           resolve(false);
-        }
-      };
+        });
     });
   }, [user, stopAudio]);
 
   // ---------------------------------------------------------------------------
-  // sendVideoFrame
+  // sendVideoFrame — delegates to SDK (handles wire format automatically)
   // ---------------------------------------------------------------------------
 
-  const sendVideoFrame = useCallback((base64Data: string, mimeType = "image/webp") => {
-    if (wsRef.current?.readyState !== WebSocket.OPEN) {
-      return;
-    }
+  const sendVideoFrame = useCallback((base64Data: string, mimeType = "image/jpeg") => {
+    if (!sessionRef.current || isSendingRef.current) return;
 
-    wsRef.current.send(
-      JSON.stringify({
-        realtime_input: {
-          media_chunks: [
-            {
-              mime_type: mimeType,
-              data: base64Data,
-            },
-          ],
+    isSendingRef.current = true;
+    try {
+      /**
+       * SDK sendRealtimeInput with { media: ... } is the verified working format
+       * from the official AI Studio reference implementation. The SDK maps this
+       * correctly to realtimeInput.video on the wire.
+       */
+      sessionRef.current.sendRealtimeInput({
+        media: {
+          data: base64Data,
+          mimeType,
         },
-      }),
-    );
+      });
+    } catch (e) {
+      console.error("[GeminiLive] Failed to send video frame:", e);
+    } finally {
+      setTimeout(() => {
+        isSendingRef.current = false;
+      }, 50);
+    }
   }, []);
 
   // ---------------------------------------------------------------------------
-  // sendAudioChunk
+  // sendAudioChunk — delegates to SDK (handles wire format automatically)
   // ---------------------------------------------------------------------------
 
-  /**
-   * Converts a Blob to base64 and streams it to Gemini Live.
-   *
-   * ✅ FIX: Replaced asynchronous FileReader with arrayBuffer() to eliminate
-   * the race condition where wsRef could become null between the readAsDataURL
-   * call and the onload callback.
-   */
-  const sendAudioChunk = useCallback(async (blob: Blob) => {
-    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
-      return;
-    }
+  const sendAudioChunk = useCallback((data: Blob | Int16Array) => {
+    if (!sessionRef.current || isSendingRef.current) return;
 
+    isSendingRef.current = true;
     try {
-      const buffer = await blob.arrayBuffer();
-      // Re-check after the async operation completes
-      if (wsRef.current?.readyState !== WebSocket.OPEN) {
+      let base64Data: string;
+
+      if (data instanceof Int16Array) {
+        base64Data = encode(new Uint8Array(data.buffer));
+      } else {
+        // Blob path — convert sync via FileReader for non-async callback compat
+        // (AudioWorklet postMessage delivers Float32Array, so this path is rare)
+        console.warn("[GeminiLive] Blob audio path invoked — consider passing Int16Array.");
+        isSendingRef.current = false;
         return;
       }
 
-      const ws = wsRef.current;
-
-      const bytes = new Uint8Array(buffer);
-      if (bytes.length === 0) return;
-
-      let binary = "";
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCodePoint(bytes[i]);
-      }
-      const base64Data = btoa(binary);
-
-      const audioPayload = {
-        realtime_input: {
-          media_chunks: [
-            {
-              mime_type: blob.type || "audio/pcm;rate=24000",
-              data: base64Data,
-            },
-          ],
+      /**
+       * SDK sendRealtimeInput with { media: ... } — verified against AI Studio.
+       * The SDK maps this to realtimeInput.audio on the wire with the correct
+       * mimeType. Input spec: 16-bit PCM, 16kHz, mono.
+       */
+      sessionRef.current.sendRealtimeInput({
+        media: {
+          data: base64Data,
+          mimeType: "audio/pcm;rate=16000",
         },
-      };
-
-      // console.log("[GeminiLive] Sending audio chunk:", bytes.length, "bytes, mime:", blob.type);
-      ws.send(JSON.stringify(audioPayload));
+      });
     } catch (e) {
-      console.error("Failed to send audio chunk:", e);
+      console.error("[GeminiLive] Failed to send audio chunk:", e);
+    } finally {
+      setTimeout(() => {
+        isSendingRef.current = false;
+      }, 10);
     }
   }, []);
 
@@ -388,7 +482,7 @@ export function useGeminiLive() {
 
   useEffect(() => {
     return () => {
-      stopAudio();
+      stopAudio(0);
       if (audioContextRef.current) {
         void audioContextRef.current.close();
       }

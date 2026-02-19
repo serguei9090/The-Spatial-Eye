@@ -15,7 +15,7 @@ export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialO
     <svg
       className="pointer-events-none absolute inset-0 h-full w-full"
       viewBox={`0 0 ${videoWidth} ${videoHeight}`}
-      preserveAspectRatio="none"
+      preserveAspectRatio="xMidYMid slice"
       aria-label="Detected object overlay"
       role="img"
     >

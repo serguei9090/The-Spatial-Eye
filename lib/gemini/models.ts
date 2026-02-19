@@ -25,8 +25,14 @@ export const GEMINI_MODELS = {
    * gemini-2.5-flash is the most stable Live-capable model currently
    * available (as of 2026-02).
    */
+  /**
+   * Locked to the exact model from the verified working AI Studio reference.
+   * "gemini-2.5-flash-native-audio-preview-12-2025" is confirmed stable for the
+   * @google/genai SDK ai.live.connect() approach.
+   * Override with NEXT_PUBLIC_GEMINI_LIVE_MODEL env var if needed.
+   */
   liveAudioVideoSession:
-    process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-latest",
+    process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-12-2025",
 
   /**
    * Text-to-Speech synthesis. Uses Gemini 1.5 Flash which has TTS capability

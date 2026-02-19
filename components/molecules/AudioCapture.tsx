@@ -1,19 +1,26 @@
 "use client";
 
+import { pcmFloat32ToInt16 } from "@/lib/utils/audio";
 import { useCallback, useEffect, useRef } from "react";
 
 interface AudioCaptureProps {
   isActive: boolean;
-  /** May be async — AudioCapture does not await the result. */
-  onAudioChunk?: (blob: Blob) => void | Promise<void>;
+  /**
+   * Emits raw 16-bit PCM samples at 16000Hz (mono).
+   * The Gemini Live API requires: 16-bit PCM, 16kHz, mono.
+   * Reference: https://ai.google.dev/gemini-api/docs/live
+   */
+  onAudioChunk?: (data: Int16Array) => void;
   inputDeviceId?: string;
 }
 
 export function AudioCapture({ isActive, onAudioChunk, inputDeviceId }: AudioCaptureProps) {
-  const recorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null);
 
   const startRecording = useCallback(async () => {
-    if (recorderRef.current?.state === "recording") return;
+    if (audioContextRef.current) return;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -22,42 +29,52 @@ export function AudioCapture({ isActive, onAudioChunk, inputDeviceId }: AudioCap
           : { echoCancellation: true, noiseSuppression: true },
         video: false,
       });
+      streamRef.current = stream;
 
-      // Prefer PCM-compatible formats for Gemini Live. The API natively handles
-      // audio/webm (opus) via server-side transcoding, but linear PCM is ideal.
-      // We check support so this degrades gracefully on all browsers.
-      const preferredMimeTypes = [
-        "audio/webm;codecs=pcm",
-        "audio/wav",
-        "audio/webm;codecs=opus",
-        "audio/webm",
-      ];
-      const mimeType = preferredMimeTypes.find((m) => MediaRecorder.isTypeSupported(m)) ?? "";
+      // CRITICAL: Gemini Live API requires 16kHz PCM input.
+      // The model outputs audio at 24kHz, but INPUT must be 16kHz.
+      // Source: https://ai.google.dev/gemini-api/docs/live
+      const audioContext = new AudioContext({ sampleRate: 16000 });
+      audioContextRef.current = audioContext;
 
-      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      // Load the AudioWorklet and connect the pipeline
+      await audioContext.audioWorklet.addModule("/worklets/pcm-capture-processor.js");
 
-      recorder.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          // eslint-disable-next-line @typescript-eslint/no-floating-promises
-          onAudioChunk?.(event.data);
+      const source = audioContext.createMediaStreamSource(stream);
+      const workletNode = new AudioWorkletNode(audioContext, "pcm-capture-processor");
+      workletNodeRef.current = workletNode;
+
+      // Receive processed audio frames from the worklet thread
+      workletNode.port.onmessage = (
+        event: MessageEvent<{ type: string; samples: Float32Array }>,
+      ) => {
+        if (event.data.type === "pcm" && isActive) {
+          const int16Samples = pcmFloat32ToInt16(event.data.samples);
+          onAudioChunk?.(int16Samples);
         }
       };
 
-      recorder.start(100); // 100ms chunks for low latency
-      recorderRef.current = recorder;
+      source.connect(workletNode);
+      // NOTE: Do NOT connect to audioContext.destination to avoid microphone feedback
     } catch (error) {
-      console.error("Failed to start audio capture:", error);
+      console.error("[AudioCapture] Failed to start audio capture:", error);
     }
-  }, [inputDeviceId, onAudioChunk]);
+  }, [inputDeviceId, onAudioChunk, isActive]);
 
   const stopRecording = useCallback(() => {
-    const recorder = recorderRef.current;
-    if (recorder) {
-      if (recorder.state !== "inactive") {
-        recorder.stop();
+    if (workletNodeRef.current) {
+      workletNodeRef.current.disconnect();
+      workletNodeRef.current = null;
+    }
+    if (audioContextRef.current) {
+      void audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+    if (streamRef.current) {
+      for (const track of streamRef.current.getTracks()) {
+        track.stop();
       }
-      recorder.stream.getTracks().forEach(track => track.stop());
-      recorderRef.current = null;
+      streamRef.current = null;
     }
   }, []);
 

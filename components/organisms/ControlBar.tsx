@@ -13,7 +13,6 @@ interface ControlBarProps {
   isConnected: boolean;
   isConnecting: boolean;
   isListening: boolean;
-  modelAvailability: "unknown" | "checking" | "available" | "unavailable";
   inputDevices: MediaDeviceInfo[];
   outputDevices: MediaDeviceInfo[];
   videoDevices: MediaDeviceInfo[];

@@ -11,7 +11,7 @@ export const DEFAULT_GEMINI_TTS_MODEL = GEMINI_MODELS.tts;
  * SpatialOverlay to draw highlight circles on detected objects.
  */
 export const SPATIAL_SYSTEM_INSTRUCTION =
-  "When identifying objects, output coordinates in the format [ymin, xmin, ymax, xmax] normalized to 0-1000 range.";
+  "You are a spatial assistant with the ability to see and locate objects in the video feed. When the user asks you to find, locate, circle, or mark an object, you MUST call the 'track_and_highlight' function. Ensure the bounding box TIGHTLY encloses the object with minimal margin. Precision is key for the spatial overlay. Provide a natural verbal confirmation like 'I see it here.' while the tool highlights the object.";
 
 const COORDINATE_PATTERN =
   /\[(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)\]/g;
@@ -41,21 +41,32 @@ export function buildGeminiWsUrl(keyOrToken: string): string {
  */
 export function sendSetupMessage(ws: WebSocket, model: string): void {
   const modelId = model.startsWith("models/") ? model : `models/${model}`;
+
+  // Using camelCase and ensuring the most stable payload structure
+  // for the Multimodal Live API (v1beta).
   const setupPayload = {
     setup: {
       model: modelId,
-      generation_config: {
-        response_modalities: ["AUDIO"],
+      generationConfig: {
+        responseModalities: ["audio"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: "Puck",
+            },
+          },
+        },
       },
-      system_instruction: {
+      systemInstruction: {
         parts: [{ text: SPATIAL_SYSTEM_INSTRUCTION }],
       },
-      // input_audio_transcription and output_audio_transcription are omitted
-      // when empty to avoid "invalid argument" errors on some API versions.
     },
   };
 
-  console.log("[GeminiLive] Sending Setup Payload:", JSON.stringify(setupPayload, null, 2));
+  console.log(
+    "[GeminiLive] Sending Setup Payload (Refined):",
+    JSON.stringify(setupPayload, null, 2),
+  );
   ws.send(JSON.stringify(setupPayload));
 }
 

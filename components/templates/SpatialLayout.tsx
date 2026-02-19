@@ -6,9 +6,9 @@ import { toast } from "sonner";
 import { AIOrb } from "@/components/atoms/AIOrb";
 import { PremiumBackground } from "@/components/backgrounds/PremiumBackground";
 import { AudioCapture } from "@/components/molecules/AudioCapture";
-import { ControlBar } from "@/components/organisms/ControlBar";
 import { SpatialOverlay } from "@/components/molecules/SpatialOverlay";
 import { VideoFeed } from "@/components/molecules/VideoFeed";
+import { ControlBar } from "@/components/organisms/ControlBar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -106,10 +106,10 @@ export function SpatialLayout() {
       }
 
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const data = canvas.toDataURL("image/webp", 0.75).split(",")[1];
+      const data = canvas.toDataURL("image/jpeg", 0.5).split(",")[1];
 
       if (data) {
-        sendVideoFrame(data, "image/webp");
+        sendVideoFrame(data, "image/jpeg");
       }
     }, 800);
 
@@ -255,7 +255,6 @@ export function SpatialLayout() {
             isConnected={isConnected}
             isConnecting={isConnecting}
             isListening={isListening}
-            modelAvailability={modelAvailability}
             inputDevices={inputDevices}
             outputDevices={outputDevices}
             videoDevices={videoDevices}

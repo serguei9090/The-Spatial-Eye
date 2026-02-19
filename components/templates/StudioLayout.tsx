@@ -102,18 +102,22 @@ export function StudioLayout() {
     if (!isListening || !isConnected) return;
 
     const intervalId = window.setInterval(() => {
-      const video = videoRef.current;
-      if (!video) return;
+      if (isConnected && isListening) {
+        const video = videoRef.current;
+        if (!video) return;
 
-      const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 360;
-      const context = canvas.getContext("2d");
-      if (!context) return;
-      context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const data = canvas.toDataURL("image/webp", 0.75).split(",")[1];
-      if (data) sendVideoFrame(data, "image/webp");
-    }, 1500); // Slower FPS for Storyteller mode to save bandwidth
+        const canvas = document.createElement("canvas");
+        // 320x180 for maximum stability on free tier
+        canvas.width = 320;
+        canvas.height = 180;
+        const context = canvas.getContext("2d");
+        if (!context) return;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const data = canvas.toDataURL("image/jpeg", 0.4).split(",")[1];
+        if (data) sendVideoFrame(data, "image/jpeg");
+      }
+    }, 2000);
 
     return () => clearInterval(intervalId);
   }, [isConnected, isListening, sendVideoFrame]);
@@ -177,7 +181,6 @@ export function StudioLayout() {
               isConnected={isConnected}
               isConnecting={isConnecting}
               isListening={isListening}
-              modelAvailability={modelAvailability}
               inputDevices={inputDevices}
               outputDevices={outputDevices}
               videoDevices={videoDevices}
