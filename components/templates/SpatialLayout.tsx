@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
-import { AIOrb } from "@/components/atoms/AIOrb";
 import { PremiumBackground } from "@/components/backgrounds/PremiumBackground";
 import { AudioCapture } from "@/components/molecules/AudioCapture";
 import { SpatialOverlay } from "@/components/molecules/SpatialOverlay";
@@ -32,7 +31,6 @@ export function SpatialLayout() {
     error: authError,
     getIdToken,
     signInWithGoogle,
-    signOutUser,
   } = useAuth();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 1280, height: 720 });
@@ -61,7 +59,6 @@ export function SpatialLayout() {
     isConnected,
     isConnecting,
     errorMessage,
-    modelAvailability,
     checkModelAvailability,
     connect,
     disconnect,
@@ -90,7 +87,7 @@ export function SpatialLayout() {
       return;
     }
 
-    const intervalId = window.setInterval(() => {
+    const intervalId = globalThis.setInterval(() => {
       const video = videoRef.current;
       if (!video) {
         return;
@@ -114,7 +111,7 @@ export function SpatialLayout() {
     }, 800);
 
     return () => {
-      window.clearInterval(intervalId);
+      globalThis.clearInterval(intervalId);
     };
   }, [isConnected, isListening, sendVideoFrame]);
 
@@ -267,6 +264,8 @@ export function SpatialLayout() {
             onInputDeviceChange={setSelectedInputId}
             onOutputDeviceChange={setSelectedOutputId}
             onVideoDeviceChange={setSelectedVideoId}
+            mode="spatial"
+            onModeChange={() => {}} // No-op for SpatialLayout
           />
         </div>
       </div>

@@ -1,492 +1,134 @@
 "use client";
 
-import { GoogleGenAI, type LiveServerMessage, Modality } from "@google/genai";
-import { useCallback, useEffect, useRef, useState } from "react";
+import type { LiveServerMessage } from "@google/genai";
+import { useEffect, useMemo, useState } from "react";
 
 import {
-  DEFAULT_GEMINI_LIVE_MODEL,
   SPATIAL_SYSTEM_INSTRUCTION,
-  extractCoordinateTuples,
-  tupleToHighlight,
+  STORYTELLER_SYSTEM_INSTRUCTION,
 } from "@/lib/api/gemini_websocket";
-import { useAuth } from "@/lib/auth/auth-context";
-import { GEMINI_TOOLS } from "@/lib/gemini/tools";
-import type { Highlight } from "@/lib/types";
-import { decode, decodeAudioData, encode } from "@/lib/utils/audio";
+import { handleSpatialToolCall } from "@/lib/gemini/handlers";
+import { handleDirectorToolCall } from "@/lib/gemini/storyteller-handlers";
+import { DIRECTOR_TOOLS, SPATIAL_TOOLS } from "@/lib/gemini/tools/definitions";
+import { useGeminiCore } from "@/lib/hooks/useGeminiCore";
+import { useSettings } from "@/lib/store/settings-context";
+import type { Highlight, StoryItem } from "@/lib/types";
 
-type LiveSession = Awaited<ReturnType<GoogleGenAI["live"]["connect"]>>;
+export type GeminiMode = "spatial" | "storyteller";
 
-interface TrackAndHighlightArgs {
-  objects: {
-    label: string;
-    center_x: number | string;
-    center_y: number | string;
-    render_scale: number | string;
-  }[];
+export interface UseGeminiLiveProps {
+  mode?: GeminiMode; // default "spatial"
 }
 
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
-
-export function useGeminiLive() {
-  // SDK session ref — replaces the raw WebSocket ref
-  const sessionRef = useRef<LiveSession | null>(null);
-  const manualCloseRef = useRef(false);
-
-  // Audio Output State (SDK delivers PCM at 24kHz)
-  const audioContextRef = useRef<AudioContext | null>(null);
-  // Store tuple of [Source, Gain] to handle fades
-  const activeSourcesRef = useRef<Set<{ source: AudioBufferSourceNode; gain: GainNode }>>(
-    new Set(),
-  );
-  const nextStartTimeRef = useRef<number>(0);
-
-  const { user } = useAuth();
-
+export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
   const [activeHighlights, setActiveHighlights] = useState<Highlight[]>([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [errorCode, setErrorCode] = useState<string | undefined>(undefined);
-  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
-  const [modelAvailability, setModelAvailability] = useState<
-    "unknown" | "checking" | "available" | "unavailable"
-  >("unknown");
+  const [storyStream, setStoryStream] = useState<StoryItem[]>([]);
   const [latestTranscript, setLatestTranscript] = useState<string>("");
 
-  // Sending lock — prevents simultaneous audio + video frames from racing
-  const isSendingRef = useRef(false);
+  // Determine configuration based on mode
+  const systemInstruction =
+    mode === "storyteller" ? STORYTELLER_SYSTEM_INSTRUCTION : SPATIAL_SYSTEM_INSTRUCTION;
 
-  // ---------------------------------------------------------------------------
-  // Audio helpers
-  // ---------------------------------------------------------------------------
+  const { highlightDuration } = useSettings();
 
-  const stopAudio = useCallback((fadeOutDuration = 0) => {
-    const ctx = audioContextRef.current;
-    if (!ctx || ctx.state === "closed") {
-      activeSourcesRef.current.clear();
-      nextStartTimeRef.current = 0;
-      return;
-    }
-
-    for (const { source, gain } of activeSourcesRef.current) {
-      try {
-        if (fadeOutDuration > 0) {
-          // Fade out gracefully
-          const currentTime = ctx.currentTime;
-          gain.gain.cancelScheduledValues(currentTime);
-          gain.gain.setValueAtTime(gain.gain.value, currentTime);
-          gain.gain.linearRampToValueAtTime(0, currentTime + fadeOutDuration);
-          source.stop(currentTime + fadeOutDuration);
-        } else {
-          // Stop immediately
-          source.stop();
-        }
-      } catch {
-        // Ignore errors for already-stopped sources
-      }
-    }
-
-    // If fading, we let the sources naturally clear themselves via onended.
-    // If immediate, we clear ref.
-    if (fadeOutDuration === 0) {
-      activeSourcesRef.current.clear();
-      nextStartTimeRef.current = 0;
-    } else {
-      // Reset next start time immediately so new audio starts "fresh"
-      nextStartTimeRef.current = 0;
-    }
-  }, []);
-
-  // ---------------------------------------------------------------------------
-  // Model availability check (REST ping to validate API key)
-  // ---------------------------------------------------------------------------
-
-  const checkModelAvailability = useCallback(async (): Promise<boolean> => {
-    const key = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-    console.log("[GeminiLive] Checking model availability...", {
-      model: DEFAULT_GEMINI_LIVE_MODEL,
-    });
-
-    if (!key?.startsWith("AIza")) {
-      console.error("[GeminiLive] Invalid API key format.");
-      setModelAvailability("unavailable");
-      return false;
-    }
-
-    setModelAvailability("checking");
-
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_GEMINI_LIVE_MODEL}?key=${encodeURIComponent(key)}`;
-      const response = await fetch(url, { method: "GET" });
-      console.log("[GeminiLive] Model check response:", response.status, response.statusText);
-
-      if (response.ok) {
-        setModelAvailability("available");
-        return true;
-      }
-
-      // 429 = quota exceeded, but key and model are valid
-      if (response.status === 429) {
-        console.warn("[GeminiLive] Quota exceeded (429), treating as available.");
-        setModelAvailability("available");
-        return true;
-      }
-
-      console.error("[GeminiLive] Model unavailable:", response.status);
-      setModelAvailability("unavailable");
-      return false;
-    } catch (e) {
-      // Network offline — let the connect attempt surface the real error
-      console.warn("[GeminiLive] Availability check failed (network?), assuming available.", e);
-      setModelAvailability("available");
-      return true;
-    }
-  }, []);
-
-  // ---------------------------------------------------------------------------
-  // Disconnect
-  // ---------------------------------------------------------------------------
-
-  const disconnect = useCallback(() => {
-    console.log("[GeminiLive] Disconnecting...");
-    manualCloseRef.current = true;
-
-    try {
-      sessionRef.current?.close();
-    } catch {
-      // ignore
-    }
-    sessionRef.current = null;
-
-    setIsConnected(false);
-    setIsConnecting(false);
-
-    stopAudio(0); // Immediate stop on disconnect
-    if (audioContextRef.current?.state !== "closed") {
-      void audioContextRef.current?.close();
-      audioContextRef.current = null;
-    }
-  }, [stopAudio]);
-
-  // ---------------------------------------------------------------------------
-  // Connect (via @google/genai SDK — no raw WebSocket payload management)
-  // ---------------------------------------------------------------------------
-
-  const connect = useCallback(async (): Promise<boolean> => {
-    console.log("[GeminiLive] Connect called.");
-    manualCloseRef.current = false;
-
-    if (!user) {
-      const message = "Sign in required before connecting to Gemini Live.";
-      console.error("[GeminiLive] Auth Error:", message);
-      setError(message);
-      setErrorCode("AUTH_REQUIRED");
-      setErrorMessage(message);
-      return false;
-    }
-
-    if (sessionRef.current) {
-      console.log("[GeminiLive] Already connected.");
-      setIsConnected(true);
-      return true;
-    }
-
-    setIsConnecting(true);
-    setError(null);
-    setErrorCode(undefined);
-    setErrorMessage(undefined);
-
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-    if (!apiKey) {
-      const message = "Missing NEXT_PUBLIC_GOOGLE_API_KEY";
-      console.error("[GeminiLive] Config Error:", message);
-      setError(message);
-      setIsConnecting(false);
-      return false;
-    }
-
-    // Initialise output AudioContext (24kHz — model outputs at 24kHz)
-    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
-      const AudioContextClass =
-        window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      audioContextRef.current = new AudioContextClass({ sampleRate: 24000 });
-    }
-
-    return new Promise((resolve) => {
-      const ai = new GoogleGenAI({ apiKey });
-
-      ai.live
-        .connect({
-          model: DEFAULT_GEMINI_LIVE_MODEL,
-          config: {
-            responseModalities: [Modality.AUDIO],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: "Puck" },
-              },
-            },
-            outputAudioTranscription: {},
-            inputAudioTranscription: {},
-            systemInstruction: SPATIAL_SYSTEM_INSTRUCTION,
-            tools: [GEMINI_TOOLS],
-          },
-          callbacks: {
-            onopen: () => {
-              console.log("[GeminiLive] SDK session opened.");
-              setIsConnecting(false);
-              setIsConnected(true);
-              resolve(true);
-            },
-
-            onmessage: async (msg: LiveServerMessage) => {
-              // 1. Handle interruption
-              if (msg.serverContent?.interrupted) {
-                console.log("[GeminiLive] Interrupted.");
-                stopAudio(0.5); // Graceful 500ms fade out
-                return;
-              }
-
-              // 2. Play audio parts
-              const parts = msg.serverContent?.modelTurn?.parts ?? [];
-              for (const part of parts) {
-                if (part.inlineData?.data && part.inlineData.mimeType?.startsWith("audio/")) {
-                  try {
-                    const ctx = audioContextRef.current;
-                    if (!ctx) continue;
-                    if (ctx.state === "suspended") await ctx.resume();
-
-                    const audioBuffer = await decodeAudioData(
-                      decode(part.inlineData.data),
-                      ctx,
-                      24000,
-                    );
-
-                    const startTime = Math.max(nextStartTimeRef.current, ctx.currentTime);
-                    const source = ctx.createBufferSource();
-                    const gain = ctx.createGain();
-
-                    source.buffer = audioBuffer;
-                    source.connect(gain);
-                    gain.connect(ctx.destination);
-
-                    const unit = { source, gain };
-
-                    source.onended = () => {
-                      activeSourcesRef.current.delete(unit);
-                    };
-
-                    source.start(startTime);
-                    nextStartTimeRef.current = startTime + audioBuffer.duration;
-                    activeSourcesRef.current.add(unit);
-                  } catch (e) {
-                    console.error("[GeminiLive] Audio playback error:", e);
-                  }
-                }
-
-                // 3. Handle text parts for coordinate extraction (Legacy/Fallback)
-                if (part.text) {
-                  console.log("[GeminiLive] Text response:", part.text);
-                  setLatestTranscript(part.text);
-
-                  const tuples = extractCoordinateTuples(part.text);
-                  if (tuples.length) {
-                    setActiveHighlights(tuples.map((t, i) => tupleToHighlight(t, i)));
-                  }
-                }
-              }
-
-              // 4. Handle Tool Calls (Highlighting) - Multi-Object Supported
-              if (msg.toolCall?.functionCalls) {
-                console.log("[GeminiLive] Tool Call received:", msg.toolCall);
-                for (const fc of msg.toolCall.functionCalls) {
-                  if (fc.name === "track_and_highlight") {
-                    const { objects } = fc.args as unknown as TrackAndHighlightArgs;
-
-                    if (Array.isArray(objects)) {
-                      console.log("[GeminiLive] Highlighter Tool (Multi):", objects);
-
-                      const newHighlights = objects.map((obj) => {
-                        const cx = Number(obj.center_x);
-                        const cy = Number(obj.center_y);
-                        const r = Number(obj.render_scale) / 2;
-
-                        return {
-                          id: crypto.randomUUID(),
-                          objectName: obj.label || "Detected Object",
-                          ymin: Math.max(0, cy - r),
-                          xmin: Math.max(0, cx - r),
-                          ymax: Math.min(1000, cy + r),
-                          xmax: Math.min(1000, cx + r),
-                          timestamp: Date.now(),
-                        };
-                      });
-
-                      setActiveHighlights((prev) => [...prev, ...newHighlights]);
-
-                      // clear highlights after 3 seconds
-                      setTimeout(() => {
-                        const idsToRemove = new Set(newHighlights.map((h) => h.id));
-                        setActiveHighlights((prev) => prev.filter((h) => !idsToRemove.has(h.id)));
-                      }, 3000);
-                    }
-
-                    // Send response back to model so it knows the tool executed
-                    if (sessionRef.current) {
-                      sessionRef.current.sendToolResponse({
-                        functionResponses: [
-                          {
-                            id: fc.id,
-                            name: fc.name,
-                            response: { result: { success: true } },
-                          },
-                        ],
-                      });
-                    }
-                  }
-                }
-              }
-
-              // 5. Output transcription
-              if (msg.serverContent?.outputTranscription?.text) {
-                const transcriptText = msg.serverContent.outputTranscription.text;
-                setLatestTranscript((prev) => prev + transcriptText);
-              }
-
-              // 6. Clear transcript on turn complete
-              if (msg.serverContent?.turnComplete) {
-                setTimeout(() => setLatestTranscript(""), 3000);
-              }
-            },
-
-            onerror: (e) => {
-              console.error("[GeminiLive] SDK error:", e);
-              const message = e instanceof Error ? e.message : "Gemini Live connection error.";
-              setError(message);
-              setErrorCode("SDK_ERROR");
-              setErrorMessage(message);
-              setIsConnected(false);
-              setIsConnecting(false);
-              resolve(false);
-            },
-
-            onclose: (e) => {
-              console.log("[GeminiLive] SDK session closed.", e?.reason ?? "");
-              sessionRef.current = null;
-              setIsConnected(false);
-              setIsConnecting(false);
-              stopAudio(0);
-
-              if (!manualCloseRef.current && e?.code && [1002, 1003, 1007, 1008].includes(e.code)) {
-                const message = `Connection closed with error: ${e.reason || e.code}`;
-                setError(message);
-                setErrorCode(`WS_${e.code}`);
-                setErrorMessage(message);
-              }
-            },
-          },
-        })
-        .then((session) => {
-          sessionRef.current = session;
-        })
-        .catch((err: unknown) => {
-          const message = err instanceof Error ? err.message : "Failed to connect to Gemini Live.";
-          console.error("[GeminiLive] Connect failed:", message);
-          setError(message);
-          setErrorCode("CONNECT_FAILED");
-          setIsConnecting(false);
-          resolve(false);
-        });
-    });
-  }, [user, stopAudio]);
-
-  // ---------------------------------------------------------------------------
-  // sendVideoFrame
-  // ---------------------------------------------------------------------------
-
-  const sendVideoFrame = useCallback((base64Data: string, mimeType = "image/jpeg") => {
-    if (!sessionRef.current || isSendingRef.current) return;
-
-    isSendingRef.current = true;
-    try {
-      sessionRef.current.sendRealtimeInput({
-        media: {
-          data: base64Data,
-          mimeType,
-        },
-      });
-    } catch (e) {
-      console.error("[GeminiLive] Failed to send video frame:", e);
-    } finally {
-      setTimeout(() => {
-        isSendingRef.current = false;
-      }, 50);
-    }
-  }, []);
-
-  // ---------------------------------------------------------------------------
-  // sendAudioChunk
-  // ---------------------------------------------------------------------------
-
-  const sendAudioChunk = useCallback((data: Blob | Int16Array) => {
-    if (!sessionRef.current || isSendingRef.current) return;
-
-    isSendingRef.current = true;
-    try {
-      let base64Data: string;
-
-      if (data instanceof Int16Array) {
-        base64Data = encode(new Uint8Array(data.buffer));
-      } else {
-        console.warn("[GeminiLive] Blob audio path invoked — consider passing Int16Array.");
-        isSendingRef.current = false;
-        return;
-      }
-
-      sessionRef.current.sendRealtimeInput({
-        media: {
-          data: base64Data,
-          mimeType: "audio/pcm;rate=16000",
-        },
-      });
-    } catch (e) {
-      console.error("[GeminiLive] Failed to send audio chunk:", e);
-    } finally {
-      setTimeout(() => {
-        isSendingRef.current = false;
-      }, 10);
-    }
-  }, []);
-
-  // ---------------------------------------------------------------------------
-  // Cleanup on unmount
-  // ---------------------------------------------------------------------------
-
+  // Highlight Pruning Logic
   useEffect(() => {
-    return () => {
-      stopAudio(0);
-      if (audioContextRef.current) {
-        void audioContextRef.current.close();
-      }
-    };
-  }, [stopAudio]);
+    if (highlightDuration === "always") return;
+
+    const interval = setInterval(() => {
+      setActiveHighlights((prev) => {
+        const now = Date.now();
+        const duration = Number(highlightDuration);
+        const filtered = prev.filter((h) => now - h.timestamp < duration);
+        if (filtered.length !== prev.length) {
+          console.log(
+            `[GeminiLive] Pruned ${prev.length - filtered.length} highlights. Duration setting:`,
+            duration,
+          );
+        }
+        return filtered;
+      });
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [highlightDuration]);
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: Reset state when mode changes
+  useEffect(() => {
+    setActiveHighlights([]);
+    setStoryStream([]);
+    setLatestTranscript("");
+  }, [mode]);
+
+  // Tools configuration
+  const tools = useMemo(() => {
+    if (mode === "storyteller") {
+      return [{ functionDeclarations: DIRECTOR_TOOLS }];
+    }
+    return [{ functionDeclarations: SPATIAL_TOOLS }];
+  }, [mode]);
+
+  // Handler for tool calls
+  const handleToolCall = (toolCall: LiveServerMessage["toolCall"]) => {
+    if (mode === "spatial") {
+      handleSpatialToolCall(toolCall, setActiveHighlights);
+    } else if (mode === "storyteller") {
+      handleDirectorToolCall(toolCall, setStoryStream);
+    }
+  };
+
+  const handleTranscript = (text: string) => {
+    setLatestTranscript((prev) => prev + text);
+
+    if (mode === "storyteller") {
+      setStoryStream((prev) => {
+        const last = prev.at(-1);
+        const isNarrative = text.includes("[NARRATIVE]") || (last?.type === "text" && last.isStory);
+        const cleanText = text.replace("[NARRATIVE]", "").trimStart();
+
+        if (last?.type === "text" && last.isStory === !!isNarrative) {
+          // Detect if we need a space: if the existing content doesn't end with a space
+          // and the new chunk doesn't start with a space.
+          const needsSpace =
+            last.content.length > 0 &&
+            !last.content.endsWith(" ") &&
+            !cleanText.startsWith(" ") &&
+            !cleanText.startsWith(".") &&
+            !cleanText.startsWith(",");
+
+          const spacing = needsSpace ? " " : "";
+
+          return [
+            ...prev.slice(0, -1),
+            { ...last, content: last.content + spacing + cleanText, timestamp: Date.now() },
+          ];
+        }
+        return [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            type: "text",
+            content: cleanText,
+            timestamp: Date.now(),
+            isStory: !!isNarrative,
+          },
+        ];
+      });
+    }
+  };
+
+  const core = useGeminiCore({
+    systemInstruction,
+    tools,
+    onToolCall: handleToolCall,
+    onTranscript: handleTranscript,
+  });
 
   return {
+    ...core,
     activeHighlights,
-    isConnected,
-    isConnecting,
-    error,
-    errorCode,
-    errorMessage,
-    modelAvailability,
-    checkModelAvailability,
-    connect,
-    disconnect,
-    sendVideoFrame,
-    sendAudioChunk,
+    storyStream,
     latestTranscript,
-    clearHighlights: () => setActiveHighlights([]),
+    mode,
   };
 }

@@ -1,31 +1,29 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { toast } from "sonner";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import { AIOrb } from "@/components/atoms/AIOrb";
 import { PremiumBackground } from "@/components/backgrounds/PremiumBackground";
 import { AudioCapture } from "@/components/molecules/AudioCapture";
-import { LiveNarration } from "@/components/molecules/LiveNarration";
+import { SpatialOverlay } from "@/components/molecules/SpatialOverlay";
+import { UserMenu } from "@/components/molecules/UserMenu";
 import { VideoFeed } from "@/components/molecules/VideoFeed";
 import { ControlBar } from "@/components/organisms/ControlBar";
-import { CreativeBoard } from "@/components/organisms/CreativeBoard";
+import { CreativeStudio } from "@/components/organisms/CreativeStudio";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAudioDevices } from "@/lib/hooks/useAudioDevices";
 import { useGeminiLive } from "@/lib/hooks/useGeminiLive";
 import { useHighlightDetection } from "@/lib/hooks/useHighlightDetection";
+import { Loader2 } from "lucide-react";
 
 export function StudioLayout() {
-  const { user, isLoading: authLoading, error: authError, signInWithGoogle } = useAuth();
+  const { user, isLoading: authLoading, signInWithGoogle, signOutUser } = useAuth();
+  const [mode, setMode] = useState<"spatial" | "storyteller">("spatial");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoSize, setVideoSize] = useState({ width: 0, height: 0 }); // Track video size
   const [isListening, setIsListening] = useState(false);
-  const [narration, setNarration] = useState<string>("");
-  const [generatedContent, setGeneratedContent] = useState<
-    Array<{ type: "image" | "text"; content: string }>
-  >([]);
 
   const {
     inputDevices,
@@ -42,82 +40,66 @@ export function StudioLayout() {
 
   const {
     activeHighlights,
+    storyStream,
     isConnected,
     isConnecting,
-    errorMessage,
-    modelAvailability,
     checkModelAvailability,
     connect,
     disconnect,
     sendVideoFrame,
     sendAudioChunk,
-    latestTranscript,
-  } = useGeminiLive();
+    error,
+    errorCode,
+    errorMessage,
+  } = useGeminiLive({ mode });
 
-  // Effect to update narration from Gemini transcripts
-  useEffect(() => {
-    if (latestTranscript) {
-      setNarration(latestTranscript);
+  const visibleHighlights = useHighlightDetection(activeHighlights);
 
-      const lower = latestTranscript.toLowerCase();
-      // Simple heuristic: trigger generation on "imagine", "picture", "draw", "create"
-      if (
-        (lower.includes("imagine") || lower.includes("picture") || lower.includes("draw")) &&
-        !lower.includes("generating") // Avoid loops if the model narrates itself
-      ) {
-        // Debounce or check recent generations to avoid spam could be added here
-        // For now, fire and forget
-        void fetch("/api/mock/generate-image", {
-          method: "POST",
-          body: JSON.stringify({ prompt: latestTranscript }),
-          headers: {
-            "Content-Type": "application/json",
-          },
-        })
-          .then((res) => res.json())
-          .then((data) => {
-            if (data.url) {
-              setGeneratedContent((prev) => [
-                ...prev,
-                { type: "text", content: latestTranscript },
-                { type: "image", content: data.url },
-              ]);
-            }
-          });
+  const handleModeChange = useCallback(
+    (newMode: "spatial" | "storyteller") => {
+      if (mode === newMode) return;
+      if (isListening || isConnected) {
+        disconnect();
+        setIsListening(false);
       }
-    }
-  }, [latestTranscript]);
+      setMode(newMode);
+    },
+    [mode, isListening, isConnected, disconnect],
+  );
 
   const updateVideoSize = useCallback(() => {
-    // No-op for now in Studio mode, or handle resize logic
+    if (!videoRef.current) return;
+    setVideoSize({
+      width: videoRef.current.videoWidth || videoRef.current.clientWidth,
+      height: videoRef.current.videoHeight || videoRef.current.clientHeight,
+    });
   }, []);
 
   useEffect(() => {
     void checkModelAvailability();
   }, [checkModelAvailability]);
 
-  // … (Keep audio/video sending logic similar to SpatialLayout, simplified for brevity in this first pass)
   // Logic to send frames periodically
   useEffect(() => {
     if (!isListening || !isConnected) return;
 
-    const intervalId = window.setInterval(() => {
+    const intervalId = globalThis.setInterval(() => {
       if (isConnected && isListening) {
         const video = videoRef.current;
         if (!video) return;
 
         const canvas = document.createElement("canvas");
-        // 320x180 for maximum stability on free tier
-        canvas.width = 320;
-        canvas.height = 180;
+        // 480x270 for a bit more detail without hitting limits
+        canvas.width = 480;
+        canvas.height = 270;
         const context = canvas.getContext("2d");
         if (!context) return;
         context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        const data = canvas.toDataURL("image/jpeg", 0.4).split(",")[1];
+        const data = canvas.toDataURL("image/jpeg", 0.5).split(",")[1];
         if (data) sendVideoFrame(data, "image/jpeg");
       }
-    }, 2000);
+    }, 1000);
 
     return () => clearInterval(intervalId);
   }, [isConnected, isListening, sendVideoFrame]);
@@ -147,10 +129,34 @@ export function StudioLayout() {
     }
   }, [connect, disconnect, isListening, isConnected, isConnecting]);
 
-  if (authLoading || !user) {
+  if (authLoading) {
     return (
-      <div className="flex h-screen items-center justify-center text-white">
-        Loading or Sign In Required...
+      <div className="flex h-screen w-full items-center justify-center bg-black text-white">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="relative flex h-screen w-full items-center justify-center overflow-hidden bg-black">
+        <PremiumBackground />
+        <div className="z-10 flex flex-col items-center gap-6 rounded-3xl border border-white/10 bg-black/40 p-12 backdrop-blur-xl shadow-2xl">
+          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/20 ring-4 ring-primary/10">
+            <div className="h-10 w-10 rounded-full bg-primary shadow-[0_0_20px_rgba(var(--primary),0.5)]" />
+          </div>
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight text-white">The Spatial Eye</h1>
+            <p className="text-muted-foreground">Sign in to access the studio.</p>
+          </div>
+          <Button
+            size="lg"
+            onClick={() => signInWithGoogle()}
+            className="w-full text-base font-semibold shadow-lg transition-all hover:scale-105"
+          >
+            Sign in with Google
+          </Button>
+        </div>
       </div>
     );
   }
@@ -159,55 +165,110 @@ export function StudioLayout() {
     <>
       <PremiumBackground />
 
-      {/* Main Studio Grid */}
-      <div className="grid h-screen w-full grid-cols-1 gap-4 p-4 lg:grid-cols-2">
-        {/* Left Column: Input & Narration */}
-        <div className="flex flex-col gap-4 rounded-3xl border border-white/10 bg-black/40 p-4 backdrop-blur-md">
-          <div className="relative flex-1 overflow-hidden rounded-2xl border border-white/5 bg-black">
-            <VideoFeed
-              videoRef={videoRef}
-              deviceId={selectedVideoId}
-              onVideoReady={updateVideoSize}
-              className="h-full w-full object-cover opacity-80"
-            />
-            <div className="absolute bottom-4 left-4 right-4">
-              <LiveNarration text={narration} isActive={isListening} />
+      {/* Error Overlay */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-20 left-1/2 z-[100] -translate-x-1/2 w-full max-w-md px-4"
+          >
+            <div className="flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-950/40 p-4 backdrop-blur-xl shadow-2xl">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/20">
+                <div className="h-5 w-5 rounded-full bg-red-500" />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-sm font-bold text-red-100">Session Error</p>
+                <p className="truncate text-xs text-red-200/60 font-mono">
+                  {errorCode}: {errorMessage || error}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => disconnect()}
+                className="text-red-200/50 hover:bg-white/5"
+              >
+                Dismiss
+              </Button>
             </div>
-          </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Compact Control Bar for Studio */}
-          <div className="h-auto shrink-0">
-            <ControlBar
-              isConnected={isConnected}
-              isConnecting={isConnecting}
-              isListening={isListening}
-              inputDevices={inputDevices}
-              outputDevices={outputDevices}
-              videoDevices={videoDevices}
-              selectedInputId={selectedInputId}
-              selectedOutputId={selectedOutputId}
-              selectedVideoId={selectedVideoId}
-              outputSelectionSupported={outputSelectionSupported}
-              onToggleListening={onToggleListening}
-              onInputDeviceChange={setSelectedInputId}
-              onOutputDeviceChange={setSelectedOutputId}
-              onVideoDeviceChange={setSelectedVideoId}
-            />
-          </div>
-        </div>
-
-        {/* Right Column: Creative Board */}
-        <div className="flex flex-col rounded-3xl border border-white/10 bg-black/40 p-4 backdrop-blur-md">
-          <CreativeBoard content={generatedContent} />
-        </div>
+      {/* Top Right User Menu */}
+      <div className="absolute top-4 right-4 z-50 animate-in fade-in slide-in-from-top-4 duration-700">
+        <UserMenu user={user} onSignOut={signOutUser} />
       </div>
 
+      {/* Hidden Audio Capture - Always Active when listening */}
       <div className="hidden">
         <AudioCapture
           isActive={isListening}
           onAudioChunk={sendAudioChunk}
           inputDeviceId={selectedInputId}
         />
+      </div>
+
+      {mode === "spatial" ? (
+        /* LIVE MODE: Full Screen Layout */
+        <div className="relative h-screen w-full overflow-hidden">
+          <VideoFeed
+            videoRef={videoRef}
+            deviceId={selectedVideoId}
+            onVideoReady={updateVideoSize}
+            className="h-full w-full object-cover"
+          />
+          <SpatialOverlay
+            highlights={visibleHighlights}
+            videoWidth={videoSize.width}
+            videoHeight={videoSize.height}
+          />
+        </div>
+      ) : (
+        /* STORYTELLER MODE: Full Screen Interleaved Layout */
+        <div className="relative h-screen w-full overflow-hidden flex flex-col">
+          {/* Hidden Video Feed (Logic Only) - The UI has its own PIP */}
+          <div className="absolute inset-0 z-0 opacity-0 pointer-events-none">
+            <VideoFeed
+              videoRef={videoRef}
+              deviceId={selectedVideoId}
+              onVideoReady={updateVideoSize}
+              className="h-full w-full object-cover"
+            />
+          </div>
+
+          {/* Main Creative Interface */}
+          <div className="flex-1 w-full h-full z-10">
+            <CreativeStudio stream={storyStream} videoRef={videoRef} />
+          </div>
+        </div>
+      )}
+
+      {/* Floating Control Bar - Always on top for both modes */}
+      <div className="pointer-events-none fixed inset-0 z-50 flex flex-col justify-end p-4 sm:p-8">
+        <div className="pointer-events-auto mx-auto w-full max-w-2xl animate-in slide-in-from-bottom-10 fade-in duration-700">
+          <ControlBar
+            isConnected={isConnected}
+            isConnecting={isConnecting}
+            isListening={isListening}
+            inputDevices={inputDevices}
+            outputDevices={outputDevices}
+            videoDevices={videoDevices}
+            selectedInputId={selectedInputId}
+            selectedOutputId={selectedOutputId}
+            selectedVideoId={selectedVideoId}
+            outputSelectionSupported={outputSelectionSupported}
+            activeHighlight={activeHighlights?.[0]}
+            mode={mode}
+            onToggleListening={onToggleListening}
+            onInputDeviceChange={setSelectedInputId}
+            onOutputDeviceChange={setSelectedOutputId}
+            onVideoDeviceChange={setSelectedVideoId}
+            onModeChange={handleModeChange}
+          />
+        </div>
       </div>
     </>
   );

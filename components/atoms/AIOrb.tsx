@@ -16,7 +16,11 @@ export function AIOrb({ isActive, className }: AIOrbProps) {
           scale: isActive ? [1, 1.1, 1] : 1,
           opacity: isActive ? [0.8, 1, 0.8] : 0.5,
           boxShadow: isActive
-            ? ["0 0 15px rgba(52,211,153,0.5)", "0 0 25px rgba(52,211,153,0.8)", "0 0 15px rgba(52,211,153,0.5)"]
+            ? [
+                "0 0 15px rgba(52,211,153,0.5)",
+                "0 0 25px rgba(52,211,153,0.8)",
+                "0 0 15px rgba(52,211,153,0.5)",
+              ]
             : "0 0 5px rgba(52,211,153,0.2)",
         }}
         transition={{

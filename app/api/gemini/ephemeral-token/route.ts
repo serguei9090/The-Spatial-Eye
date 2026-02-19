@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     const model = genAI.getGenerativeModel({ model: configuredModel });
 
     // Note: The SDK doesn't expose 'getMetadata' or 'supportsLive' directly in a standard way yet,
-    // so we rely on the known capability of the model. 
+    // so we rely on the known capability of the model.
     // However, by instantiating it via SDK, we validate the API key works.
 
     // Proceed to mint ephemeral token using REST API (SDK doesn't support this yet)
