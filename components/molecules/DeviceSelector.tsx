@@ -3,8 +3,8 @@
 import { Check, type LucideIcon } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/atoms/Button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/Popover";
 import { cn } from "@/lib/utils";
 
 interface DeviceSelectorProps {

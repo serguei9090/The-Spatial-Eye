@@ -2,9 +2,6 @@
 
 import { motion } from "framer-motion";
 
-import type { Highlight } from "@/lib/types";
-import { highlightToCircle } from "@/lib/utils/coordinates";
-
 interface HighlightCircleProps {
   id: string;
   cx: number;

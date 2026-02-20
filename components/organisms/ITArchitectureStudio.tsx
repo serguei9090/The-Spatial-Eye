@@ -1,19 +1,35 @@
 "use client";
 
-import { ITArchitectureCanvas } from "@/components/organisms/ITArchitectureCanvas";
+import { ArchitectureNode } from "@/components/atoms/ArchitectureNode";
 import { useSettings } from "@/lib/store/settings-context";
 import { cn } from "@/lib/utils";
-import type { Edge, Node, OnConnect, OnEdgesChange, OnNodesChange } from "@xyflow/react";
+import {
+  Background,
+  Controls,
+  type Edge,
+  MiniMap,
+  type Node,
+  type NodeTypes,
+  type OnConnect,
+  type OnEdgesChange,
+  type OnNodesChange,
+  ReactFlow,
+} from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
 import { ChevronDown, ChevronUp, MessageSquare } from "lucide-react";
 import { useRef, useState } from "react";
 
+const nodeTypes: NodeTypes = {
+  architecture: ArchitectureNode,
+};
+
 interface ITArchitectureStudioProps {
-  nodes: Node[];
-  edges: Edge[];
-  onNodesChange: OnNodesChange;
-  onEdgesChange: OnEdgesChange;
-  onConnect: OnConnect;
-  transcript?: string;
+  readonly nodes: Node[];
+  readonly edges: Edge[];
+  readonly onNodesChange: OnNodesChange;
+  readonly onEdgesChange: OnEdgesChange;
+  readonly onConnect: OnConnect;
+  readonly transcript?: string;
 }
 
 export function ITArchitectureStudio({
@@ -77,13 +93,23 @@ export function ITArchitectureStudio({
 
       {/* Main Canvas */}
       <div className="flex-1 w-full h-full">
-        <ITArchitectureCanvas
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-        />
+        <div className="w-full h-full bg-background border rounded-lg overflow-hidden">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            nodeTypes={nodeTypes}
+            fitView
+            className="bg-muted/10"
+            colorMode="dark"
+          >
+            <Background />
+            <Controls />
+            <MiniMap zoomable pannable />
+          </ReactFlow>
+        </div>
       </div>
     </div>
   );

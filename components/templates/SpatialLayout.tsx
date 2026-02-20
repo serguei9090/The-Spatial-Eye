@@ -20,9 +20,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth/auth-context";
-import { useAudioDevices } from "@/lib/hooks/useAudioDevices";
 import { useGeminiLive } from "@/lib/hooks/useGeminiLive";
 import { useHighlightDetection } from "@/lib/hooks/useHighlightDetection";
+import { useAudioDeviceContext } from "@/lib/store/audio-context";
 
 export function SpatialLayout() {
   const {
@@ -41,18 +41,7 @@ export function SpatialLayout() {
   const [isClearingKey, setIsClearingKey] = useState(false);
   const [keyMessage, setKeyMessage] = useState<string | null>(null);
   const [keyError, setKeyError] = useState<string | null>(null);
-  const {
-    inputDevices,
-    outputDevices,
-    videoDevices,
-    selectedInputId,
-    selectedOutputId,
-    selectedVideoId,
-    outputSelectionSupported,
-    setSelectedInputId,
-    setSelectedOutputId,
-    setSelectedVideoId,
-  } = useAudioDevices();
+  const { selectedInputId, selectedVideoId } = useAudioDeviceContext();
 
   const {
     activeHighlights,
@@ -252,18 +241,8 @@ export function SpatialLayout() {
             isConnected={isConnected}
             isConnecting={isConnecting}
             isListening={isListening}
-            inputDevices={inputDevices}
-            outputDevices={outputDevices}
-            videoDevices={videoDevices}
-            selectedInputId={selectedInputId}
-            selectedOutputId={selectedOutputId}
-            selectedVideoId={selectedVideoId}
-            outputSelectionSupported={outputSelectionSupported}
             activeHighlight={activeHighlight}
             onToggleListening={onToggleListening}
-            onInputDeviceChange={setSelectedInputId}
-            onOutputDeviceChange={setSelectedOutputId}
-            onVideoDeviceChange={setSelectedVideoId}
             mode="spatial"
             onModeChange={() => {}} // No-op for SpatialLayout
           />

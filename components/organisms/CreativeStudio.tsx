@@ -1,46 +1,13 @@
 "use client";
 
-import { AudioTrigger } from "@/components/atoms/AudioTrigger";
-import { NarrativeText } from "@/components/atoms/NarrativeText";
 import type { StoryItem } from "@/lib/types";
 import { AnimatePresence, motion } from "framer-motion";
-import { BookOpen, ImageIcon, ShieldCheck, Sparkles, Volume2 } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useEffect, useRef } from "react";
 
 interface CreativeStudioProps {
   readonly stream: StoryItem[];
   readonly videoRef: React.RefObject<HTMLVideoElement | null>;
-}
-
-const SPARKLE_IDS = Array.from({ length: 12 }, (_, i) => `sparkle-id-${i}`);
-
-/**
- * Particle Effect Component for "Magic" appearance
- */
-function SparkleEffect() {
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {SPARKLE_IDS.map((id, i) => (
-        <motion.div
-          key={id}
-          initial={{ opacity: 0, scale: 0, x: "50%", y: "50%" }}
-          animate={{
-            opacity: [0, 1, 0],
-            scale: [0, 1.5, 0.5],
-            x: `${Math.random() * 100}%`,
-            y: `${Math.random() * 100}%`,
-          }}
-          transition={{
-            duration: 2 + Math.random() * 2,
-            repeat: i % 2 === 0 ? Number.POSITIVE_INFINITY : 0,
-            delay: Math.random() * 1,
-            ease: "easeInOut",
-          }}
-          className="absolute h-1 w-1 bg-cyan-400 rounded-full blur-[1px]"
-        />
-      ))}
-    </div>
-  );
 }
 
 import { InterleavedPost } from "@/components/molecules/InterleavedPost";
@@ -97,7 +64,7 @@ export function CreativeStudio({ stream, videoRef }: CreativeStudioProps) {
                 />
               </div>
               <p className="font-mono text-[10px] uppercase tracking-[0.3em]">
-                Awaiting Director's Greeting...
+                Awaiting Director&apos;s Greeting...
               </p>
             </motion.div>
           )}

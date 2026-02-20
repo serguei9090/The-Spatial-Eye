@@ -3,9 +3,9 @@
 import { Check, Settings as SettingsIcon } from "lucide-react";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/atoms/Button";
+import { Label } from "@/components/atoms/Label";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/Popover";
 import { type HighlightDuration, useSettings } from "@/lib/store/settings-context";
 import { cn } from "@/lib/utils";
 

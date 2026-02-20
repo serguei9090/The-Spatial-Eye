@@ -21,7 +21,7 @@ export function LiveNarration({ text, isActive }: LiveNarrationProps) {
         Live Narration Stream
       </div>
       <p className="text-xl font-medium leading-relaxed text-white text-balance drop-shadow-md">
-        "{text}"
+        &ldquo;{text}&rdquo;
       </p>
     </motion.div>
   );
