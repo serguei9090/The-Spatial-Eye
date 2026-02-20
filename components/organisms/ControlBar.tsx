@@ -21,12 +21,12 @@ export interface ControlBarProps {
   readonly selectedVideoId: string;
   readonly outputSelectionSupported: boolean;
   readonly activeHighlight?: Highlight;
-  readonly mode: "spatial" | "storyteller";
+  readonly mode: "spatial" | "storyteller" | "it-architecture";
   readonly onToggleListening: () => void;
   readonly onInputDeviceChange: (deviceId: string) => void;
   readonly onOutputDeviceChange: (deviceId: string) => void;
   readonly onVideoDeviceChange: (deviceId: string) => void;
-  readonly onModeChange: (mode: "spatial" | "storyteller") => void;
+  readonly onModeChange: (mode: "spatial" | "storyteller" | "it-architecture") => void;
 }
 
 export function ControlBar({
@@ -108,6 +108,17 @@ export function ControlBar({
           )}
         >
           {t.modes.storyteller}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onModeChange("it-architecture")}
+          className={cn(
+            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-white/10",
+            mode === "it-architecture" && "bg-primary/20 text-primary hover:bg-primary/30",
+          )}
+        >
+          {t.modes.itArchitecture}
         </Button>
       </div>
 

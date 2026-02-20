@@ -1,51 +1,43 @@
+import { GEMINI_REGISTRY } from "./registry";
+
 /**
- * Gemini model identifiers used across the application.
- *
- * All model IDs are verified against the Gemini v1beta API as of 2026-02.
- * Override any model via environment variables without code changes.
- *
- * ⚠️  VIDEO_SYNTHESIS_DISABLED is intentional — Veo generation is not free-tier
- *     compatible and is gated behind the flag so it cannot be accidentally invoked.
+ * Helper to ensure model ID has the "models/" prefix
  */
+const withPrefix = (id: string) => (id.startsWith("models/") ? id : `models/${id}`);
+
 export const GEMINI_MODELS = {
   /**
    * Used for general text / search tasks and brand copy generation.
-   * gemini-2.5-flash-lite is cost-efficient and has wide context support.
    */
-  brandCopyAndSearch: process.env.NEXT_PUBLIC_GEMINI_MODEL_COPY_SEARCH || "gemini-2.5-flash-lite",
+  brandCopyAndSearch: withPrefix(
+    process.env.NEXT_PUBLIC_GEMINI_MODEL_COPY_SEARCH || GEMINI_REGISTRY.reasoning.id,
+  ),
 
   /**
-   * Inline image understanding (describe, annotate). Uses gemini-2.5-flash
-   * which supports multimodal input including images.
+   * Inline image synthesis.
    */
-  imageSynthesis: process.env.NEXT_PUBLIC_GEMINI_MODEL_IMAGE || "gemini-2.5-flash",
+  imageSynthesis: withPrefix(
+    process.env.NEXT_PUBLIC_GEMINI_MODEL_IMAGE || GEMINI_REGISTRY.image.id,
+  ),
 
   /**
    * Primary Gemini Live model for real-time audio + video conversations.
-   * gemini-2.5-flash is the most stable Live-capable model currently
-   * available (as of 2026-02).
    */
-  /**
-   * Locked to the exact model from the verified working AI Studio reference.
-   * "gemini-2.5-flash-native-audio-preview-12-2025" is confirmed stable for the
-   * @google/genai SDK ai.live.connect() approach.
-   * Override with NEXT_PUBLIC_GEMINI_LIVE_MODEL env var if needed.
-   */
-  liveAudioVideoSession:
-    process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL || "gemini-2.5-flash-native-audio-preview-12-2025",
+  liveAudioVideoSession: withPrefix(
+    process.env.NEXT_PUBLIC_GEMINI_LIVE_MODEL || GEMINI_REGISTRY.live.id,
+  ),
 
   /**
-   * Text-to-Speech synthesis. Uses Gemini 1.5 Flash which has TTS capability
-   * via the v1beta generateContent API.
+   * Text-to-Speech synthesis.
    */
-  tts: process.env.NEXT_PUBLIC_GEMINI_TTS_MODEL || "gemini-1.5-flash",
+  tts: withPrefix(process.env.NEXT_PUBLIC_GEMINI_TTS_MODEL || "gemini-1.5-flash"),
 
   /**
-   * Video generation model — intentionally disabled for free-tier builds.
-   * Set VIDEO_SYNTHESIS_DISABLED=false and supply a valid Veo model name
-   * (e.g. "veo-2.0-generate-001") when enabling for a paid project.
+   * Video generation model.
    */
-  videoSynthesis: process.env.NEXT_PUBLIC_GEMINI_MODEL_VIDEO || "veo-2.0-generate-001",
+  videoSynthesis: withPrefix(
+    process.env.NEXT_PUBLIC_GEMINI_MODEL_VIDEO || GEMINI_REGISTRY.video.id,
+  ),
 } as const;
 
 // Video generation is disabled for free-tier / hackathon builds.

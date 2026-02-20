@@ -124,4 +124,25 @@ export const defineWorldRuleTool: FunctionDeclaration = {
   },
 };
 
-export const DIRECTOR_TOOLS = [renderVisualTool, /* ambientAudioTool, */ defineWorldRuleTool];
+export const segmentStoryTool: FunctionDeclaration = {
+  name: "segment_story",
+  description:
+    "Call this when the current story arc ends or the user changes the topic significantly. It creates a visual break (like a new chapter or horizontal rule) to separate the new content from the old.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      title: {
+        type: Type.STRING,
+        description:
+          "Title for the new section or chapter (e.g. 'Chapter 2: The Deep Ocean' or 'Topic: Mars').",
+      },
+    },
+    required: ["title"],
+  },
+};
+
+export const DIRECTOR_TOOLS = [
+  renderVisualTool,
+  /* ambientAudioTool, */ defineWorldRuleTool,
+  segmentStoryTool,
+];

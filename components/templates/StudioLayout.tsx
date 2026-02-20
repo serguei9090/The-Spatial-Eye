@@ -1,5 +1,13 @@
 "use client";
 
+import {
+  type OnConnect,
+  type OnEdgesChange,
+  type OnNodesChange,
+  addEdge,
+  applyEdgeChanges,
+  applyNodeChanges,
+} from "@xyflow/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -10,6 +18,7 @@ import { UserMenu } from "@/components/molecules/UserMenu";
 import { VideoFeed } from "@/components/molecules/VideoFeed";
 import { ControlBar } from "@/components/organisms/ControlBar";
 import { CreativeStudio } from "@/components/organisms/CreativeStudio";
+import { ITArchitectureStudio } from "@/components/organisms/ITArchitectureStudio";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/auth-context";
 import { useAudioDevices } from "@/lib/hooks/useAudioDevices";
@@ -19,7 +28,7 @@ import { Loader2 } from "lucide-react";
 
 export function StudioLayout() {
   const { user, isLoading: authLoading, signInWithGoogle, signOutUser } = useAuth();
-  const [mode, setMode] = useState<"spatial" | "storyteller">("spatial");
+  const [mode, setMode] = useState<"spatial" | "storyteller" | "it-architecture">("spatial");
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 0, height: 0 }); // Track video size
@@ -41,6 +50,11 @@ export function StudioLayout() {
   const {
     activeHighlights,
     storyStream,
+    nodes,
+    edges,
+    setNodes,
+    setEdges,
+    latestTranscript,
     isConnected,
     isConnecting,
     checkModelAvailability,
@@ -56,7 +70,7 @@ export function StudioLayout() {
   const visibleHighlights = useHighlightDetection(activeHighlights);
 
   const handleModeChange = useCallback(
-    (newMode: "spatial" | "storyteller") => {
+    (newMode: "spatial" | "storyteller" | "it-architecture") => {
       if (mode === newMode) return;
       if (isListening || isConnected) {
         disconnect();
@@ -65,6 +79,21 @@ export function StudioLayout() {
       setMode(newMode);
     },
     [mode, isListening, isConnected, disconnect],
+  );
+
+  const onNodesChange: OnNodesChange = useCallback(
+    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
+    [setNodes],
+  );
+
+  const onEdgesChange: OnEdgesChange = useCallback(
+    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
+    [setEdges],
+  );
+
+  const onConnect: OnConnect = useCallback(
+    (connection) => setEdges((eds) => addEdge(connection, eds)),
+    [setEdges],
   );
 
   const updateVideoSize = useCallback(() => {
@@ -211,7 +240,7 @@ export function StudioLayout() {
         />
       </div>
 
-      {mode === "spatial" ? (
+      {mode === "spatial" && (
         /* LIVE MODE: Full Screen Layout */
         <div className="relative h-screen w-full overflow-hidden">
           <VideoFeed
@@ -226,7 +255,9 @@ export function StudioLayout() {
             videoHeight={videoSize.height}
           />
         </div>
-      ) : (
+      )}
+
+      {mode === "storyteller" && (
         /* STORYTELLER MODE: Full Screen Interleaved Layout */
         <div className="relative h-screen w-full overflow-hidden flex flex-col">
           {/* Hidden Video Feed (Logic Only) - The UI has its own PIP */}
@@ -242,6 +273,31 @@ export function StudioLayout() {
           {/* Main Creative Interface */}
           <div className="flex-1 w-full h-full z-10">
             <CreativeStudio stream={storyStream} videoRef={videoRef} />
+          </div>
+        </div>
+      )}
+
+      {mode === "it-architecture" && (
+        <div className="relative h-screen w-full overflow-hidden flex flex-col pt-16 pb-24">
+          {/* Main Architecture Interface */}
+          <div className="flex-1 w-full h-full z-10">
+            <ITArchitectureStudio
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+              onConnect={onConnect}
+              transcript={latestTranscript}
+            />
+          </div>
+          {/* Hidden Video Feed (Logic Only) */}
+          <div className="absolute inset-0 z-0 opacity-0 pointer-events-none">
+            <VideoFeed
+              videoRef={videoRef}
+              deviceId={selectedVideoId}
+              onVideoReady={updateVideoSize}
+              className="h-full w-full object-cover"
+            />
           </div>
         </div>
       )}

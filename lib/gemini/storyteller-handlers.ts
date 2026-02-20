@@ -34,7 +34,7 @@ export function handleDirectorToolCall(
           type: "image",
           content: `Visualizing: ${subject}`,
           isGenerating: true,
-          metadata: { asset_type, visual_context },
+          metadata: { asset_type, visual_context, subject },
           timestamp: Date.now(),
         },
       ]);
@@ -115,6 +115,17 @@ export function handleDirectorToolCall(
           type: "rule_event",
           content: rule_name,
           metadata: { description, consequence },
+          timestamp: Date.now(),
+        },
+      ]);
+    } else if (fc.name === "segment_story") {
+      const { title } = args;
+      setStoryStream((prev) => [
+        ...prev,
+        {
+          id: generateId(),
+          type: "story_segment",
+          content: title || "New Chapter",
           timestamp: Date.now(),
         },
       ]);
