@@ -7,6 +7,7 @@ import { DEFAULT_GEMINI_LIVE_MODEL } from "@/lib/api/gemini_websocket";
 import { useAuth } from "@/lib/auth/auth-context";
 import { notifyModelError } from "@/lib/gemini/model-error";
 import { decode, decodeAudioData } from "@/lib/utils/audio";
+import { toast } from "sonner";
 
 type LiveSession = Awaited<ReturnType<GoogleGenAI["live"]["connect"]>>;
 
@@ -272,24 +273,57 @@ export function useGeminiCore({
               resolve(false);
             },
             onclose: (e) => {
-              console.log("[GeminiCore] Closed:", e?.reason);
+              console.log("[GeminiCore] Closed:", e?.reason, "code:", e?.code);
               sessionRef.current = null;
               setIsConnected(false);
               setIsConnecting(false);
               stopAudio(0);
-              if (!manualCloseRef.current && e?.code && [1002, 1003, 1007, 1008].includes(e.code)) {
-                const message = `Closed: ${e.reason || e.code}`;
+
+              // User pressed Stop — clean exit, no toast needed
+              if (manualCloseRef.current) return;
+
+              const reason = (e?.reason ?? "").toLowerCase();
+              const code = e?.code ?? 0;
+
+              // ── Gemini API session timeout (gRPC DEADLINE_EXCEEDED) ──────────
+              // Google closes the WebSocket when the max session duration is hit.
+              // This is expected behaviour — not an error in user code.
+              if (reason.includes("deadline") || reason.includes("expired")) {
+                toast.info("Session timed out", {
+                  id: "session-timeout",
+                  description:
+                    "The Live session reached its maximum duration. Tap Start to continue.",
+                  duration: 8000,
+                });
+                return;
+              }
+
+              // ── Hard protocol / billing errors ───────────────────────────────
+              if (code && [1002, 1003, 1007, 1008].includes(code)) {
+                const message = `Closed: ${e?.reason || code}`;
                 setError(message);
-                setErrorCode(`WS_${e.code}`);
+                setErrorCode(`WS_${code}`);
                 setErrorMessage(message);
-                // 1008 = policy violation, often billing/quota on Gemini
-                if (e.code === 1008) {
-                  notifyModelError(
-                    DEFAULT_GEMINI_LIVE_MODEL,
-                    new Error(e.reason ?? `WS ${e.code}`),
-                  );
+                // 1008 = policy violation (billing/quota) — model genuinely unavailable
+                if (code === 1008) {
+                  notifyModelError(DEFAULT_GEMINI_LIVE_MODEL, new Error(e?.reason ?? `WS ${code}`));
                   setModelAvailability("unavailable");
                 }
+                return;
+              }
+
+              // ── Transient server errors (1011) ────────────────────────────────
+              // 1011 = Internal Server Error from Google — this is a temporary
+              // hiccup on their side. The model is NOT broken. The user can
+              // press Start immediately to reconnect.
+              if (code === 1011) {
+                toast.warning("Connection interrupted", {
+                  id: "ws-1011",
+                  description: "Google's server had a temporary error. Tap Start to reconnect.",
+                  duration: 6000,
+                });
+                // Do NOT call setModelAvailability("unavailable") — the model is fine
+                return;
               }
             },
           },

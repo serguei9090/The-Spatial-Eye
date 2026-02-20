@@ -45,7 +45,7 @@ export function StoryOrchestrator({ stream }: StoryOrchestratorProps) {
         ) : (
           <div className="space-y-6">
             {stream.map((item) => (
-              <InterleavedPost key={item.id} item={item} />
+              <InterleavedPost key={item.id} group={{ raw: item }} />
             ))}
             <div ref={bottomRef} className="h-2" />
           </div>

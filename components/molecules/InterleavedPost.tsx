@@ -4,22 +4,78 @@ import { NarrativeText } from "@/components/atoms/NarrativeText";
 import type { StoryItem } from "@/lib/types";
 import { motion } from "framer-motion";
 
-interface InterleavedPostProps {
-  readonly item: StoryItem;
+interface GroupProps {
+  /** A pending image to float inside this text block */
+  image?: StoryItem;
+  /** The narrative text block. Image (if any) will float right of this. */
+  text?: StoryItem;
+  /** Non-text, non-image standalone items (titles, rules, audio) */
+  raw?: StoryItem;
 }
 
-export function InterleavedPost({ item }: InterleavedPostProps) {
+interface InterleavedPostProps {
+  readonly group: GroupProps;
+}
+
+function ImageCard({ item }: { readonly item: StoryItem }) {
+  return (
+    <div className="float-right ml-6 mb-4 w-[40%] min-w-[200px] max-w-[360px]">
+      <div className="relative w-full overflow-hidden rounded-md border border-white/10 bg-black/50 shadow-2xl">
+        {item.isGenerating ? (
+          <div className="aspect-[4/3] w-full">
+            <MediaPlaceholder label={item.content} isLoading={true} />
+          </div>
+        ) : (
+          <img
+            src={item.content}
+            alt={String(item.metadata?.subject || "Story Visual")}
+            className="w-full object-cover aspect-[4/3] animate-in fade-in duration-1000"
+          />
+        )}
+      </div>
+      {!item.isGenerating && item.metadata?.subject && (
+        <p className="mt-2 text-center font-serif text-xs italic text-white/40">
+          {String(item.metadata.subject)}
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function InterleavedPost({ group }: InterleavedPostProps) {
+  const { image, text, raw } = group;
+
+  // ── Paired text + image (Wikipedia-style float) ──────────────────────────
+  if (text) {
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="mb-6 block overflow-hidden"
+      >
+        {/* Image renders first in DOM so float-right wraps the following text */}
+        {image && <ImageCard item={image} />}
+        <NarrativeText text={text.content} />
+        {/* clearfix so next element isn't affected by the float */}
+        <div className="clear-both" />
+      </motion.div>
+    );
+  }
+
+  // ── Standalone items (titles, rules, audio, orphaned images) ─────────────
+  const item = raw;
+  if (!item) return null;
+
   return (
     <motion.div
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-8 block"
+      className="mb-6 block"
     >
-      {item.type === "text" && <NarrativeText text={item.content} />}
-
       {item.type === "story_segment" && (
-        <div className="my-12 flex flex-col items-center">
+        <div className="my-10 flex flex-col items-center">
           <div className="h-px w-full max-w-xs bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
           <span className="mt-4 font-serif text-lg tracking-[0.2em] uppercase text-cyan-200">
             {item.content}
@@ -29,24 +85,12 @@ export function InterleavedPost({ item }: InterleavedPostProps) {
       )}
 
       {item.type === "image" && (
-        <div className="my-8 flex flex-col items-center">
-          <div className="relative w-full max-w-md overflow-hidden rounded-sm border-4 border-white/5 bg-black Shadow-2xl">
-            {item.isGenerating ? (
-              <MediaPlaceholder label={item.content} isLoading={true} />
-            ) : (
-              <img
-                src={item.content}
-                alt={String(item.metadata?.subject || "Story Visual")}
-                className="w-full object-cover aspect-[4/5] animate-in fade-in duration-1000"
-              />
-            )}
+        // Orphaned image (no following text) — display centered
+        <div className="my-6 flex justify-center">
+          <div className="w-1/2 min-w-[240px] max-w-[400px]">
+            <ImageCard item={item} />
+            <div className="clear-both" />
           </div>
-          {/* Caption */}
-          {!item.isGenerating && item.metadata?.subject && (
-            <p className="mt-3 font-serif italic text-white/50 text-sm text-center max-w-md">
-              {String(item.metadata.subject)}
-            </p>
-          )}
         </div>
       )}
 

@@ -19,10 +19,14 @@ type ModelErrorKind = "rate_limit" | "billing" | "not_found" | "generic";
 function resolveDisplayName(modelId: string): string {
   // Strip the "models/" prefix that some callsites include
   const stripped = modelId.replace(/^models\//, "");
-  return (
-    Object.values(GEMINI_REGISTRY).find((m) => m.id === stripped || m.id === modelId)
-      ?.displayName ?? modelId
-  );
+
+  // Look through the registry for a match on either the raw id or stripped id
+  const entry = Object.values(GEMINI_REGISTRY).find((m) => {
+    const registryStripped = m.id.replace(/^models\//, "");
+    return registryStripped === stripped;
+  });
+
+  return entry?.displayName ?? modelId;
 }
 
 /**
