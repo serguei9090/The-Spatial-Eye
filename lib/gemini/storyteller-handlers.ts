@@ -62,9 +62,8 @@ export function handleDirectorToolCall(
       ]);
 
       // 2. Trigger Generation (Real Gemini API)
-      console.log(
-        `[Director] Generating with ${GEMINI_MODELS.imageSynthesis}: ${subject || "Unknown subject"}`,
-      );
+      const modelId = GEMINI_MODELS.imageSynthesis.replace(/^models\//, "");
+      console.log(`[Director] render_visual triggered for: "${subject}" using model: ${modelId}`);
 
       (async () => {
         try {
@@ -72,8 +71,10 @@ export function handleDirectorToolCall(
           if (!apiKey) throw new Error("No API Key");
 
           const client = new GoogleGenAI({ apiKey });
+          console.log("[Director] Calling generateContent...");
+
           const response = await client.models.generateContent({
-            model: GEMINI_MODELS.imageSynthesis,
+            model: modelId,
             contents: [
               {
                 parts: [
@@ -83,7 +84,16 @@ export function handleDirectorToolCall(
                 ],
               },
             ],
+            config: {
+              // Must specify IMAGE modality — without this the model returns text only
+              responseModalities: ["IMAGE", "TEXT"],
+            },
           });
+
+          console.log(
+            "[Director] generateContent response received. Candidates:",
+            response.candidates?.length,
+          );
 
           // Extract Image
           const candidates = response.candidates;
@@ -92,6 +102,7 @@ export function handleDirectorToolCall(
           ) as { inlineData: { mimeType: string; data: string } } | undefined;
 
           if (imagePart?.inlineData) {
+            console.log("[Director] Image data found, updating card.");
             const base64Image = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
 
             setStoryStream((prev) =>
@@ -100,13 +111,18 @@ export function handleDirectorToolCall(
               ),
             );
           } else {
+            console.warn(
+              "[Director] No image inlineData in response. Parts:",
+              candidates?.[0]?.content?.parts,
+            );
             throw new Error("No image data in response");
           }
         } catch (error) {
+          console.error("[Director] Image generation failed:", error);
           // Route through shared utility — classifies rate_limit / billing / not_found
           notifyModelError(GEMINI_MODELS.imageSynthesis, error);
 
-          // Replace the card with a clean SVG placeholder instead of a broken external URL
+          // Replace the card with a clean SVG placeholder instead of a broken image
           setStoryStream((prev) =>
             prev.map((item) =>
               item.id === id

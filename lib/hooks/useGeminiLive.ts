@@ -105,10 +105,16 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
     if (mode !== "storyteller") return;
     setStoryStream((prev) => {
       const last = prev.at(-1);
-      const isNarrative = text.includes("[NARRATIVE]") || (last?.type === "text" && last.isStory);
-      const cleanText = text.replace("[NARRATIVE]", "").trimStart();
 
-      if (last?.type === "text" && last.isStory === !!isNarrative) {
+      // Explicitly check for [DIRECTOR] or [NARRATIVE] tags
+      let isNarrative = last?.type === "text" ? last.isStory : false;
+      if (text.includes("[NARRATIVE]")) isNarrative = true;
+      if (text.includes("[DIRECTOR]")) isNarrative = false;
+
+      // Clean the text of ANY tags
+      const cleanText = text.replace("[NARRATIVE]", "").replace("[DIRECTOR]", "").trimStart();
+
+      if (last?.type === "text" && last.isStory === isNarrative) {
         // Detect if we need a space: if the existing content doesn't end with a space
         // and the new chunk doesn't start with a space.
         const needsSpace =
@@ -132,7 +138,7 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
           type: "text",
           content: cleanText,
           timestamp: Date.now(),
-          isStory: !!isNarrative,
+          isStory: isNarrative,
         },
       ];
     });
