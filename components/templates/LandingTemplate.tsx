@@ -80,7 +80,7 @@ export function LandingTemplate() {
           <div className="mb-16 text-center">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">Unified Intelligence</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Explore the three core dimensions of The Spatial Eye, each leveraging Gemini's
+              Explore the three core dimensions of The Spatial Eye, each leveraging Gemini&apos;s
               multimodal power in unique ways.
             </p>
           </div>
