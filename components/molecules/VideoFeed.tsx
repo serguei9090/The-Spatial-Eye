@@ -3,25 +3,47 @@
 import { useEffect } from "react";
 
 interface VideoFeedProps {
-  videoRef: React.RefObject<HTMLVideoElement | null>;
-  deviceId?: string;
-  onVideoReady?: () => void;
-  className?: string;
+  readonly videoRef: React.RefObject<HTMLVideoElement | null>;
+  readonly deviceId?: string;
+  readonly onVideoReady?: () => void;
+  readonly className?: string;
+  readonly enabled?: boolean;
 }
 
-export function VideoFeed({ videoRef, deviceId, onVideoReady, className }: VideoFeedProps) {
+export function VideoFeed({
+  videoRef,
+  deviceId,
+  onVideoReady,
+  className,
+  enabled = true,
+}: VideoFeedProps) {
   useEffect(() => {
     let mounted = true;
     let stream: MediaStream | null = null;
 
-    const startCamera = async () => {
-      // Stop any existing tracks before switching
+    const stopCamera = () => {
       if (videoRef.current?.srcObject) {
         for (const track of (videoRef.current.srcObject as MediaStream).getTracks()) {
           track.stop();
         }
         videoRef.current.srcObject = null;
       }
+      if (stream) {
+        for (const track of stream.getTracks()) {
+          track.stop();
+        }
+        stream = null;
+      }
+    };
+
+    const startCamera = async () => {
+      if (!enabled) {
+        stopCamera();
+        return;
+      }
+
+      // Stop any existing tracks before switching
+      stopCamera();
 
       try {
         const videoConstraints: MediaTrackConstraints = deviceId
@@ -47,11 +69,11 @@ export function VideoFeed({ videoRef, deviceId, onVideoReady, className }: Video
 
     return () => {
       mounted = false;
-      for (const track of stream?.getTracks() ?? []) {
-        track.stop();
-      }
+      stopCamera();
     };
-  }, [deviceId, onVideoReady, videoRef]);
+  }, [deviceId, onVideoReady, videoRef, enabled]);
+
+  if (!enabled) return null;
 
   return (
     <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-black">

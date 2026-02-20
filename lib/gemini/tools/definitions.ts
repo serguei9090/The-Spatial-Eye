@@ -19,20 +19,23 @@ export const highlightTool: FunctionDeclaration = {
           properties: {
             label: {
               type: Type.STRING,
-              description: "Label of the object (e.g. 'Coffee Cup')",
+              description:
+                "A short, human-readable label of the object (e.g. 'Coffee Cup', 'Laptop'). Do not guess if the object is not clearly identifiable.",
             },
             center_x: {
               type: Type.NUMBER,
-              description: "Center X coordinate (0-1000)",
+              description:
+                "Center X coordinate on a 0-1000 normalized grid (0=left edge, 1000=right edge). ONLY provide if the object is clearly visible. Do NOT guess or extrapolate.",
             },
             center_y: {
               type: Type.NUMBER,
-              description: "Center Y coordinate (0-1000)",
+              description:
+                "Center Y coordinate on a 0-1000 normalized grid (0=top edge, 1000=bottom edge). ONLY provide if the object is clearly visible. Do NOT guess or extrapolate.",
             },
             render_scale: {
               type: Type.NUMBER,
               description:
-                "Approximate size/radius of the object (0-1000). Keep it tight to the object.",
+                "Approximate radius/size of the visible object (0-1000). Keep it tight to the actual visible boundaries. Do not inflate.",
             },
           },
           required: ["label", "center_x", "center_y", "render_scale"],
@@ -62,12 +65,13 @@ export const renderVisualTool: FunctionDeclaration = {
       asset_type: {
         type: Type.STRING,
         enum: ["STILL_IMAGE", "CINEMAGRAPH", "DIAGRAM"],
-        description: "The type of visual asset to generate.",
+        description:
+          "Must strictly be one of: STILL_IMAGE, CINEMAGRAPH, or DIAGRAM. Do not guess any other value.",
       },
       subject: {
         type: Type.STRING,
         description:
-          "The specific item/action to visualize (e.g., 'A cracked viewport showing the abyss').",
+          "The precise action/item/character to be drawn. E.g. 'A cracked viewport with stars'. Make it highly descriptive. Do not hallucinate elements the user hasn't introduced.",
       },
       visual_context: {
         type: Type.STRING,
@@ -88,7 +92,7 @@ export const ambientAudioTool: FunctionDeclaration = {
       preset: {
         type: Type.STRING,
         enum: ["ominous", "airy", "tech", "nature", "custom"],
-        description: "The base audio preset to use.",
+        description: "Must be a valid preset from the list exactly. Do not invent an audio preset.",
       },
       vibe_description: {
         type: Type.STRING,
@@ -134,7 +138,7 @@ export const segmentStoryTool: FunctionDeclaration = {
       title: {
         type: Type.STRING,
         description:
-          "Title for the new section or chapter (e.g. 'Chapter 2: The Deep Ocean' or 'Topic: Mars').",
+          "The exact title text you want displayed (e.g. 'Chapter 2: The Deep Ocean'). Keep it short and dramatic.",
       },
     },
     required: ["title"],

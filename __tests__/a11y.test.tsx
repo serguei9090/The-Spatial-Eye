@@ -25,7 +25,6 @@ describe("Accessibility", () => {
         onNodesChange={jest.fn()}
         onEdgesChange={jest.fn()}
         onConnect={jest.fn()}
-        transcript=""
       />,
     );
 

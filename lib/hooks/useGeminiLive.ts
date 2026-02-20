@@ -95,10 +95,13 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
 
   const handleTranscript = (text: string) => {
     // For IT Architecture mode, skip raw tool call strings from transcript
-    const isToolCallText = mode === "it-architecture" && /call:\s*\w+|update_diagram/.test(text);
+    const isToolCallText =
+      mode === "it-architecture" && /call:\s*\w+|add_node|add_edge|clear_diagram/.test(text);
     if (!isToolCallText) {
       // Strip out any partial tool call artifacts that may bleed through
-      const cleanText = text.replaceAll(/call:\s*update_diagram[\s\S]*/g, "").trimEnd();
+      const cleanText = text
+        .replaceAll(/call:\s*(add_node|add_edge|clear_diagram)[\s\S]*/g, "")
+        .trimEnd();
       if (cleanText) setLatestTranscript((prev) => prev + cleanText);
     }
 
@@ -144,11 +147,33 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
     });
   };
 
+  let resumePrompt =
+    "The connection to the server was briefly interrupted. Please resume what you were doing exactly where you left off.";
+  if (mode === "it-architecture") {
+    // Cap context to avoid buffer overflow on WebSocket reconnect handshake.
+    // Sending all node labels as a large string on reconnect is a primary cause
+    // of "deadline exceeded" / 1006 drops, especially on Hackintosh systems.
+    const MAX_RESUME_NODES = 8;
+    const nodeNames = nodes
+      .slice(0, MAX_RESUME_NODES)
+      .map((n) => n.data.label)
+      .join(", ");
+    const moreNodes =
+      nodes.length > MAX_RESUME_NODES ? ` (and ${nodes.length - MAX_RESUME_NODES} more)` : "";
+    const edgeCount = edges.length;
+    resumePrompt += ` We are building an architecture diagram with ${nodes.length} nodes (e.g., ${nodeNames}${moreNodes}) and ${edgeCount} connections. Please continue the design.`;
+  } else if (mode === "storyteller") {
+    resumePrompt += " Please continue the story or narrative from where it stopped.";
+  } else if (mode === "spatial") {
+    resumePrompt += " Please continue analyzing the spatial environment.";
+  }
+
   const core = useGeminiCore({
     systemInstruction,
     tools,
     onToolCall: handleToolCall,
     onTranscript: handleTranscript,
+    resumePrompt,
   });
 
   return {

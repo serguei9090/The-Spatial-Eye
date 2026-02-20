@@ -18,6 +18,7 @@ import { AudioCapture } from "@/components/molecules/AudioCapture";
 import { SpatialOverlay } from "@/components/molecules/SpatialOverlay";
 import { UserMenu } from "@/components/molecules/UserMenu";
 import { VideoFeed } from "@/components/molecules/VideoFeed";
+import { AITranscriptOverlay } from "@/components/organisms/AITranscriptOverlay";
 import { ControlBar } from "@/components/organisms/ControlBar";
 import { CreativeStudio } from "@/components/organisms/CreativeStudio";
 import { ITArchitectureStudio } from "@/components/organisms/ITArchitectureStudio";
@@ -112,7 +113,7 @@ export function StudioLayout() {
 
   // Logic to send frames periodically
   useEffect(() => {
-    if (!isListening || !isConnected) return;
+    if (!isListening || !isConnected || mode === "it-architecture") return;
 
     const intervalId = globalThis.setInterval(() => {
       if (isConnected && isListening) {
@@ -133,7 +134,7 @@ export function StudioLayout() {
     }, 1000);
 
     return () => clearInterval(intervalId);
-  }, [isConnected, isListening, sendVideoFrame]);
+  }, [isConnected, isListening, mode, sendVideoFrame]);
 
   // Verify component mount
   useEffect(() => {
@@ -233,6 +234,9 @@ export function StudioLayout() {
         <UserMenu user={user} onSignOut={signOutUser} />
       </div>
 
+      {/* Global AI Assistant Overlay - Hide in Storyteller mode which has its own stream */}
+      {mode !== "storyteller" && <AITranscriptOverlay transcript={latestTranscript} />}
+
       {/* Hidden Audio Capture - Always Active when listening */}
       <div className="hidden">
         <AudioCapture
@@ -294,13 +298,13 @@ export function StudioLayout() {
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
-                transcript={latestTranscript}
               />
             </div>
             {/* Hidden Video Feed (Logic Only) */}
             <div className="absolute inset-0 z-0 opacity-0 pointer-events-none">
               <VideoFeed
                 videoRef={videoRef}
+                enabled={false}
                 deviceId={selectedVideoId}
                 onVideoReady={updateVideoSize}
                 className="h-full w-full object-cover"
