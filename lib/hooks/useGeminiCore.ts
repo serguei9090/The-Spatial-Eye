@@ -53,7 +53,7 @@ export function useGeminiCore({
     }
     setModelAvailability("checking");
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${DEFAULT_GEMINI_LIVE_MODEL}?key=${encodeURIComponent(key)}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/${DEFAULT_GEMINI_LIVE_MODEL}?key=${encodeURIComponent(key)}`;
       const response = await fetch(url, { method: "GET" });
       if (response.ok || response.status === 429) {
         setModelAvailability("available");

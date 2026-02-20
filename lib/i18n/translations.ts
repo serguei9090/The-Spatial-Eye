@@ -5,11 +5,13 @@ export const translations = {
     modes: {
       live: "Live",
       storyteller: "Storyteller",
+      itArchitecture: "IT Architecture",
     },
     status: {
       connecting: "Connecting...",
-      live: "Live",
       ready: "Ready",
+      live: "Live",
+      aiAssistant: "AI Assistant",
     },
     controls: {
       start: "Start Session",
@@ -36,11 +38,13 @@ export const translations = {
     modes: {
       live: "En Vivo",
       storyteller: "Cuentacuentos",
+      itArchitecture: "Arquitectura TI",
     },
     status: {
       connecting: "Conectando...",
-      live: "En Vivo",
       ready: "Listo",
+      live: "En Vivo",
+      aiAssistant: "Asistente IA",
     },
     controls: {
       start: "Iniciar Sesión",

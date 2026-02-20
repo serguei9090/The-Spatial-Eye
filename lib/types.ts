@@ -41,7 +41,7 @@ export interface StoryWorldRule {
   active: boolean;
 }
 
-export type StoryItemType = "text" | "image" | "audio_event" | "rule_event";
+export type StoryItemType = "text" | "image" | "audio_event" | "rule_event" | "story_segment";
 
 export interface StoryItem {
   id: string;
