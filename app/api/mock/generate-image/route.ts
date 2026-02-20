@@ -23,7 +23,7 @@ export async function POST(request: Request) {
       url: randomImage,
       prompt: prompt,
     });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: "Failed to generate mock image" }, { status: 500 });
   }
 }

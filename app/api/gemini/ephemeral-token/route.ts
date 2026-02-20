@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 import { DEFAULT_GEMINI_LIVE_MODEL, SPATIAL_SYSTEM_INSTRUCTION } from "@/lib/api/gemini_websocket";
-import { GEMINI_MODELS } from "@/lib/gemini/models";
 
 interface GeminiEphemeralTokenResponse {
   name?: string;
@@ -38,7 +37,7 @@ export async function POST(request: Request) {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     // Use SDK to get model info (Compliance Check)
-    const model = genAI.getGenerativeModel({ model: configuredModel });
+    genAI.getGenerativeModel({ model: configuredModel });
 
     // Note: The SDK doesn't expose 'getMetadata' or 'supportsLive' directly in a standard way yet,
     // so we rely on the known capability of the model.

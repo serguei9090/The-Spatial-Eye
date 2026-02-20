@@ -1,3 +1,4 @@
+import { notifyModelError } from "@/lib/gemini/model-error";
 import { GEMINI_MODELS } from "@/lib/gemini/models";
 import type { StoryItem } from "@/lib/types";
 import { GoogleGenAI, type LiveServerMessage } from "@google/genai";
@@ -6,12 +7,30 @@ import type { Dispatch, SetStateAction } from "react";
 // Helper to create a UUID (simple version for browser)
 const generateId = () => crypto.randomUUID();
 
+/** Inline SVG used as a card placeholder when Nano Banana fails or is unavailable. */
+const IMAGE_PLACEHOLDER_SVG = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#0f172a"/>
+  <text x="400" y="290" font-family="monospace" font-size="18" fill="rgba(148,163,184,0.6)" text-anchor="middle">Image unavailable</text>
+  <text x="400" y="320" font-family="monospace" font-size="13" fill="rgba(148,163,184,0.35)" text-anchor="middle">Nano Banana could not generate a visual</text>
+</svg>
+`)}`;
+
 /**
  * Handles 'Director' tool calls for the Storyteller mode.
- * - render_visual: Adds a placeholder, then (mock) generates an image.
- * - ambient_audio: Adds an audio event item.
- * - define_world_rule: Adds a rule event item.
  */
+interface DirectorArgs {
+  asset_type?: string;
+  subject?: string;
+  visual_context?: string;
+  preset?: string;
+  vibe_description?: string;
+  rule_name?: string;
+  description?: string;
+  consequence?: string;
+  title?: string;
+}
+
 export function handleDirectorToolCall(
   toolCall: LiveServerMessage["toolCall"],
   setStoryStream: Dispatch<SetStateAction<StoryItem[]>>,
@@ -19,8 +38,7 @@ export function handleDirectorToolCall(
   if (!toolCall?.functionCalls) return;
 
   for (const fc of toolCall.functionCalls) {
-    // biome-ignore lint/suspicious/noExplicitAny: Args vary by tool
-    const args = fc.args as any;
+    const args = fc.args as DirectorArgs;
 
     if (fc.name === "render_visual") {
       const { asset_type, subject, visual_context } = args;
@@ -32,15 +50,21 @@ export function handleDirectorToolCall(
         {
           id,
           type: "image",
-          content: `Visualizing: ${subject}`,
+          content: `Visualizing: ${subject || "Scene"}`,
           isGenerating: true,
-          metadata: { asset_type, visual_context, subject },
+          metadata: {
+            asset_type: asset_type || "image",
+            visual_context: visual_context || "",
+            subject: subject || "",
+          },
           timestamp: Date.now(),
         },
       ]);
 
       // 2. Trigger Generation (Real Gemini API)
-      console.log(`[Director] Generating with ${GEMINI_MODELS.imageSynthesis}: ${subject}`);
+      console.log(
+        `[Director] Generating with ${GEMINI_MODELS.imageSynthesis}: ${subject || "Unknown subject"}`,
+      );
 
       (async () => {
         try {
@@ -79,14 +103,17 @@ export function handleDirectorToolCall(
             throw new Error("No image data in response");
           }
         } catch (error) {
-          console.error("[Director] Image Gen Failed:", error);
+          // Route through shared utility — classifies rate_limit / billing / not_found
+          notifyModelError(GEMINI_MODELS.imageSynthesis, error);
+
+          // Replace the card with a clean SVG placeholder instead of a broken external URL
           setStoryStream((prev) =>
             prev.map((item) =>
               item.id === id
                 ? {
                     ...item,
                     isGenerating: false,
-                    content: "https://loremflickr.com/800/600/glitch,error", // Fallback
+                    content: IMAGE_PLACEHOLDER_SVG,
                     metadata: { ...item.metadata, error: "Generation Failed" },
                   }
                 : item,
@@ -101,8 +128,8 @@ export function handleDirectorToolCall(
         {
           id: generateId(),
           type: "audio_event",
-          content: vibe_description,
-          metadata: { preset },
+          content: vibe_description || "Ambient Sound",
+          metadata: { preset: preset || "default" },
           timestamp: Date.now(),
         },
       ]);
@@ -113,8 +140,8 @@ export function handleDirectorToolCall(
         {
           id: generateId(),
           type: "rule_event",
-          content: rule_name,
-          metadata: { description, consequence },
+          content: rule_name || "New Rule",
+          metadata: { description: description || "", consequence: consequence || "" },
           timestamp: Date.now(),
         },
       ]);

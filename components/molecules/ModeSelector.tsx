@@ -1,12 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LayoutTemplate, Video } from "lucide-react";
-import * as React from "react";
+import { LayoutTemplate, Network, Video } from "lucide-react";
+import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-export type AppMode = "live" | "studio";
+export type AppMode = "spatial" | "storyteller" | "it-architecture";
 
 interface ModeSelectorProps {
   mode: AppMode;
@@ -15,51 +15,38 @@ interface ModeSelectorProps {
 }
 
 export function ModeSelector({ mode, onChange, disabled }: ModeSelectorProps) {
-  return (
-    <div className="flex items-center rounded-full border border-white/10 bg-black/50 p-1 backdrop-blur-md">
-      <button
-        type="button"
-        onClick={() => onChange("live")}
-        disabled={disabled}
-        className={cn(
-          "relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-          mode === "live" ? "text-black" : "text-white/70 hover:text-white",
-        )}
-      >
-        {mode === "live" && (
-          <motion.div
-            layoutId="mode-highlight"
-            className="absolute inset-0 rounded-full bg-white"
-            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-          />
-        )}
-        <span className="relative z-10 flex items-center gap-2">
-          <Video className="h-4 w-4" />
-          Live
-        </span>
-      </button>
+  const modes: { id: AppMode; label: string; icon: React.ElementType }[] = [
+    { id: "spatial", label: "Live", icon: Video },
+    { id: "storyteller", label: "Storyteller", icon: LayoutTemplate },
+    { id: "it-architecture", label: "Architecture", icon: Network },
+  ];
 
-      <button
-        type="button"
-        onClick={() => onChange("studio")}
-        disabled={disabled}
-        className={cn(
-          "relative flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors",
-          mode === "studio" ? "text-black" : "text-white/70 hover:text-white",
-        )}
-      >
-        {mode === "studio" && (
-          <motion.div
-            layoutId="mode-highlight"
-            className="absolute inset-0 rounded-full bg-white"
-            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-          />
-        )}
-        <span className="relative z-10 flex items-center gap-2">
-          <LayoutTemplate className="h-4 w-4" />
-          Storyteller
-        </span>
-      </button>
+  return (
+    <div className="flex items-center gap-1 rounded-xl border bg-background/50 p-1 backdrop-blur-md">
+      {modes.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          onClick={() => onChange(item.id)}
+          disabled={disabled}
+          className={cn(
+            "relative flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-medium transition-all hover:bg-white/10",
+            mode === item.id ? "text-primary" : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {mode === item.id && (
+            <motion.div
+              layoutId="mode-highlight"
+              className="absolute inset-0 rounded-lg bg-primary/20"
+              transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+            />
+          )}
+          <span className="relative z-10 flex items-center gap-2">
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </span>
+        </button>
+      ))}
     </div>
   );
 }

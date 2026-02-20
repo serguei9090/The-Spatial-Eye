@@ -9,8 +9,10 @@ import {
   applyNodeChanges,
 } from "@xyflow/react";
 import { AnimatePresence, motion } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { AIErrorBoundary } from "@/components/atoms/AIErrorBoundary";
 import { PremiumBackground } from "@/components/backgrounds/PremiumBackground";
 import { AudioCapture } from "@/components/molecules/AudioCapture";
 import { SpatialOverlay } from "@/components/molecules/SpatialOverlay";
@@ -21,31 +23,31 @@ import { CreativeStudio } from "@/components/organisms/CreativeStudio";
 import { ITArchitectureStudio } from "@/components/organisms/ITArchitectureStudio";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/lib/auth/auth-context";
-import { useAudioDevices } from "@/lib/hooks/useAudioDevices";
 import { useGeminiLive } from "@/lib/hooks/useGeminiLive";
 import { useHighlightDetection } from "@/lib/hooks/useHighlightDetection";
+import { useAudioDeviceContext } from "@/lib/store/audio-context";
 import { Loader2 } from "lucide-react";
+
+type AppMode = "spatial" | "storyteller" | "it-architecture";
 
 export function StudioLayout() {
   const { user, isLoading: authLoading, signInWithGoogle, signOutUser } = useAuth();
-  const [mode, setMode] = useState<"spatial" | "storyteller" | "it-architecture">("spatial");
+  const searchParams = useSearchParams();
+  const initialMode = searchParams.get("mode") as AppMode;
+
+  const [mode, setMode] = useState<AppMode>(
+    initialMode && ["spatial", "storyteller", "it-architecture"].includes(initialMode)
+      ? initialMode
+      : "spatial",
+  );
+  const { selectedInputId, selectedVideoId } = useAudioDeviceContext();
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 0, height: 0 }); // Track video size
   const [isListening, setIsListening] = useState(false);
 
-  const {
-    inputDevices,
-    outputDevices,
-    videoDevices,
-    selectedInputId,
-    selectedOutputId,
-    selectedVideoId,
-    outputSelectionSupported,
-    setSelectedInputId,
-    setSelectedOutputId,
-    setSelectedVideoId,
-  } = useAudioDevices();
+  // useAudioDevices is now consumed via context in ControlBar
+  // const { ... } = useAudioDevices();
 
   const {
     activeHighlights,
@@ -105,7 +107,7 @@ export function StudioLayout() {
   }, []);
 
   useEffect(() => {
-    void checkModelAvailability();
+    checkModelAvailability();
   }, [checkModelAvailability]);
 
   // Logic to send frames periodically
@@ -151,7 +153,7 @@ export function StudioLayout() {
       setIsListening(false);
     } else {
       console.log("[StudioLayout] Connecting...");
-      void connect().then((connected) => {
+      connect().then((connected) => {
         console.log("[StudioLayout] Connect result:", connected);
         if (connected) setIsListening(true);
       });
@@ -242,64 +244,70 @@ export function StudioLayout() {
 
       {mode === "spatial" && (
         /* LIVE MODE: Full Screen Layout */
-        <div className="relative h-screen w-full overflow-hidden">
-          <VideoFeed
-            videoRef={videoRef}
-            deviceId={selectedVideoId}
-            onVideoReady={updateVideoSize}
-            className="h-full w-full object-cover"
-          />
-          <SpatialOverlay
-            highlights={visibleHighlights}
-            videoWidth={videoSize.width}
-            videoHeight={videoSize.height}
-          />
-        </div>
+        <AIErrorBoundary key="spatial" label="Spatial mode">
+          <div className="relative h-screen w-full overflow-hidden">
+            <VideoFeed
+              videoRef={videoRef}
+              deviceId={selectedVideoId}
+              onVideoReady={updateVideoSize}
+              className="h-full w-full object-cover"
+            />
+            <SpatialOverlay
+              highlights={visibleHighlights}
+              videoWidth={videoSize.width}
+              videoHeight={videoSize.height}
+            />
+          </div>
+        </AIErrorBoundary>
       )}
 
       {mode === "storyteller" && (
         /* STORYTELLER MODE: Full Screen Interleaved Layout */
-        <div className="relative h-screen w-full overflow-hidden flex flex-col">
-          {/* Hidden Video Feed (Logic Only) - The UI has its own PIP */}
-          <div className="absolute inset-0 z-0 opacity-0 pointer-events-none">
-            <VideoFeed
-              videoRef={videoRef}
-              deviceId={selectedVideoId}
-              onVideoReady={updateVideoSize}
-              className="h-full w-full object-cover"
-            />
-          </div>
+        <AIErrorBoundary key="storyteller" label="Creative Storyteller">
+          <div className="relative h-screen w-full overflow-hidden flex flex-col">
+            {/* Hidden Video Feed (Logic Only) - The UI has its own PIP */}
+            <div className="absolute inset-0 z-0 opacity-0 pointer-events-none">
+              <VideoFeed
+                videoRef={videoRef}
+                deviceId={selectedVideoId}
+                onVideoReady={updateVideoSize}
+                className="h-full w-full object-cover"
+              />
+            </div>
 
-          {/* Main Creative Interface */}
-          <div className="flex-1 w-full h-full z-10">
-            <CreativeStudio stream={storyStream} videoRef={videoRef} />
+            {/* Main Creative Interface */}
+            <div className="flex-1 w-full h-full z-10">
+              <CreativeStudio stream={storyStream} videoRef={videoRef} />
+            </div>
           </div>
-        </div>
+        </AIErrorBoundary>
       )}
 
       {mode === "it-architecture" && (
-        <div className="relative h-screen w-full overflow-hidden flex flex-col pt-16 pb-24">
-          {/* Main Architecture Interface */}
-          <div className="flex-1 w-full h-full z-10">
-            <ITArchitectureStudio
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              transcript={latestTranscript}
-            />
+        <AIErrorBoundary key="it-architecture" label="IT Architecture Studio">
+          <div className="relative h-screen w-full overflow-hidden flex flex-col pt-16 pb-24">
+            {/* Main Architecture Interface */}
+            <div className="flex-1 w-full h-full z-10">
+              <ITArchitectureStudio
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                transcript={latestTranscript}
+              />
+            </div>
+            {/* Hidden Video Feed (Logic Only) */}
+            <div className="absolute inset-0 z-0 opacity-0 pointer-events-none">
+              <VideoFeed
+                videoRef={videoRef}
+                deviceId={selectedVideoId}
+                onVideoReady={updateVideoSize}
+                className="h-full w-full object-cover"
+              />
+            </div>
           </div>
-          {/* Hidden Video Feed (Logic Only) */}
-          <div className="absolute inset-0 z-0 opacity-0 pointer-events-none">
-            <VideoFeed
-              videoRef={videoRef}
-              deviceId={selectedVideoId}
-              onVideoReady={updateVideoSize}
-              className="h-full w-full object-cover"
-            />
-          </div>
-        </div>
+        </AIErrorBoundary>
       )}
 
       {/* Floating Control Bar - Always on top for both modes */}
@@ -309,19 +317,9 @@ export function StudioLayout() {
             isConnected={isConnected}
             isConnecting={isConnecting}
             isListening={isListening}
-            inputDevices={inputDevices}
-            outputDevices={outputDevices}
-            videoDevices={videoDevices}
-            selectedInputId={selectedInputId}
-            selectedOutputId={selectedOutputId}
-            selectedVideoId={selectedVideoId}
-            outputSelectionSupported={outputSelectionSupported}
             activeHighlight={activeHighlights?.[0]}
             mode={mode}
             onToggleListening={onToggleListening}
-            onInputDeviceChange={setSelectedInputId}
-            onOutputDeviceChange={setSelectedOutputId}
-            onVideoDeviceChange={setSelectedVideoId}
             onModeChange={handleModeChange}
           />
         </div>

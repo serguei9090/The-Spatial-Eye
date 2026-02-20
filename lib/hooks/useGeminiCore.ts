@@ -5,7 +5,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DEFAULT_GEMINI_LIVE_MODEL } from "@/lib/api/gemini_websocket";
 import { useAuth } from "@/lib/auth/auth-context";
-import { decode, decodeAudioData, encode } from "@/lib/utils/audio";
+import { notifyModelError } from "@/lib/gemini/model-error";
+import { decode, decodeAudioData } from "@/lib/utils/audio";
 
 type LiveSession = Awaited<ReturnType<GoogleGenAI["live"]["connect"]>>;
 
@@ -29,7 +30,6 @@ export function useGeminiCore({
     new Set(),
   );
   const nextStartTimeRef = useRef<number>(0);
-  const isSendingRef = useRef(false);
 
   const { user } = useAuth();
 
@@ -49,6 +49,7 @@ export function useGeminiCore({
     const key = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
     if (!key?.startsWith("AIza")) {
       setModelAvailability("unavailable");
+      notifyModelError(DEFAULT_GEMINI_LIVE_MODEL, new Error("Invalid or missing API key."));
       return false;
     }
     setModelAvailability("checking");
@@ -59,9 +60,16 @@ export function useGeminiCore({
         setModelAvailability("available");
         return true;
       }
+      // 403 = billing disabled / access denied, anything else = unexpected
+      const reason =
+        response.status === 403
+          ? "Access denied — billing may be disabled for this model."
+          : `Server returned ${response.status}.`;
       setModelAvailability("unavailable");
+      notifyModelError(DEFAULT_GEMINI_LIVE_MODEL, new Error(reason));
       return false;
     } catch {
+      // Network error — be optimistic, don't block the user
       setModelAvailability("available");
       return true;
     }
@@ -258,6 +266,9 @@ export function useGeminiCore({
               setErrorMessage(message);
               setIsConnected(false);
               setIsConnecting(false);
+              // Route all model errors through the shared utility
+              notifyModelError(DEFAULT_GEMINI_LIVE_MODEL, e);
+              setModelAvailability("unavailable");
               resolve(false);
             },
             onclose: (e) => {
@@ -271,6 +282,14 @@ export function useGeminiCore({
                 setError(message);
                 setErrorCode(`WS_${e.code}`);
                 setErrorMessage(message);
+                // 1008 = policy violation, often billing/quota on Gemini
+                if (e.code === 1008) {
+                  notifyModelError(
+                    DEFAULT_GEMINI_LIVE_MODEL,
+                    new Error(e.reason ?? `WS ${e.code}`),
+                  );
+                  setModelAvailability("unavailable");
+                }
               }
             },
           },
@@ -280,8 +299,12 @@ export function useGeminiCore({
         })
         .catch((err) => {
           console.error("[GeminiCore] Fail:", err);
-          setError(err instanceof Error ? err.message : "Connect failed");
+          const errMsg = err instanceof Error ? err.message : "Connect failed";
+          setError(errMsg);
           setIsConnecting(false);
+          // Route through shared utility — it classifies internally
+          notifyModelError(DEFAULT_GEMINI_LIVE_MODEL, err);
+          setModelAvailability("unavailable");
           resolve(false);
         });
     });

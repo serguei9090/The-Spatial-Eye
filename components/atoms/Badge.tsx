@@ -1,19 +1,12 @@
+import { Badge as UIBadge, type badgeVariants } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import type { VariantProps } from "class-variance-authority";
+import type * as React from "react";
 
-interface BadgeProps {
-  children: React.ReactNode;
-  className?: string;
-}
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof badgeVariants> {}
 
-export function Badge({ children, className }: BadgeProps) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700",
-        className,
-      )}
-    >
-      {children}
-    </span>
-  );
+export function Badge({ className, variant, ...props }: Readonly<BadgeProps>) {
+  return <UIBadge className={cn(className)} variant={variant} {...props} />;
 }

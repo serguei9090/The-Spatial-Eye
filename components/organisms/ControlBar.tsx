@@ -5,6 +5,7 @@ import { CoordinateDisplay } from "@/components/molecules/CoordinateDisplay";
 import { DeviceSelector } from "@/components/molecules/DeviceSelector";
 import { SettingsMenu } from "@/components/organisms/SettingsMenu";
 import { Button } from "@/components/ui/button";
+import { useAudioDeviceContext } from "@/lib/store/audio-context";
 import { useSettings } from "@/lib/store/settings-context";
 import type { Highlight } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -13,19 +14,9 @@ export interface ControlBarProps {
   readonly isConnected: boolean;
   readonly isConnecting: boolean;
   readonly isListening: boolean;
-  readonly inputDevices: MediaDeviceInfo[];
-  readonly outputDevices: MediaDeviceInfo[];
-  readonly videoDevices: MediaDeviceInfo[];
-  readonly selectedInputId: string;
-  readonly selectedOutputId: string;
-  readonly selectedVideoId: string;
-  readonly outputSelectionSupported: boolean;
   readonly activeHighlight?: Highlight;
   readonly mode: "spatial" | "storyteller" | "it-architecture";
   readonly onToggleListening: () => void;
-  readonly onInputDeviceChange: (deviceId: string) => void;
-  readonly onOutputDeviceChange: (deviceId: string) => void;
-  readonly onVideoDeviceChange: (deviceId: string) => void;
   readonly onModeChange: (mode: "spatial" | "storyteller" | "it-architecture") => void;
 }
 
@@ -33,22 +24,24 @@ export function ControlBar({
   isConnected,
   isConnecting,
   isListening,
-  inputDevices,
-  outputDevices,
-  videoDevices,
-  selectedInputId,
-  selectedOutputId,
-  selectedVideoId,
-  outputSelectionSupported,
   activeHighlight,
   mode,
   onToggleListening,
-  onInputDeviceChange,
-  onOutputDeviceChange,
-  onVideoDeviceChange,
   onModeChange,
 }: ControlBarProps) {
   const { t } = useSettings();
+  const {
+    inputDevices,
+    outputDevices,
+    videoDevices,
+    selectedInputId,
+    selectedOutputId,
+    selectedVideoId,
+    outputSelectionSupported,
+    setSelectedInputId,
+    setSelectedOutputId,
+    setSelectedVideoId,
+  } = useAudioDeviceContext();
 
   const connectionLabel = isConnecting
     ? t.status.connecting
@@ -88,6 +81,7 @@ export function ControlBar({
       {/* Mode Selector */}
       <div className="flex items-center gap-1 rounded-xl border bg-background/50 p-1 backdrop-blur-md">
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={() => onModeChange("spatial")}
@@ -99,6 +93,7 @@ export function ControlBar({
           {t.modes.live}
         </Button>
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={() => onModeChange("storyteller")}
@@ -110,6 +105,7 @@ export function ControlBar({
           {t.modes.storyteller}
         </Button>
         <Button
+          type="button"
           variant="ghost"
           size="sm"
           onClick={() => onModeChange("it-architecture")}
@@ -126,6 +122,7 @@ export function ControlBar({
       <div className="group flex items-center gap-3 rounded-2xl border bg-background/80 p-3 shadow-2xl backdrop-blur-xl transition-all hover:scale-[1.01] hover:bg-background/90">
         {/* Connection Toggle (Primary Action) */}
         <Button
+          type="button"
           size="lg"
           variant={isListening ? "destructive" : "default"}
           className={cn(
@@ -152,7 +149,7 @@ export function ControlBar({
             label={t.devices.camera}
             devices={videoDevices}
             selectedId={selectedVideoId}
-            onDeviceChange={onVideoDeviceChange}
+            onDeviceChange={setSelectedVideoId}
           />
 
           <DeviceSelector
@@ -160,7 +157,7 @@ export function ControlBar({
             label={t.devices.microphone}
             devices={inputDevices}
             selectedId={selectedInputId}
-            onDeviceChange={onInputDeviceChange}
+            onDeviceChange={setSelectedInputId}
           />
 
           <DeviceSelector
@@ -168,7 +165,7 @@ export function ControlBar({
             label={t.devices.speaker}
             devices={outputDevices}
             selectedId={selectedOutputId}
-            onDeviceChange={onOutputDeviceChange}
+            onDeviceChange={setSelectedOutputId}
             disabled={!outputSelectionSupported}
           />
 

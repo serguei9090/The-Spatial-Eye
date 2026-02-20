@@ -62,7 +62,7 @@ export function InterleavedPost({ item }: InterleavedPostProps) {
             <div className="h-px w-8 bg-cyan-500/30" />
           </div>
           <p className="font-serif italic text-cyan-100/70 text-base leading-relaxed">
-            "{String(item.metadata?.description || "")}"
+            &ldquo;{String(item.metadata?.description || "")}&rdquo;
           </p>
           {item.metadata?.consequence && (
             <p className="mt-4 text-[9px] uppercase tracking-[0.2em] text-cyan-500/40 font-mono">
