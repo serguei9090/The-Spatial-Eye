@@ -4,6 +4,7 @@
 Re-introduce the Python backend iteratively by incrementally decoupling the audio processing, session orchestration, and tool handling from the existing React frontend. The primary goal is to safely restore the backend for advanced tool execution without breaking the working frontend implementation. Note that we must be extremely careful with the audio format for strict Voice Activity Detection (VAD) compliance under Google's Agent Development Kit (ADK).
 
 ## Step 1: Prepare the Proper Environment
+**Status:** [Finished and Tested]
 The backend will utilize modern Python tooling entirely.
 
 1. **Initialize Project:** Create an isolated Python project inside the `backend/` directory using `uv init`. 
@@ -16,6 +17,7 @@ The backend will utilize modern Python tooling entirely.
 4. **Code Quality:** Configure `ruff` linting rules within `pyproject.toml`. No direct `pip` or standard `venv` will be used based on global standards.
 
 ## Step 2: Implement Audio Relay (Bidi-Streaming)
+**Status:** [Working]
 Based on Google's ADK Bidi-streaming specifications, we must construct a highly reliable WebSocket multiplexer. VAD demands precise handling of audio modalities.
 
 1. **Endpoint Initialization:** Mount a WebSockets endpoint (e.g. `ws://localhost:8000/ws/live`) inside `backend/main.py`.
@@ -29,12 +31,14 @@ Based on Google's ADK Bidi-streaming specifications, we must construct a highly 
 6. **Graceful Cleanup:** Guarantee concurrent task shutdown inside a `try...finally` block. `live_request_queue.close()` MUST be called upon termination to end session processes correctly.
 
 ## Step 3: Shift Orchestration & Tool Definitions
+**Status:** [Pending]
 Once bidirectional audio is seamlessly routing through the local relay without dropouts, the next step involves moving the execution orchestration out of the frontend.
 
 1. Migrate tool configurations (`SPATIAL_TOOLS`, `DIRECTOR_TOOLS`, `IT_ARCHITECTURE_TOOLS`) from TypeScript to Python tool functions within the ADK.
 2. Route `toolCall` notifications as JSON messages through the downstream task straight into frontend state managers so the UI dynamically reacts to tool invocations (`activeHighlights`, `nodes`, `edges`).
 
 ## Step 4: Refactor Frontend Application (`useGeminiCore.ts`)
+**Status:** [Pending]
 The existing frontend (`lib/hooks/useGeminiCore.ts`) currently instantiates the `@google/genai` SDK natively in the browser and points directly to `wss://generativelanguage.googleapis.com`. This must change entirely to a localized relay approach:
 
 1. **Remove Frontend SDK dependency:** Eliminate `GoogleGenAI` from `useGeminiCore.ts`. Replace it with a standard browser `WebSocket` connecting directly to `ws://localhost:8000/ws/live`.

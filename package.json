@@ -12,7 +12,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:ci": "jest --ci --coverage",
-    "test:a11y": "jest --testMatch \"**/*.a11y.test.tsx\""
+    "test:a11y": "jest --testMatch \"**/*.a11y.test.tsx\"",
+    "backend:dev": "cd backend && uv run uvicorn main:app --port 8000"
   },
   "dependencies": {
     "@genkit-ai/googleai": "^1.28.0",

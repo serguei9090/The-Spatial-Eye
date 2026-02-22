@@ -10,9 +10,10 @@ load_dotenv(ENV_PATH)
 
 app = FastAPI(title="The Spatial Eye - Gemini Relay Backend")
 
+
 @app.get("/")
 def read_root():
     return {
         "status": "online",
-        "live_model": os.getenv("NEXT_PUBLIC_GEMINI_LIVE_MODEL", "Not Found")
+        "live_model": os.getenv("NEXT_PUBLIC_GEMINI_LIVE_MODEL", "Not Found"),
     }
