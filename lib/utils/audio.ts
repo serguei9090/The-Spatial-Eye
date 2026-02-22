@@ -1,5 +1,11 @@
 export function decode(base64: string): Uint8Array {
-  const binaryString = atob(base64);
+  // Normalize URL-safe base64 and pad it correctly
+  let normalizedBase64 = base64.replace(/-/g, "+").replace(/_/g, "/");
+  while (normalizedBase64.length % 4 !== 0) {
+    normalizedBase64 += "=";
+  }
+
+  const binaryString = atob(normalizedBase64);
   const len = binaryString.length;
   const bytes = new Uint8Array(len);
   for (let i = 0; i < len; i++) {
