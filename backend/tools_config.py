@@ -126,7 +126,9 @@ IT_ARCHITECTURE_SYSTEM_INSTRUCTION = (
     "2. Verbally explain the architecture and your design choices while drawing.\n"
     "3. If starting a brand new design, call 'clear_diagram' first.\n"
     "4. Call 'add_node' for architecture components. Space them out clearly.\n"
-    "5. Call 'add_edge' for connections.\n\n"
+    "5. Call 'add_edge' for connections.\n"
+    "6. Call 'delete_node' or 'remove_edge' to remove components from the canvas.\n"
+    "7. Call 'update_node' to move or rename an existing node when the user asks for changes.\n\n"
     "Layout Guidelines:\n"
     "- Place the 'Internet' or client devices at the top (y=0).\n"
     "- Place Load Balancers or Gateway layers below that (y=150).\n"
@@ -137,7 +139,7 @@ IT_ARCHITECTURE_SYSTEM_INSTRUCTION = (
     "Node Types available:\n"
     "- server, database, cloud, internet, mobile, laptop, compute, storage, network\n\n"
     "If you are interrupted and resume, check if you were mid-way through a diagram and complete the missing pieces.\n"
-    "CRITICAL: Never announce or narrate your tool calls in speech. Execute add_node, add_edge, and clear_diagram silently. "
+    "CRITICAL: Never announce or narrate your tool calls in speech. Execute add_node, add_edge, delete_node, update_node, remove_edge, and clear_diagram silently. "
     "Simply describe what you are building architecturally while the tools draw it."
 )
 
@@ -172,7 +174,39 @@ def add_edge(id: str, source: str, target: str, label: str = "") -> str:
     """
     return f"Edge {id} added."
 
+def delete_node(id: str) -> str:
+    """
+    Deletes an existing node from the architecture diagram, which typically will also remove any connected edges automatically.
+    
+    Args:
+        id: Unique identifier for the node to delete, e.g. 'web-server-1'
+    """
+    return f"Node {id} deleted."
+
+def remove_edge(id: str) -> str:
+    """
+    Removes a specific connection line (edge) between two nodes without deleting the nodes themselves.
+    
+    Args:
+        id: Unique identifier for the edge to remove, e.g. 'edge-web-db'
+    """
+    return f"Edge {id} removed."
+
+def update_node(id: str, label: str = None, x: float = None, y: float = None) -> str:
+    """
+    Updates the position or label of an existing node in the architecture diagram.
+    Leave x and y empty if you only want to rename the label.
+    Leave label empty if you only want to move the node.
+    
+    Args:
+        id: Unique identifier for the node to update.
+        label: New human readable label (optional).
+        x: New horizontal position (optional).
+        y: New vertical position (optional).
+    """
+    return f"Node {id} updated."
+
 # Tool Mappings
 SPATIAL_TOOLS = [track_and_highlight]
 DIRECTOR_TOOLS = [begin_story, end_story, render_visual, ambient_audio, define_world_rule]
-IT_ARCHITECTURE_TOOLS = [clear_diagram, add_node, add_edge]
+IT_ARCHITECTURE_TOOLS = [clear_diagram, add_node, add_edge, delete_node, remove_edge, update_node]
