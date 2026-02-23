@@ -62,6 +62,8 @@ export function useGeminiCore({
     new Set(),
   );
   const nextStartTimeRef = useRef<number>(0);
+  const audioQueueRef = useRef<string[]>([]);
+  const isProcessingAudioRef = useRef<boolean>(false);
   const keepAliveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentTurnIdRef = useRef<string>(crypto.randomUUID());
 
@@ -120,6 +122,7 @@ export function useGeminiCore({
   // Audio Playback & Control
   // ---------------------------------------------------------------------------
   const stopAudio = useCallback((fadeOutDuration = 0) => {
+    audioQueueRef.current = []; // Clear pending audio queue
     const ctx = audioContextRef.current;
     if (!ctx || ctx.state === "closed") {
       activeSourcesRef.current.clear();
@@ -254,6 +257,56 @@ export function useGeminiCore({
           }, 25_000);
         };
 
+        const processAudioQueue = async () => {
+          if (isProcessingAudioRef.current) return;
+          isProcessingAudioRef.current = true;
+
+          const ctx = audioContextRef.current;
+          if (!ctx || ctx.state === "closed") {
+            isProcessingAudioRef.current = false;
+            return;
+          }
+
+          try {
+            if (ctx.state === "suspended") await ctx.resume();
+
+            while (audioQueueRef.current.length > 0) {
+              const base64Data = audioQueueRef.current.shift();
+              if (!base64Data) continue;
+
+              const audioBuffer = await decodeAudioData(decode(base64Data), ctx, 24000);
+
+              // We could have been interrupted while decoding
+              if (!isProcessingAudioRef.current || audioContextRef.current?.state === "closed")
+                break;
+
+              let startTime = nextStartTimeRef.current;
+              // If we suffered a buffer underrun (audio finished playing before we got the next chunk)
+              // We add an artificial delay (Jitter Buffer) of 300ms to let more chunks pile up.
+              if (startTime <= ctx.currentTime) {
+                startTime = ctx.currentTime + 0.4;
+              }
+
+              const source = ctx.createBufferSource();
+              const gain = ctx.createGain();
+
+              source.buffer = audioBuffer;
+              source.connect(gain);
+              gain.connect(ctx.destination);
+
+              const unit = { source, gain };
+              source.onended = () => activeSourcesRef.current.delete(unit);
+              source.start(startTime);
+              nextStartTimeRef.current = startTime + audioBuffer.duration;
+              activeSourcesRef.current.add(unit);
+            }
+          } catch (e) {
+            console.error("[GeminiCore] Audio playback error in queue:", e);
+          } finally {
+            isProcessingAudioRef.current = false;
+          }
+        };
+
         ws.onmessage = async (event) => {
           let payload: unknown;
           try {
@@ -293,6 +346,8 @@ export function useGeminiCore({
           // 1. Interruption
           if (msg.interrupted === true) {
             logInfo("Barge-in: Interrupted by ADK.");
+            audioQueueRef.current = [];
+            isProcessingAudioRef.current = false;
             stopAudio(0);
             currentTurnIdRef.current = crypto.randomUUID(); // Cycle turn immediately
             return;
@@ -308,28 +363,8 @@ export function useGeminiCore({
               if (audioRecvCountRef.current % 30 === 0) {
                 logTrace(`Received ${audioRecvCountRef.current} PCM Audio Blocks from Relay`);
               }
-              try {
-                const ctx = audioContextRef.current;
-                if (!ctx || ctx.state === "closed") continue;
-                if (ctx.state === "suspended") await ctx.resume();
-
-                const audioBuffer = await decodeAudioData(decode(inlineData.data), ctx, 24000);
-                const startTime = Math.max(nextStartTimeRef.current, ctx.currentTime);
-                const source = ctx.createBufferSource();
-                const gain = ctx.createGain();
-
-                source.buffer = audioBuffer;
-                source.connect(gain);
-                gain.connect(ctx.destination);
-
-                const unit = { source, gain };
-                source.onended = () => activeSourcesRef.current.delete(unit);
-                source.start(startTime);
-                nextStartTimeRef.current = startTime + audioBuffer.duration;
-                activeSourcesRef.current.add(unit);
-              } catch (e) {
-                console.error("[GeminiCore] Audio playback error:", e);
-              }
+              audioQueueRef.current.push(inlineData.data);
+              processAudioQueue();
             }
 
             // 3. Tool Calls
