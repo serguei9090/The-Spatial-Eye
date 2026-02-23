@@ -11,6 +11,8 @@ interface GroupProps {
   text?: StoryItem;
   /** Non-text, non-image standalone items (titles, rules, audio) */
   raw?: StoryItem;
+  /** Sequential story number (1-based), derived from how many segment_story calls precede this */
+  storyIndex?: number;
 }
 
 interface InterleavedPostProps {
@@ -43,7 +45,7 @@ function ImageCard({ item }: { readonly item: StoryItem }) {
 }
 
 export function InterleavedPost({ group }: InterleavedPostProps) {
-  const { image, text, raw } = group;
+  const { image, text, raw, storyIndex } = group;
 
   // ── Paired text + image (Wikipedia-style float) ──────────────────────────
   if (text) {
@@ -75,12 +77,51 @@ export function InterleavedPost({ group }: InterleavedPostProps) {
       className="mb-6 block"
     >
       {item.type === "story_segment" && (
-        <div className="my-10 flex flex-col items-center">
-          <div className="h-px w-full max-w-xs bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
-          <span className="mt-4 font-serif text-lg tracking-[0.2em] uppercase text-cyan-200">
-            {item.content}
-          </span>
-          <div className="mt-4 h-px w-full max-w-xs bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent" />
+        <div className="my-14 flex flex-col items-center gap-4">
+          {/* Top ornament */}
+          <div className="flex w-full items-center gap-4">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-cyan-500/60" />
+            <div className="flex items-center gap-2">
+              <div className="h-1 w-1 rotate-45 bg-cyan-400/60" />
+              <div className="h-1.5 w-1.5 rotate-45 bg-cyan-400/80" />
+              <div className="h-1 w-1 rotate-45 bg-cyan-400/60" />
+            </div>
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent via-cyan-500/30 to-cyan-500/60" />
+          </div>
+
+          {/* Story number badge + title */}
+          <div className="flex flex-col items-center gap-2">
+            {storyIndex !== undefined && (
+              <span className="font-mono text-[9px] uppercase tracking-[0.35em] text-cyan-500/50">
+                Story {storyIndex}
+              </span>
+            )}
+            {item.isPlaceholder ? (
+              // Shimmer state while the real title is in transit
+              <motion.span
+                animate={{ opacity: [0.3, 0.8, 0.3] }}
+                transition={{ duration: 1.4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+                className="font-mono text-sm tracking-[0.4em] text-cyan-400/50"
+              >
+                ···
+              </motion.span>
+            ) : (
+              <span className="font-serif text-xl tracking-[0.18em] uppercase text-cyan-100/90 text-center px-4">
+                {item.content}
+              </span>
+            )}
+          </div>
+
+          {/* Bottom ornament (mirrored) */}
+          <div className="flex w-full items-center gap-4">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-cyan-500/60" />
+            <div className="flex items-center gap-2">
+              <div className="h-1 w-1 rotate-45 bg-cyan-400/60" />
+              <div className="h-1.5 w-1.5 rotate-45 bg-cyan-400/80" />
+              <div className="h-1 w-1 rotate-45 bg-cyan-400/60" />
+            </div>
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent via-cyan-500/30 to-cyan-500/60" />
+          </div>
         </div>
       )}
 
@@ -114,6 +155,34 @@ export function InterleavedPost({ group }: InterleavedPostProps) {
             </p>
           )}
         </div>
+      )}
+
+      {item.type === "director_prompt" && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="my-14 mx-auto max-w-sm text-center"
+        >
+          {/* Closing flourish line */}
+          <div className="flex items-center gap-3 mb-6">
+            <div className="h-px flex-1 bg-gradient-to-r from-transparent to-amber-400/40" />
+            <span className="font-mono text-[10px] tracking-[0.5em] text-amber-400/70 uppercase">
+              ✦ The End ✦
+            </span>
+            <div className="h-px flex-1 bg-gradient-to-l from-transparent to-amber-400/40" />
+          </div>
+
+          {/* Director's invitation */}
+          <div className="rounded-xl border border-white/8 bg-white/3 px-6 py-5 backdrop-blur-sm">
+            <p className="font-serif italic text-white/60 text-sm leading-relaxed">
+              {item.content}
+            </p>
+            <p className="mt-3 font-mono text-[9px] uppercase tracking-[0.3em] text-amber-400/40">
+              — The Director
+            </p>
+          </div>
+        </motion.div>
       )}
     </motion.div>
   );

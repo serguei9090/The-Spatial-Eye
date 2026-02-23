@@ -36,28 +36,49 @@ def track_and_highlight(label: str, center_x: float, center_y: float, render_sca
 # STORYTELLER (DIRECTOR) MODE
 # ---------------------------------------------------------
 STORYTELLER_SYSTEM_INSTRUCTION = (
-    "You are a Creative Director and Master Storyteller. \n\n"
+    "You are a Creative Director and Master Storyteller.\n\n"
     "PHASE 1: DIRECTOR SETUP\n"
-    "When the session starts, act as the DIRECTOR. Greet the user warmly and ask for the story theme or context. "
-    "Do NOT use story tools yet. Everything you say here is OOB (Out-Of-Band) coordination. "
-    "CRITICAL: Every time you speak out of band to the user as the director, you MUST prefix your message with '[DIRECTOR]'.\n"
-    "Example: '[DIRECTOR] Welcome! What world are we building today?'\n\n"
-    "PHASE 2: THE NARRATIVE\n"
-    "Once the user provides a theme, transition into STORYTELLER mode. \n"
-    "CRITICAL: Every time you provide a piece of the actual story narrative, you MUST prefix that specific message with '[NARRATIVE]'. \n"
-    "Example: '[NARRATIVE] The sky bled crimson as the first ship descended...'\n\n"
-    "If the user stops the session and starts again to continue the story, you MUST first call 'segment_story' to title "
-    "the new section before you resume the [NARRATIVE].\n\n"
-    "TOOL PROTOCOL:\n"
-    "- CRITICAL: NEVER announce or narrate your tool calls. Do not say 'I will now call render_visual' or any variant. "
-    "Execute tools silently and seamlessly continue your narrative.\n"
-    "- Call 'render_visual' for concept art. IMAGES ARE INLINE.\n"
-    "- Call 'segment_story' when the user changes topic, or when returning from a break. Title the new section.\n"
-    "- Call 'ambient_audio' (presets: ominous, airy, tech, nature).\n"
-    "- Call 'track_and_highlight' to ground the story in visible objects.\n"
-    "- Call 'define_world_rule' for consistent story laws.\n\n"
-    "Keep your [DIRECTOR] chatter separate from the [NARRATIVE] text."
+    "Greet the user. Ask for the theme. Prefix all coordination with '[DIRECTOR]'.\n\n"
+    "PHASE 2: STORY SEQUENCE — STRICT ORDER, NO EXCEPTIONS\n"
+    "When the user gives you a theme, follow these steps in EXACT ORDER:\n"
+    "  Step 1: Say a brief [DIRECTOR] acknowledgment (e.g. '[DIRECTOR] A tale of the frog it shall be.').\n"
+    "  Step 2: Call 'render_visual(...)' for the opening image.\n"
+    "  Step 3: Call 'begin_story(title)' to register the story and trigger the visual separation.\n"
+    "  Step 4: Begin [NARRATIVE]. Speak the title dramatically as your very first sentence.\n"
+    "          Prefix EVERY narration chunk with '[NARRATIVE]'.\n\n"
+    "PHASE 3: STORY LENGTH — NON-NEGOTIABLE\n"
+    "Your story MUST be EXACTLY 3 [NARRATIVE] paragraphs. Count them:\n"
+    "  - Paragraph 1: Set the scene and introduce the hero.\n"
+    "  - Paragraph 2: The conflict and journey.\n"
+    "  - Paragraph 3: The resolution. MUST end with '[NARRATIVE] The End.' as the final sentence.\n"
+    "After paragraph 3, you MUST immediately:\n"
+    "  a) Say '[NARRATIVE] The End.'\n"
+    "  b) Call 'end_story()'\n"
+    "  c) Switch to [DIRECTOR] and ask: '[DIRECTOR] The tale is told. Shall we craft another?'\n\n"
+    "CRITICAL RULES:\n"
+    "- STOP after exactly 3 [NARRATIVE] paragraphs. Do NOT write more.\n"
+    "- Do NOT continue if the user speaks mid-story — finish the 3 paragraphs first.\n"
+    "- Keep [DIRECTOR] chatter separate from [NARRATIVE] story text.\n"
+    "- Never announce tool calls in speech."
 )
+
+def begin_story(title: str) -> str:
+    """
+    MANDATORY: Call this FIRST before starting any narrative. Registers the story title
+    and signals the frontend to show the visual separator. You MUST wait for this tool's
+    response before speaking any [NARRATIVE] content.
+
+    Args:
+        title: The complete, dramatic title of the story (e.g. 'The Emerald Wanderer of the Whispering Bog').
+    """
+    return f"Story '{title}' registered. Visual separator shown. You may now begin narration."
+
+def end_story() -> str:
+    """
+    Call this immediately after saying '[NARRATIVE] The End.' to signal the story is finished.
+    This triggers the frontend to show the story-complete state and prompts the user for next steps.
+    """
+    return "Story concluded. Return to [DIRECTOR] mode and ask the user what to do next."
 
 def render_visual(asset_type: str, subject: str, visual_context: str) -> str:
     """
@@ -91,14 +112,7 @@ def define_world_rule(rule_name: str, description: str, consequence: str) -> str
     """
     return f"Rule {rule_name} established."
 
-def segment_story(title: str) -> str:
-    """
-    Call this when the current story arc ends or the user changes the topic significantly. It creates a visual break (like a new chapter or horizontal rule) to separate the new content from the old.
 
-    Args:
-        title: The exact title text you want displayed (e.g. 'Chapter 2: The Deep Ocean'). Keep it short and dramatic.
-    """
-    return f"Story segmented with title {title}."
 
 # ---------------------------------------------------------
 # IT ARCHITECTURE MODE
@@ -160,5 +174,5 @@ def add_edge(id: str, source: str, target: str, label: str = "") -> str:
 
 # Tool Mappings
 SPATIAL_TOOLS = [track_and_highlight]
-DIRECTOR_TOOLS = [render_visual, define_world_rule, segment_story]
+DIRECTOR_TOOLS = [begin_story, end_story, render_visual, ambient_audio, define_world_rule, track_and_highlight]
 IT_ARCHITECTURE_TOOLS = [clear_diagram, add_node, add_edge]

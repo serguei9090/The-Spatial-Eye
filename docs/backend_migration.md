@@ -31,23 +31,31 @@ Based on Google's ADK Bidi-streaming specifications, we must construct a highly 
 6. **Graceful Cleanup:** Guarantee concurrent task shutdown inside a `try...finally` block. `live_request_queue.close()` MUST be called upon termination to end session processes correctly.
 
 ## Step 3: Shift Orchestration & Tool Definitions
-**Status:** [In Progress]
-Once bidirectional audio is seamlessly routing through the local relay without dropouts, the next step involves moving the execution orchestration out of the frontend.
+**Status:** [Finished and Tested - Spatial Mode]
+The execution orchestration has been moved to the backend. Spatial awareness is now handled by the Python relay.
 
-1. Migrate tool configurations (`SPATIAL_TOOLS`, `DIRECTOR_TOOLS`, `IT_ARCHITECTURE_TOOLS`) from TypeScript to Python tool functions within the ADK.
-2. Route `toolCall` notifications as JSON messages through the downstream task straight into frontend state managers so the UI dynamically reacts to tool invocations (`activeHighlights`, `nodes`, `edges`).
+1. migrated tool configurations (`SPATIAL_TOOLS`) to Python functions in `backend/tools_config.py`.
+2. `toolCall` notifications are routed as JSON straight into the frontend state manager.
+3. Verified `track_and_highlight` successfully triggers UI highlights from the backend.
 
 ## Step 4: Refactor Frontend Application (`useGeminiCore.ts`)
 **Status:** [Finished and Tested]
-The existing frontend (`lib/hooks/useGeminiCore.ts`) currently instantiates the `@google/genai` SDK natively in the browser and points directly to `wss://generativelanguage.googleapis.com`. This must change entirely to a localized relay approach:
+The frontend has been successfully decoupled from the `@google/genai` SDK and now communicates exclusively with the local Python relay.
 
-1. **Remove Frontend SDK dependency:** Eliminate `GoogleGenAI` from `useGeminiCore.ts`. Replace it with a standard browser `WebSocket` connecting directly to `ws://localhost:8000/ws/live`.
-2. **Audio Processing Changes (Sending):** 
-   - Currently, `sendAudioChunk()` base64-encodes an `Int16Array` (16kHz) and wraps it inside a `session.sendRealtimeInput({ media: ... })` JSON object.
-   - We must transmit the base64-encoded string (or raw bytes) cleanly to the Python `upstream_task` so that the ADK `types.Content` wrapper can be constructed strictly on the Python side.
-3. **Audio Processing Changes (Receiving):** 
-   - The frontend currently decodes `msg.serverContent.modelTurn.parts` dynamically. 
-   - The Python `downstream_task` will forward `runner.run_live()` events down the wire as JSON. The frontend `onMessage` handler must strictly parse these JSON strings, extract the base64 audio chunks, and queue them into the existing `audioContextRef`. 
-4. **Tool Execution:** 
-   - The Python `LiveRequestQueue` handles the tools internally now. The backend will transmit custom `Event` payloads back down the WebSocket when UI state updates are needed (e.g., rendering a highlight or an architecture node).
-   - The frontend merely acts as a "dumb UI terminal" listening for visualization instructions.
+1. **Removed Frontend SDK dependency:** Use standard `WebSocket` for communication.
+2. **Audio Processing (Sending/Receiving):** Verified bidirectional PCM streaming.
+3. **Tool Execution:** Frontend now acts as a reactive terminal for backend-triggered tool calls.
+
+## Step 5: Refine Creative Storyteller (Director) Mode
+**Status:** [Finished and Tested - Narrative Ready]
+Transitioned Storyteller functionality to backend orchestration and resolved critical display issues.
+
+1. **DIRECTOR_TOOLS Mapping:** Integrated `render_visual`, `segment_story`, and `define_world_rule` into the Python relay.
+2. **Resolved "Narrative Silence":** Improved `useGeminiLive.ts` to intelligently detect narrative context even when markers are missing. Relaxed `useGeminiCore.ts` transcript finality checks to ensure smooth streaming.
+3. **Image Generation:** Verified `render_visual` triggers the secondary pipeline; currently using optimized `Nano Banana` (Gemini 2.5 Flash Image) for storyboard frames.
+
+## Step 6: IT Architecture Mode & Final Polish
+**Status:** [Next]
+1. Migrate `IT_ARCHITECTURE_TOOLS` to backend.
+2. Verify ReactFlow integration via the relay.
+3. Final production build and validation.
