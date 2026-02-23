@@ -35,6 +35,7 @@ const logInfo = (msg: string, ...args: unknown[]) => {
 export interface UseGeminiCoreProps {
   systemInstruction: string;
   tools?: Tool[];
+  mode?: "spatial" | "director" | "it-architecture" | string;
   onToolCall?: (toolCall: LiveServerMessage["toolCall"]) => void;
   onTranscript?: (text: string) => void;
   resumePrompt?: string;
@@ -43,6 +44,7 @@ export interface UseGeminiCoreProps {
 export function useGeminiCore({
   systemInstruction,
   tools,
+  mode,
   onToolCall,
   onTranscript,
   resumePrompt = "The connection to the server was briefly interrupted. Please resume what you were doing exactly where you left off.",
@@ -211,7 +213,8 @@ export function useGeminiCore({
       }
 
       return new Promise((resolve) => {
-        const wsUrl = process.env.NEXT_PUBLIC_RELAY_WS_URL || "ws://localhost:8000/ws/live";
+        const baseUrl = process.env.NEXT_PUBLIC_RELAY_WS_URL || "ws://localhost:8000/ws/live";
+        const wsUrl = mode ? `${baseUrl}?mode=${mode}` : baseUrl;
         const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
@@ -267,6 +270,19 @@ export function useGeminiCore({
             outputTranscription?: { text: string };
             output_transcription?: { text: string };
           };
+
+          // Trace log for raw payload (excluding heavy base64 audio parts for readability)
+          if (DEBUG_MODE) {
+            const partTypes =
+              msg.content?.parts?.map((p) =>
+                p.inlineData || p.inline_data
+                  ? "audio"
+                  : p.functionCall || p.function_call
+                    ? "tool_call"
+                    : "unknown",
+              ) || [];
+            logTrace(`Incoming Event [${partTypes.join(", ")}]`, payload);
+          }
 
           // 1. Interruption
           if (msg.interrupted === true) {
@@ -331,8 +347,14 @@ export function useGeminiCore({
 
           // 4. Transcript
           const transcript = msg.outputTranscription || msg.output_transcription;
+          const isFinal = (payload as { partial?: boolean }).partial === false;
+
           if (transcript?.text && onTranscript) {
-            onTranscript(transcript.text);
+            // Only fire the transcript when it is marked as finished to avoid doubles
+            const isFinished = (transcript as { finished?: boolean }).finished === true;
+            if (isFinished || isFinal) {
+              onTranscript(transcript.text);
+            }
           }
         };
 
@@ -364,7 +386,7 @@ export function useGeminiCore({
         };
       });
     },
-    [user, onToolCall, onTranscript, stopAudio, resumePrompt],
+    [user, mode, onToolCall, onTranscript, stopAudio, resumePrompt],
   );
 
   useEffect(() => {
@@ -378,7 +400,7 @@ export function useGeminiCore({
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(
         JSON.stringify({
-          realtimeInput: { media: { mimeType, data: base64Data } },
+          realtimeInput: { video: { mimeType, data: base64Data } },
         }),
       );
     }

@@ -7,42 +7,28 @@ import { type FunctionDeclaration, Type } from "@google/genai";
 export const highlightTool: FunctionDeclaration = {
   name: "track_and_highlight",
   description:
-    "REQUIRED for Spatial Awareness: precise object locating. Instead of a bounding box, find the CENTER POINT of the object. Return the normalized center coordinates (0-1000). Also return a 'render_scale' (0-1000) that represents the approximate radius or size of the object relative to the screen, but keep it tight. Supports identifying MULTIPLE objects at once.",
+    "REQUIRED for Spatial Awareness: precise object locating. Instead of a bounding box, find the CENTER POINT of the object. Return the normalized center coordinates (0-1000). Also return a 'render_scale' (0-1000) that represents the approximate radius or size of the object relative to the screen, but keep it tight. If there are MULTIPLE objects, call this tool MULTIPLE times in parallel.",
   parameters: {
     type: Type.OBJECT,
     properties: {
-      objects: {
-        type: Type.ARRAY,
-        description: "List of objects to highlight",
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            label: {
-              type: Type.STRING,
-              description:
-                "A short, human-readable label of the object (e.g. 'Coffee Cup', 'Laptop'). Do not guess if the object is not clearly identifiable.",
-            },
-            center_x: {
-              type: Type.NUMBER,
-              description:
-                "Center X coordinate on a 0-1000 normalized grid (0=left edge, 1000=right edge). ONLY provide if the object is clearly visible. Do NOT guess or extrapolate.",
-            },
-            center_y: {
-              type: Type.NUMBER,
-              description:
-                "Center Y coordinate on a 0-1000 normalized grid (0=top edge, 1000=bottom edge). ONLY provide if the object is clearly visible. Do NOT guess or extrapolate.",
-            },
-            render_scale: {
-              type: Type.NUMBER,
-              description:
-                "Approximate radius/size of the visible object (0-1000). Keep it tight to the actual visible boundaries. Do not inflate.",
-            },
-          },
-          required: ["label", "center_x", "center_y", "render_scale"],
-        },
+      label: {
+        type: Type.STRING,
+        description: "A short, human-readable label of the object (e.g. 'Coffee Cup').",
+      },
+      center_x: {
+        type: Type.NUMBER,
+        description: "Center X coordinate on a 0-1000 normalized grid.",
+      },
+      center_y: {
+        type: Type.NUMBER,
+        description: "Center Y coordinate on a 0-1000 normalized grid.",
+      },
+      render_scale: {
+        type: Type.NUMBER,
+        description: "Approximate radius/size of the visible object (0-1000).",
       },
     },
-    required: ["objects"],
+    required: ["label", "center_x", "center_y", "render_scale"],
   },
 };
 

@@ -165,12 +165,14 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
   } else if (mode === "storyteller") {
     resumePrompt += " Please continue the story or narrative from where it stopped.";
   } else if (mode === "spatial") {
-    resumePrompt += " Please continue analyzing the spatial environment.";
+    resumePrompt +=
+      " I am back online. Await my specific instructions before highlighting any objects.";
   }
 
   const core = useGeminiCore({
     systemInstruction,
     tools,
+    mode,
     onToolCall: handleToolCall,
     onTranscript: handleTranscript,
     resumePrompt,

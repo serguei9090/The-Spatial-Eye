@@ -17,43 +17,37 @@ export function useSpatialLive() {
 
     for (const fc of toolCall.functionCalls) {
       if (fc.name === "track_and_highlight") {
-        // Robust typing for the args
-        const args = fc.args as { objects?: unknown[] };
-        const objects = args.objects;
+        // Robust typing for the flat args
+        const args = fc.args as {
+          label?: string;
+          center_x?: number;
+          center_y?: number;
+          render_scale?: number;
+        };
 
-        if (Array.isArray(objects)) {
-          // Filter valid objects to prevent crashes
-          const validObjects = objects.filter(
-            (
-              obj,
-            ): obj is { label: string; center_x: number; center_y: number; render_scale: number } =>
-              typeof obj === "object" && obj !== null && "center_x" in obj,
-          );
+        if (args && typeof args.center_x === "number" && typeof args.center_y === "number") {
+          const cx = Number(args.center_x);
+          const cy = Number(args.center_y);
+          const r = Number(args.render_scale || 50) / 2;
 
-          if (validObjects.length > 0) {
-            const newHighlights = validObjects.map((obj) => {
-              const cx = Number(obj.center_x);
-              const cy = Number(obj.center_y);
-              const r = Number(obj.render_scale) / 2;
-              return {
-                id: crypto.randomUUID(),
-                objectName: obj.label || "Detected Object",
-                ymin: Math.max(0, cy - r),
-                xmin: Math.max(0, cx - r),
-                ymax: Math.min(1000, cy + r),
-                xmax: Math.min(1000, cx + r),
-                timestamp: Date.now(),
-              };
-            });
+          const highlightId = crypto.randomUUID();
 
-            setActiveHighlights((prev) => [...prev, ...newHighlights]);
+          const newHighlight = {
+            id: highlightId,
+            objectName: args.label || "Detected Object",
+            ymin: Math.max(0, cy - r),
+            xmin: Math.max(0, cx - r),
+            ymax: Math.min(1000, cy + r),
+            xmax: Math.min(1000, cx + r),
+            timestamp: Date.now(),
+          };
 
-            // Auto-clear after 3 seconds
-            setTimeout(() => {
-              const idsToRemove = new Set(newHighlights.map((h) => h.id));
-              setActiveHighlights((prev) => prev.filter((h) => !idsToRemove.has(h.id)));
-            }, 3000);
-          }
+          setActiveHighlights((prev) => [...prev, newHighlight]);
+
+          // Auto-clear after 3 seconds
+          setTimeout(() => {
+            setActiveHighlights((prev) => prev.filter((h) => h.id !== highlightId));
+          }, 3000);
         }
       }
     }
@@ -66,6 +60,7 @@ export function useSpatialLive() {
   const core = useGeminiCore({
     systemInstruction: SPATIAL_SYSTEM_INSTRUCTION,
     tools: [{ functionDeclarations: SPATIAL_TOOLS }],
+    mode: "spatial",
     onToolCall: handleToolCall,
     onTranscript: handleTranscript,
   });

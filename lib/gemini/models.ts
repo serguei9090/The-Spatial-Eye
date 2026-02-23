@@ -28,11 +28,6 @@ export const GEMINI_MODELS = {
   ),
 
   /**
-   * Text-to-Speech synthesis.
-   */
-  tts: withPrefix(process.env.NEXT_PUBLIC_GEMINI_TTS_MODEL || "gemini-1.5-flash"),
-
-  /**
    * Video generation model.
    */
   videoSynthesis: withPrefix(
