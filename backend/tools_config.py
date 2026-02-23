@@ -174,5 +174,5 @@ def add_edge(id: str, source: str, target: str, label: str = "") -> str:
 
 # Tool Mappings
 SPATIAL_TOOLS = [track_and_highlight]
-DIRECTOR_TOOLS = [begin_story, end_story, render_visual, ambient_audio, define_world_rule, track_and_highlight]
+DIRECTOR_TOOLS = [begin_story, end_story, render_visual, ambient_audio, define_world_rule]
 IT_ARCHITECTURE_TOOLS = [clear_diagram, add_node, add_edge]
