@@ -14,12 +14,20 @@ export function handleSpatialToolCall(
 
   for (const fc of toolCall.functionCalls) {
     if (fc.name === "track_and_highlight") {
-      const args = fc.args as { objects?: unknown[] };
-      const objects = args.objects;
+      logTrace("Executing track_and_highlight with args:", fc.args);
+      const args = fc.args as Record<string, unknown>;
 
-      if (Array.isArray(objects)) {
-        // Robust filtering
-        const validObjects = objects.filter(
+      // Support both direct ADK args AND legacy 'objects' array
+      let rawObjects: unknown[] = [];
+      if (Array.isArray(args.objects)) {
+        rawObjects = args.objects;
+      } else if ("center_x" in args || "center_y" in args) {
+        // Direct tool call where args is the object itself
+        rawObjects = [args];
+      }
+
+      if (rawObjects.length > 0) {
+        const validObjects = rawObjects.filter(
           (
             obj,
           ): obj is { label: string; center_x: number; center_y: number; render_scale: number } =>
@@ -27,11 +35,11 @@ export function handleSpatialToolCall(
         );
 
         if (validObjects.length > 0) {
-          console.log("[SpatialHandler] Highlight Objects:", validObjects);
           const newHighlights = validObjects.map((obj) => {
             const cx = Number(obj.center_x);
             const cy = Number(obj.center_y);
-            const r = Number(obj.render_scale) / 2;
+            // Default render_scale to 200 if missing
+            const r = (Number(obj.render_scale) || 200) / 2;
             return {
               id: crypto.randomUUID(),
               objectName: obj.label || "Detected Object",
@@ -49,3 +57,13 @@ export function handleSpatialToolCall(
     }
   }
 }
+
+// Helper for logging if not imported
+const logTrace = (msg: string, ...args: unknown[]) => {
+  console.debug(
+    `%c[SpatialHandler]%c ${msg}`,
+    "color: #3b82f6; font-weight: bold;",
+    "color: inherit;",
+    ...args,
+  );
+};

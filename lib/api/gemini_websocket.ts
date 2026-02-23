@@ -3,7 +3,6 @@ import type { Highlight } from "@/lib/types";
 
 export type CoordinatesTuple = [number, number, number, number];
 export const DEFAULT_GEMINI_LIVE_MODEL = GEMINI_MODELS.liveAudioVideoSession;
-export const DEFAULT_GEMINI_TTS_MODEL = GEMINI_MODELS.tts;
 
 /**
  * System instruction that tells Gemini Live to output bounding box coordinates

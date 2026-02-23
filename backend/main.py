@@ -32,11 +32,11 @@ logger.add(
 
 app = FastAPI(title="The Spatial Eye - Gemini Relay Backend")
 
+import tools_config
+
 # Initialize ADK globals (can be shared across sessions)
 session_service = InMemorySessionService()
 agent_model = os.getenv("NEXT_PUBLIC_GEMINI_LIVE_MODEL", "gemini-2.5-flash")
-agent = Agent(name="SpatialEye", model=agent_model)
-runner = Runner(app_name="SpatialEyeApp", agent=agent, session_service=session_service)
 
 
 @app.get("/")
@@ -45,21 +45,48 @@ def read_root():
 
 
 @app.websocket("/ws/live")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial"):
     await websocket.accept()
 
     # Create a unique session per connection
     session_id = str(uuid.uuid4())
     user_id = str(uuid.uuid4())
+    
+    # ADK requires valid identifiers (no hyphens)
+    mode_clean = mode.replace("-", "_")
 
     import warnings
     warnings.filterwarnings('ignore', category=UserWarning, module='pydantic')
 
     # Register the session with the ADK SessionService before running
     await session_service.create_session(
-        app_name="SpatialEyeApp",
+        app_name=f"SpatialEyeApp_{mode_clean}",
         user_id=user_id,
         session_id=session_id
+    )
+
+    # Resolve Mode Configuration
+    if mode == "storyteller":
+        system_instruction = tools_config.STORYTELLER_SYSTEM_INSTRUCTION
+        active_tools = tools_config.DIRECTOR_TOOLS
+    elif mode == "it-architecture":
+        system_instruction = tools_config.IT_ARCHITECTURE_SYSTEM_INSTRUCTION
+        active_tools = tools_config.IT_ARCHITECTURE_TOOLS
+    else:
+        system_instruction = tools_config.SPATIAL_SYSTEM_INSTRUCTION
+        active_tools = tools_config.SPATIAL_TOOLS
+
+    agent = Agent(
+        name=f"SpatialEye_{mode_clean}", 
+        model=agent_model, 
+        instruction=system_instruction,
+        tools=active_tools
+    )
+    
+    runner = Runner(
+        app_name=f"SpatialEyeApp_{mode_clean}", 
+        agent=agent, 
+        session_service=session_service
     )
 
     # 1. Initialize Bidi-Streaming Config
@@ -94,26 +121,31 @@ async def websocket_endpoint(websocket: WebSocket):
                     try:
                         parsed = json.loads(text_data)
 
-                        # Handle old React format
-                        if "realtimeInput" in parsed and "media" in parsed["realtimeInput"]:
-                            audio_chunk_count += 1
-                            if audio_chunk_count % 50 == 0:
-                                logger.debug(
-                                    f"[{session_id}] Upstream: Piped {audio_chunk_count} Audio "
-                                    "Chunks to ADK"
-                                )
-                            media = parsed["realtimeInput"]["media"]
-
-                            try:
+                        # Handle Multimodal Inputs (Audio/Video)
+                        if "realtimeInput" in parsed:
+                            ri = parsed["realtimeInput"]
+                            
+                            # 1. Handle Audio
+                            if "media" in ri:
+                                audio_chunk_count += 1
+                                if audio_chunk_count % 50 == 0:
+                                    logger.debug(f"[{session_id}] Upstream: Piped {audio_chunk_count} Audio Chunks")
+                                media = ri["media"]
                                 raw_media = base64.b64decode(media["data"])
-                                mime_type = media.get("mimeType", "audio/pcm;rate=16000")
-                                live_blob = types.Blob(
-                                    mime_type=mime_type,
+                                live_request_queue.send_realtime(types.Blob(
+                                    mime_type=media.get("mimeType", "audio/pcm;rate=16000"),
                                     data=raw_media
-                                )
-                                live_request_queue.send_realtime(live_blob)
-                            except Exception as e:
-                                logger.error(f"[{session_id}] Failed to decode B64 media: {e}")
+                                ))
+
+                            # 2. Handle Video (The Missing Modality)
+                            if "video" in ri:
+                                video = ri["video"]
+                                raw_video = base64.b64decode(video["data"])
+                                live_request_queue.send_realtime(types.Blob(
+                                    mime_type=video.get("mimeType", "image/jpeg"),
+                                    data=raw_video
+                                ))
+                            
                             continue
                     except json.JSONDecodeError:
                         pass
@@ -160,12 +192,17 @@ async def websocket_endpoint(websocket: WebSocket):
                             "Blocks to FE"
                         )
                 elif "toolCall" in payload:
-                    logger.success(f"[{session_id}] Downstream -> Tool Invoked")
+                    logger.success(f"[{session_id}] Downstream -> Tool Invoked: {payload}")
                 else:
-                    logger.debug(f"[{session_id}] Downstream -> Payload Shift (Text/Control)")
+                    # For other control messages/transcripts, log truncated payload if in DEBUG
+                    if DEBUG_MODE:
+                        logger.debug(f"[{session_id}] Downstream -> Payload Shift: {payload[:200]}...")
 
                 try:
                     await websocket.send_text(payload)
+                except RuntimeError as e:
+                    logger.debug(f"[{session_id}] Client disconnected before payload sent: {e}")
+                    break
                 except Exception as e:
                     logger.error(f"[{session_id}] Error sending payload downstream: {e}")
                     break
@@ -180,7 +217,7 @@ async def websocket_endpoint(websocket: WebSocket):
         live_request_queue.close()
         try:
             await session_service.delete_session(
-                app_name="SpatialEyeApp",
+                app_name=f"SpatialEyeApp_{mode_clean}",
                 user_id=user_id,
                 session_id=session_id
             )
