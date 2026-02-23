@@ -7,14 +7,15 @@ import type { Dispatch, SetStateAction } from "react";
 // Helper to create a UUID (simple version for browser)
 const generateId = () => crypto.randomUUID();
 
-/** Inline SVG used as a card placeholder when Nano Banana fails or is unavailable. */
-const IMAGE_PLACEHOLDER_SVG = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(`
+const PLACEHOLDER_SVG_BODY = `
 <svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
   <rect width="800" height="600" fill="#0f172a"/>
   <text x="400" y="290" font-family="monospace" font-size="18" fill="rgba(148,163,184,0.6)" text-anchor="middle">Image unavailable</text>
   <text x="400" y="320" font-family="monospace" font-size="13" fill="rgba(148,163,184,0.35)" text-anchor="middle">Nano Banana could not generate a visual</text>
 </svg>
-`)}`;
+`;
+
+const IMAGE_PLACEHOLDER_SVG = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(PLACEHOLDER_SVG_BODY)}`;
 
 /**
  * Handles 'Director' tool calls for the Storyteller mode.
@@ -34,7 +35,9 @@ interface DirectorArgs {
 export function handleDirectorToolCall(
   toolCall: LiveServerMessage["toolCall"],
   setStoryStream: Dispatch<SetStateAction<StoryItem[]>>,
+  metadata: { invocationId?: string },
 ) {
+  const { invocationId } = metadata;
   if (!toolCall?.functionCalls) return;
 
   for (const fc of toolCall.functionCalls) {
@@ -58,6 +61,7 @@ export function handleDirectorToolCall(
             subject: subject || "",
           },
           timestamp: Date.now(),
+          invocationId,
         },
       ]);
 
@@ -147,6 +151,7 @@ export function handleDirectorToolCall(
           content: vibe_description || "Ambient Sound",
           metadata: { preset: preset || "default" },
           timestamp: Date.now(),
+          invocationId,
         },
       ]);
     } else if (fc.name === "define_world_rule") {
@@ -159,19 +164,37 @@ export function handleDirectorToolCall(
           content: rule_name || "New Rule",
           metadata: { description: description || "", consequence: consequence || "" },
           timestamp: Date.now(),
+          invocationId,
         },
       ]);
-    } else if (fc.name === "segment_story") {
+    } else if (fc.name === "begin_story") {
+      // ── ATOMIC TITLE INJECTION ──────────────────────────────────────────
+      // The title arrives complete in one tool call — no word-by-word parsing.
+      // This replaces any previous placeholder, or appends a fresh separator.
       const { title } = args;
-      setStoryStream((prev) => [
-        ...prev,
-        {
-          id: generateId(),
-          type: "story_segment",
-          content: title || "New Chapter",
+      setStoryStream((prev) => {
+        const placeholderIdx = prev.findLastIndex(
+          (i) => i.type === "story_segment" && i.isPlaceholder === true,
+        );
+        const newSegment = {
+          id: placeholderIdx !== -1 ? prev[placeholderIdx].id : generateId(),
+          type: "story_segment" as const,
+          content: title || "Untitled",
           timestamp: Date.now(),
-        },
-      ]);
+          invocationId,
+          isPlaceholder: false,
+        };
+        if (placeholderIdx === -1) {
+          return [...prev, newSegment];
+        }
+        const updated = [...prev];
+        updated[placeholderIdx] = newSegment;
+        return updated;
+      });
+    } else if (fc.name === "end_story") {
+      // end_story has no direct stream effect — the model's following [DIRECTOR]
+      // text will naturally render the "Shall we craft another?" prompt.
+      // We could add a visual story-end marker here in future if desired.
     }
   }
 }

@@ -43,17 +43,14 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
   // Highlight Pruning Logic
   useEffect(() => {
     if (highlightDuration === "always") return;
+    const durationCount = Number(highlightDuration);
 
     const interval = setInterval(() => {
       setActiveHighlights((prev) => {
         const now = Date.now();
-        const duration = Number(highlightDuration);
-        const filtered = prev.filter((h) => now - h.timestamp < duration);
+        const filtered = prev.filter((h) => now - h.timestamp < durationCount);
         if (filtered.length !== prev.length) {
-          console.log(
-            `[GeminiLive] Pruned ${prev.length - filtered.length} highlights. Duration setting:`,
-            duration,
-          );
+          console.debug(`[GeminiLive] Pruned ${prev.length - filtered.length} highlights.`);
         }
         return filtered;
       });
@@ -83,17 +80,24 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
   }, [mode]);
 
   // Handler for tool calls
-  const handleToolCall = (toolCall: LiveServerMessage["toolCall"]) => {
+  const handleToolCall = (
+    toolCall: LiveServerMessage["toolCall"],
+    metadata: { invocationId?: string },
+  ) => {
     if (mode === "spatial") {
       handleSpatialToolCall(toolCall, setActiveHighlights);
     } else if (mode === "storyteller") {
-      handleDirectorToolCall(toolCall, setStoryStream);
+      handleDirectorToolCall(toolCall, setStoryStream, metadata);
     } else if (mode === "it-architecture") {
       handleArchitectureToolCall(toolCall, setNodes, setEdges);
     }
   };
 
-  const handleTranscript = (text: string) => {
+  const handleTranscript = (
+    text: string,
+    metadata: { invocationId?: string; finished?: boolean },
+  ) => {
+    const { invocationId, finished } = metadata;
     // For IT Architecture mode, skip raw tool call strings from transcript
     const isToolCallText =
       mode === "it-architecture" && /call:\s*\w+|add_node|add_edge|clear_diagram/.test(text);
@@ -106,44 +110,146 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
     }
 
     if (mode !== "storyteller") return;
-    setStoryStream((prev) => {
-      const last = prev.at(-1);
 
-      // Explicitly check for [DIRECTOR] or [NARRATIVE] tags
-      let isNarrative = last?.type === "text" ? last.isStory : false;
-      if (text.includes("[NARRATIVE]")) isNarrative = true;
-      if (text.includes("[DIRECTOR]")) isNarrative = false;
-
-      // Clean the text of ANY tags
-      const cleanText = text.replace("[NARRATIVE]", "").replace("[DIRECTOR]", "").trimStart();
-
-      if (last?.type === "text" && last.isStory === isNarrative) {
-        // Detect if we need a space: if the existing content doesn't end with a space
-        // and the new chunk doesn't start with a space.
-        const needsSpace =
-          last.content.length > 0 &&
-          !last.content.endsWith(" ") &&
-          !cleanText.startsWith(" ") &&
-          !cleanText.startsWith(".") &&
-          !cleanText.startsWith(",");
-
-        const spacing = needsSpace ? " " : "";
-
-        return [
-          ...prev.slice(0, -1),
-          { ...last, content: last.content + spacing + cleanText, timestamp: Date.now() },
-        ];
+    // ── FINISHED TRANSCRIPT: Retroactive Title Extraction ────────────────────
+    // The model always places the title as the first [NARRATIVE] sentence.
+    // We wait for the complete final transcript to extract it reliably,
+    // then backfill the placeholder segment that was injected at turn start.
+    if (finished) {
+      const narrativeMatch = /\[NARRATIVE\]\s*([^\n.!?]+[.!?]?)/i.exec(text);
+      if (narrativeMatch) {
+        const extractedTitle = narrativeMatch[1]
+          .replaceAll(/(?:^[*_]+|[*_]+$)/g, "") // strip markdown bold/italic
+          .trim();
+        if (extractedTitle) {
+          setStoryStream((prev) => {
+            const placeholderIdx = prev.findLastIndex(
+              (i) => i.type === "story_segment" && i.isPlaceholder === true,
+            );
+            if (placeholderIdx === -1) return prev;
+            const updated = [...prev];
+            updated[placeholderIdx] = {
+              ...updated[placeholderIdx],
+              content: extractedTitle,
+              isPlaceholder: false,
+              timestamp: Date.now(),
+            };
+            return updated;
+          });
+        }
       }
-      return [
-        ...prev,
-        {
+      return; // finished events are only for title extraction, not text rendering
+    }
+
+    // ── PARTIAL TRANSCRIPT: Stream text and inject placeholder ────────────────
+    setStoryStream((prev) => {
+      // ── SPLIT CHUNK AT TAG BOUNDARIES ───────────────────────────────────
+      // A single chunk can contain multiple tagged segments, e.g.:
+      //   "[NARRATIVE] The End. [DIRECTOR] Shall we craft another?"
+      // We split on ANY tag marker and process each segment independently.
+      const TAG_SPLIT_RE = /(?=\[NARRATIVE\]|\[DIRECTOR\])/gi;
+      const tagSegments = text.split(TAG_SPLIT_RE).filter(Boolean);
+
+      // If no splits occurred (tagless chunk), treat as a single segment
+      const segments = tagSegments.length > 0 ? tagSegments : [text];
+
+      // Determine the initial isNarrative state from the last text item in stream
+      const lastTextItem = prev.findLast((i) => i.type === "text");
+      let currentIsNarrative = lastTextItem?.isStory ?? false;
+
+      // Detect new story transition: [NARRATIVE] starts when we're NOT in narrative mode.
+      // Usually, the `begin_story` tool call creates the `story_segment` slightly before
+      // the `[NARRATIVE]` text arrives. BUT due to async streaming, the text might arrive first.
+      // We only inject a placeholder if we are starting narrative text AND we don't have a
+      // fresh `story_segment` waiting for us.
+      const lastSegmentIdx = prev.findLastIndex((i) => i.type === "story_segment");
+      const lastNarrativeTextIdx = prev.findLastIndex((i) => i.type === "text" && i.isStory);
+      const hasNarrativeTag = text.includes("[NARRATIVE]");
+
+      // A segment is "stale/used" if we've already written narrative text after it.
+      // If we have no segment (-1) or the last one is stale, we need a new one.
+      const needsSegment = lastSegmentIdx === -1 || lastNarrativeTextIdx > lastSegmentIdx;
+      const isNewStoryTransition = hasNarrativeTag && !currentIsNarrative && needsSegment;
+
+      let workingStream = prev;
+      let effectiveSegmentIdx = lastSegmentIdx;
+
+      if (isNewStoryTransition) {
+        const placeholder = {
           id: crypto.randomUUID(),
-          type: "text",
-          content: cleanText,
+          type: "story_segment" as const,
+          content: "", // backfilled on finished:true
           timestamp: Date.now(),
-          isStory: isNarrative,
-        },
-      ];
+          invocationId,
+          isPlaceholder: true,
+        };
+        workingStream = [...prev, placeholder];
+        effectiveSegmentIdx = workingStream.length - 1;
+      }
+
+      // ── PROCESS EACH TAG SEGMENT ─────────────────────────────────────────
+      for (const segment of segments) {
+        // Determine this segment's type
+        if (/^\[NARRATIVE\]/i.test(segment)) currentIsNarrative = true;
+        if (/^\[DIRECTOR\]/i.test(segment)) currentIsNarrative = false;
+
+        // Strip the tag prefix from this segment's text
+        const cleanSegment = segment
+          .replace(/^\[NARRATIVE\]\s*/i, "")
+          .replace(/^\[DIRECTOR\]\s*/i, "")
+          .trim();
+
+        if (!cleanSegment) continue;
+
+        const isNarrativeSegment = currentIsNarrative;
+
+        // Find existing block to merge into
+        const targetIndex = workingStream.findLastIndex(
+          (i) =>
+            i.type === "text" &&
+            i.invocationId === invocationId &&
+            !!i.isStory === isNarrativeSegment,
+        );
+
+        // Crucial fix: NO text (neither narrative nor director) should merge backwards
+        // across a story_segment boundary. If targetIndex points to a block BEFORE
+        // the effective segment, it is invalid. (e.g. Director talk after a story
+        // should separate from Director talk before the story).
+        const afterSegment = targetIndex > effectiveSegmentIdx;
+        const isValidMerge = targetIndex !== -1 && afterSegment;
+
+        if (isValidMerge) {
+          const target = workingStream[targetIndex];
+          const alreadyHasStart = cleanSegment
+            .toLowerCase()
+            .startsWith(target.content.toLowerCase().trim());
+          const needsSpace =
+            !alreadyHasStart && target.content.length > 0 && !target.content.endsWith(" ");
+          const updatedContent = alreadyHasStart
+            ? cleanSegment
+            : target.content + (needsSpace ? " " : "") + cleanSegment;
+          workingStream = [...workingStream];
+          workingStream[targetIndex] = {
+            ...target,
+            content: updatedContent,
+            timestamp: Date.now(),
+          };
+        } else {
+          workingStream = [
+            ...workingStream,
+            {
+              id: crypto.randomUUID(),
+              type: "text",
+              content: cleanSegment,
+              timestamp: Date.now(),
+              isStory: isNarrativeSegment,
+              invocationId,
+            },
+          ];
+        }
+      }
+
+      return workingStream;
     });
   };
 
@@ -175,6 +281,51 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
     mode,
     onToolCall: handleToolCall,
     onTranscript: handleTranscript,
+    onTurnComplete: () => {
+      if (mode !== "storyteller") return;
+      setStoryStream((prev) => {
+        let updated = [...prev];
+
+        // 1. Resolve any unfinished placeholder title
+        const placeholderIdx = updated.findLastIndex(
+          (i) => i.type === "story_segment" && i.isPlaceholder,
+        );
+        if (placeholderIdx !== -1) {
+          // Try to read the title from the first narrative sentence still in the stream
+          const firstNarrative = updated.find((i) => i.type === "text" && i.isStory);
+          const fallbackTitle = firstNarrative
+            ? (/^([^.!?\n]+[.!?]?)/.exec(firstNarrative.content)?.[1]?.trim() ?? "A Story")
+            : "A Story";
+          updated[placeholderIdx] = {
+            ...updated[placeholderIdx],
+            content: fallbackTitle,
+            isPlaceholder: false,
+          };
+        }
+
+        // 2. Inject a director_prompt only if THIS turn told a story
+        //    Check for narrative text AFTER the last director_prompt (not from a previous story)
+        const lastPromptIdx = updated.findLastIndex((i) => i.type === "director_prompt");
+        const narrativeAfterLastPrompt = updated.some(
+          (i, idx) => i.type === "text" && i.isStory && idx > lastPromptIdx,
+        );
+        const alreadyHasPrompt = updated.at(-1)?.type === "director_prompt";
+
+        if (narrativeAfterLastPrompt && !alreadyHasPrompt) {
+          updated = [
+            ...updated,
+            {
+              id: crypto.randomUUID(),
+              type: "director_prompt",
+              content: "The tale is told. Shall we craft another?",
+              timestamp: Date.now(),
+            },
+          ];
+        }
+
+        return updated;
+      });
+    },
     resumePrompt,
   });
 

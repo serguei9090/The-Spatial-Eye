@@ -36,8 +36,12 @@ export interface UseGeminiCoreProps {
   systemInstruction: string;
   tools?: Tool[];
   mode?: "spatial" | "director" | "it-architecture" | string;
-  onToolCall?: (toolCall: LiveServerMessage["toolCall"]) => void;
-  onTranscript?: (text: string) => void;
+  onToolCall?: (
+    toolCall: LiveServerMessage["toolCall"],
+    metadata: { invocationId?: string },
+  ) => void;
+  onTranscript?: (text: string, metadata: { invocationId?: string; finished?: boolean }) => void;
+  onTurnComplete?: (invocationId?: string) => void;
   resumePrompt?: string;
 }
 
@@ -47,6 +51,7 @@ export function useGeminiCore({
   mode,
   onToolCall,
   onTranscript,
+  onTurnComplete,
   resumePrompt = "The connection to the server was briefly interrupted. Please resume what you were doing exactly where you left off.",
 }: UseGeminiCoreProps) {
   const socketRef = useRef<WebSocket | null>(null);
@@ -58,6 +63,7 @@ export function useGeminiCore({
   );
   const nextStartTimeRef = useRef<number>(0);
   const keepAliveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const currentTurnIdRef = useRef<string>(crypto.randomUUID());
 
   const audioSendCountRef = useRef(0);
   const audioRecvCountRef = useRef(0);
@@ -123,26 +129,25 @@ export function useGeminiCore({
 
     for (const { source, gain } of activeSourcesRef.current) {
       try {
+        const currentTime = ctx.currentTime;
         if (fadeOutDuration > 0) {
-          const currentTime = ctx.currentTime;
           gain.gain.cancelScheduledValues(currentTime);
           gain.gain.setValueAtTime(gain.gain.value, currentTime);
           gain.gain.linearRampToValueAtTime(0, currentTime + fadeOutDuration);
           source.stop(currentTime + fadeOutDuration);
         } else {
-          source.stop();
+          gain.gain.cancelScheduledValues(currentTime);
+          gain.gain.setValueAtTime(0, currentTime);
+          source.stop(currentTime);
+          source.disconnect();
         }
       } catch {
         // ignore
       }
     }
 
-    if (fadeOutDuration === 0) {
-      activeSourcesRef.current.clear();
-      nextStartTimeRef.current = 0;
-    } else {
-      nextStartTimeRef.current = 0;
-    }
+    activeSourcesRef.current.clear();
+    nextStartTimeRef.current = 0;
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -259,6 +264,7 @@ export function useGeminiCore({
 
           const msg = payload as {
             interrupted?: boolean;
+            invocationId?: string;
             content?: {
               parts?: Array<{
                 inlineData?: { data: string; mimeType: string };
@@ -271,34 +277,32 @@ export function useGeminiCore({
             output_transcription?: { text: string };
           };
 
-          // Trace log for raw payload (excluding heavy base64 audio parts for readability)
           if (DEBUG_MODE) {
             const partTypes =
-              msg.content?.parts?.map((p) =>
-                p.inlineData || p.inline_data
-                  ? "audio"
-                  : p.functionCall || p.function_call
-                    ? "tool_call"
-                    : "unknown",
-              ) || [];
+              msg.content?.parts?.map((p) => {
+                const isAudio = p.inlineData || p.inline_data;
+                const isTool = p.functionCall || p.function_call;
+                return isAudio ? "audio" : isTool ? "tool_call" : "unknown";
+              }) || [];
             logTrace(`Incoming Event [${partTypes.join(", ")}]`, payload);
           }
 
+          // Maintain a strict client-side turn ID to reliably isolate separate model responses
+          const currentTurnId = currentTurnIdRef.current;
+
           // 1. Interruption
           if (msg.interrupted === true) {
-            console.log("[GeminiCore] Interrupted by ADK (Barge-in).");
+            logInfo("Barge-in: Interrupted by ADK.");
             stopAudio(0);
+            currentTurnIdRef.current = crypto.randomUUID(); // Cycle turn immediately
             return;
           }
 
-          // 2. Audio Playback
-          // ADK Event payload JSON maps content to msg.content
-          const content = msg.content;
-          const parts = content?.parts || [];
+          const parts = msg.content?.parts || [];
 
           for (const part of parts) {
+            // 2. Audio Playback
             const inlineData = part.inlineData || part.inline_data;
-            // Native audio PCM is sent as base64 inside inline_data
             if (inlineData?.data && inlineData.mimeType?.startsWith("audio/")) {
               audioRecvCountRef.current += 1;
               if (audioRecvCountRef.current % 30 === 0) {
@@ -306,11 +310,10 @@ export function useGeminiCore({
               }
               try {
                 const ctx = audioContextRef.current;
-                if (!ctx) continue;
+                if (!ctx || ctx.state === "closed") continue;
                 if (ctx.state === "suspended") await ctx.resume();
 
                 const audioBuffer = await decodeAudioData(decode(inlineData.data), ctx, 24000);
-
                 const startTime = Math.max(nextStartTimeRef.current, ctx.currentTime);
                 const source = ctx.createBufferSource();
                 const gain = ctx.createGain();
@@ -320,10 +323,7 @@ export function useGeminiCore({
                 gain.connect(ctx.destination);
 
                 const unit = { source, gain };
-                source.onended = () => {
-                  activeSourcesRef.current.delete(unit);
-                };
-
+                source.onended = () => activeSourcesRef.current.delete(unit);
                 source.start(startTime);
                 nextStartTimeRef.current = startTime + audioBuffer.duration;
                 activeSourcesRef.current.add(unit);
@@ -331,30 +331,43 @@ export function useGeminiCore({
                 console.error("[GeminiCore] Audio playback error:", e);
               }
             }
-          }
 
-          // 3. Tool Calls (ADK maps them in action/functionCall structures within content)
-          // Look for functionCall inside parts
-          for (const part of parts) {
+            // 3. Tool Calls
             const functionCall = part.functionCall || part.function_call;
             if (functionCall && onToolCall) {
-              // We wrap it in a mock LiveServerMessage toolCall for the legacy frontend bridge
-              onToolCall({
-                functionCalls: [functionCall as { name: string; args: Record<string, unknown> }],
-              } as unknown as LiveServerMessage["toolCall"]);
+              onToolCall(
+                {
+                  functionCalls: [functionCall as { name: string; args: Record<string, unknown> }],
+                } as unknown as LiveServerMessage["toolCall"],
+                { invocationId: currentTurnId },
+              );
             }
           }
 
           // 4. Transcript
           const transcript = msg.outputTranscription || msg.output_transcription;
-          const isFinal = (payload as { partial?: boolean }).partial === false;
+          const transcriptFinished =
+            (msg as { outputTranscription?: { text: string; finished?: boolean } })
+              .outputTranscription?.finished ??
+            (msg as { output_transcription?: { text: string; finished?: boolean } })
+              .output_transcription?.finished ??
+            false;
 
           if (transcript?.text && onTranscript) {
-            // Only fire the transcript when it is marked as finished to avoid doubles
-            const isFinished = (transcript as { finished?: boolean }).finished === true;
-            if (isFinished || isFinal) {
-              onTranscript(transcript.text);
+            onTranscript(transcript.text, {
+              invocationId: currentTurnId,
+              finished: transcriptFinished,
+            });
+          }
+
+          // 5. Turn Complete
+          const isTurnComplete = (msg as { turnComplete?: boolean }).turnComplete === true;
+          if (isTurnComplete) {
+            if (onTurnComplete) {
+              onTurnComplete(currentTurnId);
             }
+            // Cycle turn ID for the next complete model response
+            currentTurnIdRef.current = crypto.randomUUID();
           }
         };
 
@@ -386,7 +399,7 @@ export function useGeminiCore({
         };
       });
     },
-    [user, mode, onToolCall, onTranscript, stopAudio, resumePrompt],
+    [user, mode, onToolCall, onTranscript, onTurnComplete, stopAudio, resumePrompt],
   );
 
   useEffect(() => {

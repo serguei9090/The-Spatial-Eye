@@ -1,5 +1,5 @@
-import { Volume2 } from "lucide-react";
-import { useEffect, useState } from "react";
+// import { Volume2 } from "lucide-react";
+// import { useEffect, useState } from "react";
 
 interface AudioTriggerProps {
   readonly description: string;
@@ -7,6 +7,11 @@ interface AudioTriggerProps {
 }
 
 export function AudioTrigger({ description, active = true }: AudioTriggerProps) {
+  // Deprecated because we need a lyric model not available for use as the midi generated is bad sound.
+  // The logic below is commented out but kept for future reference.
+  return null;
+
+  /*
   const [playing, setPlaying] = useState(false);
 
   useEffect(() => {
@@ -73,4 +78,5 @@ export function AudioTrigger({ description, active = true }: AudioTriggerProps) 
       <span className="font-mono uppercase tracking-wider">Atmosphere: {description}</span>
     </div>
   );
+  */
 }

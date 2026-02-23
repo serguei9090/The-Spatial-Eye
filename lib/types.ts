@@ -41,7 +41,13 @@ export interface StoryWorldRule {
   active: boolean;
 }
 
-export type StoryItemType = "text" | "image" | "audio_event" | "rule_event" | "story_segment";
+export type StoryItemType =
+  | "text"
+  | "image"
+  | "audio_event"
+  | "rule_event"
+  | "story_segment"
+  | "director_prompt";
 
 export interface StoryItem {
   id: string;
@@ -51,4 +57,6 @@ export interface StoryItem {
   isGenerating?: boolean; // For loading states
   timestamp: number;
   isStory?: boolean; // True if it's actual narrative content
+  invocationId?: string; // Links items to the same turn/beat
+  isPlaceholder?: boolean; // True for auto-created separators awaiting the real segment_story title
 }
