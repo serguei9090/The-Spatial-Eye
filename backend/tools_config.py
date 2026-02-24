@@ -39,68 +39,23 @@ STORYTELLER_SYSTEM_INSTRUCTION = (
     "You are a Creative Director and Master Storyteller.\n\n"
     "PHASE 1: DIRECTOR SETUP\n"
     "Greet the user. Ask for the theme. Prefix all coordination with '[DIRECTOR]'.\n\n"
-    "PHASE 2: STORY SEQUENCE — STRICT ORDER, NO EXCEPTIONS\n"
+    "PHASE 2: STORY SEQUENCE\n"
     "When the user gives you a theme, follow these steps in EXACT ORDER:\n"
-    "  Step 1: Immediately call 'render_visual(...)' and 'begin_story(title)' BEFORE you start the story.\n"
-    "  Step 2: Say a brief [DIRECTOR] acknowledgment out loud (e.g. '[DIRECTOR] A tale of the frog it shall be.').\n"
-    "  Step 3: Wait for the tools to succeed. Do NOT start the story yet.\n"
-    "  Step 4: Once confirmed, begin [NARRATIVE]. Speak the title dramatically as your very first sentence.\n"
-    "          Prefix EVERY narration chunk with '[NARRATIVE]'.\n\n"
+    "  Step 1: Say a brief [DIRECTOR] acknowledgment out loud (e.g. '[DIRECTOR] A brilliant tale it shall be!').\n"
+    "  Step 2: Begin [NARRATIVE]. Speak the Title dramatically as your very first sentence.\n"
+    "          Prefix EVERY paragraph chunk with '[NARRATIVE]'.\n\n"
     "PHASE 3: STORY LENGTH — NON-NEGOTIABLE\n"
     "Your story MUST be EXACTLY 3 [NARRATIVE] paragraphs. Count them:\n"
     "  - Paragraph 1: Set the scene and introduce the hero.\n"
     "  - Paragraph 2: The conflict and journey.\n"
     "  - Paragraph 3: The resolution. MUST end with '[NARRATIVE] The End.' as the final sentence.\n"
     "After paragraph 3, you MUST immediately:\n"
-    "  a) Say '[NARRATIVE] The End.'\n"
-    "  b) Call 'end_story()'\n"
-    "  c) Switch to [DIRECTOR] and ask: '[DIRECTOR] The tale is told. Shall we craft another?'\n\n"
+    "  Switch back to [DIRECTOR] and ask: '[DIRECTOR] The tale is told. Shall we craft another?'\n\n"
     "CRITICAL RULES:\n"
     "- STOP after exactly 3 [NARRATIVE] paragraphs. Do NOT write more.\n"
     "- Do NOT continue if the user speaks mid-story — finish the 3 paragraphs first.\n"
-    "- Keep [DIRECTOR] chatter separate from [NARRATIVE] story text.\n"
-    "- Never announce tool calls in speech."
+    "- Keep [DIRECTOR] chatter separate from [NARRATIVE] story text."
 )
-
-def begin_story(title: str) -> str:
-    """
-    MANDATORY: Call this FIRST before starting any narrative. Registers the story title
-    and signals the frontend to show the visual separator. You MUST wait for this tool's
-    response before speaking any [NARRATIVE] content.
-
-    Args:
-        title: The complete, dramatic title of the story (e.g. 'The Emerald Wanderer of the Whispering Bog').
-    """
-    return f"Story '{title}' registered. Visual separator shown. You may now begin narration."
-
-def end_story() -> str:
-    """
-    Call this immediately after saying '[NARRATIVE] The End.' to signal the story is finished.
-    This triggers the frontend to show the story-complete state and prompts the user for next steps.
-    """
-    return "Story concluded. Return to [DIRECTOR] mode and ask the user what to do next."
-
-def render_visual(asset_type: str, subject: str, visual_context: str) -> str:
-    """
-    Orders a visual asset that matches the current user-defined theme. Use this to visualize key story elements.
-
-    Args:
-        asset_type: Must strictly be one of: STILL_IMAGE, CINEMAGRAPH, or DIAGRAM. Do not guess any other value.
-        subject: The precise action/item/character to be drawn. E.g. 'A cracked viewport with stars'. Make it highly descriptive. Do not hallucinate elements the user hasn't introduced.
-        visual_context: Style/Vibe context based on the user's brief (e.g., 'Murky, blue, bioluminescent highlights').
-    """
-    return "Visual rendering requested."
-
-def ambient_audio(preset: str, vibe_description: str) -> str:
-    """
-    Sets the sonic mood based on the user's input or story progression.
-
-    Args:
-        preset: Must be a valid preset from the list exactly: ominous, airy, tech, nature, custom. Do not invent an audio preset.
-        vibe_description: Detailed description of the soundscape (e.g., 'Low thrumming of engines, distant whale song').
-    """
-    return "Audio preset changed."
-
 def define_world_rule(rule_name: str, description: str, consequence: str) -> str:
     """
     Hard-fixes a law of physics/logic for the session based on the user's environment or story needs.
@@ -207,6 +162,7 @@ def update_node(id: str, label: str = None, x: float = None, y: float = None) ->
     return f"Node {id} updated."
 
 # Tool Mappings
+# Tool Mappings
 SPATIAL_TOOLS = [track_and_highlight]
-DIRECTOR_TOOLS = [begin_story, end_story, render_visual, ambient_audio, define_world_rule]
+DIRECTOR_TOOLS = [define_world_rule]
 IT_ARCHITECTURE_TOOLS = [clear_diagram, add_node, add_edge, delete_node, remove_edge, update_node]

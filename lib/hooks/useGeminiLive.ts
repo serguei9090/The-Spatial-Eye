@@ -1,7 +1,7 @@
 "use client";
 
 import type { LiveServerMessage } from "@google/genai";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import {
   SPATIAL_SYSTEM_INSTRUCTION,
@@ -13,7 +13,7 @@ import {
   IT_ARCHITECTURE_TOOLS,
   handleArchitectureToolCall,
 } from "@/lib/gemini/it-architecture-handlers";
-import { handleDirectorToolCall } from "@/lib/gemini/storyteller-handlers";
+import { handleDirectorToolCall, triggerStoryVisual } from "@/lib/gemini/storyteller-handlers";
 import { DIRECTOR_TOOLS, SPATIAL_TOOLS } from "@/lib/gemini/tools/definitions";
 import { useGeminiCore } from "@/lib/hooks/useGeminiCore";
 import { useSettings } from "@/lib/store/settings-context";
@@ -32,6 +32,8 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
   const [nodes, setNodes] = useState<Node[]>([]);
   const [edges, setEdges] = useState<Edge[]>([]);
   const [latestTranscript, setLatestTranscript] = useState<string>("");
+  const triggeredVisualsRef = useRef<Set<string>>(new Set());
+  const cumulativeTranscriptRef = useRef<string>("");
 
   // Determine configuration based on mode
   let systemInstruction = SPATIAL_SYSTEM_INSTRUCTION;
@@ -66,6 +68,8 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
     setNodes([]);
     setEdges([]);
     setLatestTranscript("");
+    cumulativeTranscriptRef.current = "";
+    triggeredVisualsRef.current.clear();
   }, [mode]);
 
   // Tools configuration
@@ -111,34 +115,55 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
 
     if (mode !== "storyteller") return;
 
-    // ── FINISHED TRANSCRIPT: Retroactive Title Extraction ────────────────────
-    // The model always places the title as the first [NARRATIVE] sentence.
-    // We wait for the complete final transcript to extract it reliably,
-    // then backfill the placeholder segment that was injected at turn start.
-    if (finished) {
-      const narrativeMatch = /\[NARRATIVE\]\s*([^\n.!?]+[.!?]?)/i.exec(text);
-      if (narrativeMatch) {
-        const extractedTitle = narrativeMatch[1]
-          .replaceAll(/(?:^[*_]+|[*_]+$)/g, "") // strip markdown bold/italic
-          .trim();
-        if (extractedTitle) {
-          setStoryStream((prev) => {
-            const placeholderIdx = prev.findLastIndex(
-              (i) => i.type === "story_segment" && i.isPlaceholder === true,
-            );
-            if (placeholderIdx === -1) return prev;
-            const updated = [...prev];
-            updated[placeholderIdx] = {
-              ...updated[placeholderIdx],
-              content: extractedTitle,
-              isPlaceholder: false,
-              timestamp: Date.now(),
-            };
-            return updated;
-          });
+    // Accumulate the text purely for regex matching across chunk boundaries
+    cumulativeTranscriptRef.current += text;
+    const fullText = cumulativeTranscriptRef.current;
+
+    // ── STREAMING RETROACTIVE TITLE EXTRACTION ────────────────────────────────
+    // We scan the cumulative full text. If we see a complete first sentence,
+    // we extract it and backfill the placeholder segment immediately!
+    // Added safety: The title can end with punctuation (.!?) OR a new line (\n)
+    const narrativeMatch = /\[NARRATIVE\]\s*([^\n.!?]+(?:[.!?]|\n))/i.exec(fullText);
+    if (narrativeMatch) {
+      const extractedTitle = narrativeMatch[1]
+        .replaceAll(/(?:^[*_]+|[*_]+$)/g, "") // strip markdown bold/italic
+        .trim();
+      if (extractedTitle) {
+        // Manually trigger the visual API to start loading the image parallel to the TTS stream!
+        // (Ensuring we only fire it once per unique title segment per session turn)
+        if (invocationId && !triggeredVisualsRef.current.has(invocationId)) {
+          triggeredVisualsRef.current.add(invocationId);
+          console.log(
+            `[GeminiLive] Native text intercept -> Generating Visual for: ${extractedTitle}`,
+          );
+          triggerStoryVisual(
+            extractedTitle,
+            `Dynamic highly detailed digital illustration of: ${extractedTitle}, cinematic lighting`,
+            invocationId,
+            setStoryStream,
+          );
         }
+
+        setStoryStream((prev) => {
+          const placeholderIdx = prev.findLastIndex(
+            (i) => i.type === "story_segment" && i.isPlaceholder === true,
+          );
+          if (placeholderIdx === -1) return prev;
+          const updated = [...prev];
+          updated[placeholderIdx] = {
+            ...updated[placeholderIdx],
+            content: extractedTitle,
+            isPlaceholder: false,
+            timestamp: Date.now(),
+          };
+          return updated;
+        });
       }
-      return; // finished events are only for title extraction, not text rendering
+    }
+
+    if (finished) {
+      cumulativeTranscriptRef.current = ""; // Reset for next turn
+      return;
     }
 
     // ── PARTIAL TRANSCRIPT: Stream text and inject placeholder ────────────────
