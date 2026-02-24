@@ -12,6 +12,8 @@ export interface ControlBarProps {
   readonly isConnected: boolean;
   readonly isConnecting: boolean;
   readonly isListening: boolean;
+  readonly isAiTalking?: boolean;
+  readonly isUserTalking?: boolean;
   readonly activeHighlight?: Highlight;
   readonly mode: "spatial" | "storyteller" | "it-architecture";
   readonly onToggleListening: () => void;
@@ -22,6 +24,8 @@ export function ControlBar({
   isConnected,
   isConnecting,
   isListening,
+  isAiTalking = false,
+  isUserTalking = false,
   activeHighlight,
   mode,
   onToggleListening,
@@ -110,7 +114,12 @@ export function ControlBar({
 
         {/* Unified Status Center */}
         <div className="flex items-center gap-3 px-2 py-1.5 rounded-xl transition-all">
-          <AIOrb isActive={isConnected} className="flex items-center justify-center p-0.5" />
+          <AIOrb
+            isActive={isConnected}
+            isUserTalking={isUserTalking}
+            isAiTalking={isAiTalking}
+            className="flex items-center justify-center p-0.5"
+          />
           <div className="flex flex-col">
             <span
               className={cn(
