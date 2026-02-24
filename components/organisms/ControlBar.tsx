@@ -1,11 +1,9 @@
-import { Camera, Loader2, Mic, MicOff, Speaker } from "lucide-react";
+import { Loader2, Mic, MicOff } from "lucide-react";
 
 import { AIOrb } from "@/components/atoms/AIOrb";
 import { CoordinateDisplay } from "@/components/molecules/CoordinateDisplay";
-import { DeviceSelector } from "@/components/molecules/DeviceSelector";
 import { SettingsMenu } from "@/components/organisms/SettingsMenu";
 import { Button } from "@/components/ui/button";
-import { useAudioDeviceContext } from "@/lib/store/audio-context";
 import { useSettings } from "@/lib/store/settings-context";
 import type { Highlight } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -30,18 +28,6 @@ export function ControlBar({
   onModeChange,
 }: ControlBarProps) {
   const { t } = useSettings();
-  const {
-    inputDevices,
-    outputDevices,
-    videoDevices,
-    selectedInputId,
-    selectedOutputId,
-    selectedVideoId,
-    outputSelectionSupported,
-    setSelectedInputId,
-    setSelectedOutputId,
-    setSelectedVideoId,
-  } = useAudioDeviceContext();
 
   const connectionLabel = isConnecting
     ? t.status.connecting
@@ -57,27 +43,6 @@ export function ControlBar({
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      {/* Top Status Bar (Mobile Friendly) */}
-      <div className="flex items-center gap-3 rounded-full bg-background/60 px-4 py-2 text-sm font-medium shadow-sm backdrop-blur-md transition-all">
-        <AIOrb isActive={isConnected} className="flex items-center justify-center p-0.5" />
-        <span
-          className={cn(
-            "transition-colors",
-            isConnected ? "text-emerald-400" : "text-muted-foreground",
-          )}
-        >
-          {connectionLabel}
-        </span>
-        {activeHighlight && (
-          <>
-            <div className="h-4 w-px bg-border/50" />
-            <span className="max-w-[120px] truncate font-mono text-xs text-primary/80">
-              {activeHighlight.objectName}
-            </span>
-          </>
-        )}
-      </div>
-
       {/* Mode Selector */}
       <div className="flex items-center gap-1 rounded-xl border bg-background/50 p-1 backdrop-blur-md">
         <Button
@@ -119,7 +84,7 @@ export function ControlBar({
       </div>
 
       {/* Main Dock / Control Bar */}
-      <div className="group flex items-center gap-3 rounded-2xl border bg-background/80 p-3 shadow-2xl backdrop-blur-xl transition-all hover:scale-[1.01] hover:bg-background/90">
+      <div className="group flex items-center gap-2 rounded-2xl border bg-background/80 p-2 pr-3 shadow-2xl backdrop-blur-xl transition-all hover:scale-[1.01] hover:bg-background/90">
         {/* Connection Toggle (Primary Action) */}
         <Button
           type="button"
@@ -143,35 +108,34 @@ export function ControlBar({
 
         <div className="mx-1 h-8 w-px bg-border/50" />
 
-        <div className="flex items-center gap-1">
-          <DeviceSelector
-            icon={Camera}
-            label={t.devices.camera}
-            devices={videoDevices}
-            selectedId={selectedVideoId}
-            onDeviceChange={setSelectedVideoId}
-          />
+        {/* Unified Status Center */}
+        <div className="flex items-center gap-3 px-2 py-1.5 rounded-xl transition-all">
+          <AIOrb isActive={isConnected} className="flex items-center justify-center p-0.5" />
+          <div className="flex flex-col">
+            <span
+              className={cn(
+                "text-[10px] uppercase font-bold tracking-widest leading-none mb-0.5 transition-colors",
+                isConnected ? "text-emerald-400" : "text-muted-foreground",
+              )}
+            >
+              {connectionLabel}
+            </span>
+            {activeHighlight ? (
+              <span className="max-w-[100px] truncate font-mono text-[11px] text-primary/90 leading-none">
+                {activeHighlight.objectName}
+              </span>
+            ) : (
+              <span className="text-[11px] text-white/30 leading-none font-medium">
+                {isListening ? "Listening..." : "Idle"}
+              </span>
+            )}
+          </div>
+        </div>
 
-          <DeviceSelector
-            icon={Mic}
-            label={t.devices.microphone}
-            devices={inputDevices}
-            selectedId={selectedInputId}
-            onDeviceChange={setSelectedInputId}
-          />
+        <div className="ml-1 mr-1 h-8 w-px bg-border/50" />
 
-          <DeviceSelector
-            icon={Speaker}
-            label={t.devices.speaker}
-            devices={outputDevices}
-            selectedId={selectedOutputId}
-            onDeviceChange={setSelectedOutputId}
-            disabled={!outputSelectionSupported}
-          />
-
-          <div className="mx-1 h-8 w-px bg-border/50" />
-
-          {/* Settings Menu (Popover) */}
+        <div className="flex items-center gap-0.5">
+          {/* Settings Menu (Popover) now handles device selection (Camera, Mic, Speaker) */}
           <SettingsMenu mode={mode} />
         </div>
       </div>
