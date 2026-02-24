@@ -33,7 +33,6 @@ logger.add(
 app = FastAPI(title="The Spatial Eye - Gemini Relay Backend")
 
 import tools_config
-
 # Initialize ADK globals (can be shared across sessions)
 session_service = InMemorySessionService()
 agent_model = os.getenv("NEXT_PUBLIC_GEMINI_LIVE_MODEL", "gemini-2.5-flash")

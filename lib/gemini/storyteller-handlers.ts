@@ -32,6 +32,110 @@ interface DirectorArgs {
   title?: string;
 }
 
+export function triggerStoryVisual(
+  subject: string,
+  visual_context: string,
+  invocationId: string | undefined,
+  setStoryStream: Dispatch<SetStateAction<StoryItem[]>>,
+) {
+  const id = generateId();
+
+  // 1. Add Placeholder
+  setStoryStream((prev) => [
+    ...prev,
+    {
+      id,
+      type: "image",
+      content: `Visualizing: ${subject || "Scene"}`,
+      isGenerating: true,
+      metadata: {
+        asset_type: "STILL_IMAGE",
+        visual_context: visual_context || "",
+        subject: subject || "",
+      },
+      timestamp: Date.now(),
+      invocationId,
+    },
+  ]);
+
+  // 2. Trigger Generation (Real Gemini API)
+  const modelId = GEMINI_MODELS.imageSynthesis.replace(/^models\//, "");
+  console.log(`[Director] render_visual triggered for: "${subject}" using model: ${modelId}`);
+
+  (async () => {
+    try {
+      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+      if (!apiKey) throw new Error("No API Key");
+
+      const client = new GoogleGenAI({ apiKey });
+      console.log("[Director] Calling generateContent...");
+
+      const response = await client.models.generateContent({
+        model: modelId,
+        contents: [
+          {
+            parts: [
+              {
+                text: `Generate a detailed, cinematic, high-quality image of: ${subject}. Context: ${visual_context}. Style: Photorealistic, 8k resolution, dramatic lighting.`,
+              },
+            ],
+          },
+        ],
+        config: {
+          // Must specify IMAGE modality — without this the model returns text only
+          responseModalities: ["IMAGE", "TEXT"],
+        },
+      });
+
+      console.log(
+        "[Director] generateContent response received. Candidates:",
+        response.candidates?.length,
+      );
+
+      // Extract Image
+      const candidates = response.candidates;
+      const imagePart = candidates?.[0]?.content?.parts?.find(
+        (p) => "inlineData" in p && p.inlineData?.mimeType?.startsWith("image"),
+      ) as { inlineData: { mimeType: string; data: string } } | undefined;
+
+      if (imagePart?.inlineData) {
+        console.log("[Director] Image data found, updating card.");
+        const base64Image = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
+
+        setStoryStream((prev) =>
+          prev.map((item) =>
+            item.id === id ? { ...item, isGenerating: false, content: base64Image } : item,
+          ),
+        );
+      } else {
+        console.warn(
+          "[Director] No image inlineData in response. Parts:",
+          candidates?.[0]?.content?.parts,
+        );
+        throw new Error("No image data in response");
+      }
+    } catch (error) {
+      console.error("[Director] Image generation failed:", error);
+      // Route through shared utility — classifies rate_limit / billing / not_found
+      notifyModelError(GEMINI_MODELS.imageSynthesis, error);
+
+      // Replace the card with a clean SVG placeholder instead of a broken image
+      setStoryStream((prev) =>
+        prev.map((item) =>
+          item.id === id
+            ? {
+                ...item,
+                isGenerating: false,
+                content: IMAGE_PLACEHOLDER_SVG,
+                metadata: { ...item.metadata, error: "Generation Failed" },
+              }
+            : item,
+        ),
+      );
+    }
+  })();
+}
+
 export function handleDirectorToolCall(
   toolCall: LiveServerMessage["toolCall"],
   setStoryStream: Dispatch<SetStateAction<StoryItem[]>>,
@@ -44,103 +148,8 @@ export function handleDirectorToolCall(
     const args = fc.args as DirectorArgs;
 
     if (fc.name === "render_visual") {
-      const { asset_type, subject, visual_context } = args;
-      const id = generateId();
-
-      // 1. Add Placeholder
-      setStoryStream((prev) => [
-        ...prev,
-        {
-          id,
-          type: "image",
-          content: `Visualizing: ${subject || "Scene"}`,
-          isGenerating: true,
-          metadata: {
-            asset_type: asset_type || "image",
-            visual_context: visual_context || "",
-            subject: subject || "",
-          },
-          timestamp: Date.now(),
-          invocationId,
-        },
-      ]);
-
-      // 2. Trigger Generation (Real Gemini API)
-      const modelId = GEMINI_MODELS.imageSynthesis.replace(/^models\//, "");
-      console.log(`[Director] render_visual triggered for: "${subject}" using model: ${modelId}`);
-
-      (async () => {
-        try {
-          const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-          if (!apiKey) throw new Error("No API Key");
-
-          const client = new GoogleGenAI({ apiKey });
-          console.log("[Director] Calling generateContent...");
-
-          const response = await client.models.generateContent({
-            model: modelId,
-            contents: [
-              {
-                parts: [
-                  {
-                    text: `Generate a detailed, cinematic, high-quality image of: ${subject}. Context: ${visual_context}. Style: Photorealistic, 8k resolution, dramatic lighting.`,
-                  },
-                ],
-              },
-            ],
-            config: {
-              // Must specify IMAGE modality — without this the model returns text only
-              responseModalities: ["IMAGE", "TEXT"],
-            },
-          });
-
-          console.log(
-            "[Director] generateContent response received. Candidates:",
-            response.candidates?.length,
-          );
-
-          // Extract Image
-          const candidates = response.candidates;
-          const imagePart = candidates?.[0]?.content?.parts?.find(
-            (p) => "inlineData" in p && p.inlineData?.mimeType?.startsWith("image"),
-          ) as { inlineData: { mimeType: string; data: string } } | undefined;
-
-          if (imagePart?.inlineData) {
-            console.log("[Director] Image data found, updating card.");
-            const base64Image = `data:${imagePart.inlineData.mimeType};base64,${imagePart.inlineData.data}`;
-
-            setStoryStream((prev) =>
-              prev.map((item) =>
-                item.id === id ? { ...item, isGenerating: false, content: base64Image } : item,
-              ),
-            );
-          } else {
-            console.warn(
-              "[Director] No image inlineData in response. Parts:",
-              candidates?.[0]?.content?.parts,
-            );
-            throw new Error("No image data in response");
-          }
-        } catch (error) {
-          console.error("[Director] Image generation failed:", error);
-          // Route through shared utility — classifies rate_limit / billing / not_found
-          notifyModelError(GEMINI_MODELS.imageSynthesis, error);
-
-          // Replace the card with a clean SVG placeholder instead of a broken image
-          setStoryStream((prev) =>
-            prev.map((item) =>
-              item.id === id
-                ? {
-                    ...item,
-                    isGenerating: false,
-                    content: IMAGE_PLACEHOLDER_SVG,
-                    metadata: { ...item.metadata, error: "Generation Failed" },
-                  }
-                : item,
-            ),
-          );
-        }
-      })();
+      const { subject, visual_context } = args;
+      triggerStoryVisual(subject || "Scene", visual_context || "", invocationId, setStoryStream);
     } else if (fc.name === "ambient_audio") {
       const { preset, vibe_description } = args;
       setStoryStream((prev) => [

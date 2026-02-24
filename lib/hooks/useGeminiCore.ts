@@ -64,6 +64,7 @@ export function useGeminiCore({
   const nextStartTimeRef = useRef<number>(0);
   const audioQueueRef = useRef<string[]>([]);
   const isProcessingAudioRef = useRef<boolean>(false);
+  const isBufferingRef = useRef<boolean>(true); // Anti-jitter cache buffer state
   const keepAliveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentTurnIdRef = useRef<string>(crypto.randomUUID());
 
@@ -151,6 +152,7 @@ export function useGeminiCore({
 
     activeSourcesRef.current.clear();
     nextStartTimeRef.current = 0;
+    isBufferingRef.current = true;
   }, []);
 
   // ---------------------------------------------------------------------------
@@ -257,7 +259,7 @@ export function useGeminiCore({
           }, 25_000);
         };
 
-        const processAudioQueue = async () => {
+        const processAudioQueue = () => {
           if (isProcessingAudioRef.current) return;
           isProcessingAudioRef.current = true;
 
@@ -268,23 +270,46 @@ export function useGeminiCore({
           }
 
           try {
-            if (ctx.state === "suspended") await ctx.resume();
+            if (ctx.state === "suspended") void ctx.resume();
 
+            // ── CACHE BUFFER (High Water Mark) ──
+            // Wait until we have accumulated a minimum number of chunks before playing,
+            // to absorb network/generation jitter.
+            if (isBufferingRef.current) {
+              const MIN_CHUNKS = 40; // ~400-800ms of buffered audio, prevents React UI jitter
+              if (audioQueueRef.current.length < MIN_CHUNKS) {
+                isProcessingAudioRef.current = false;
+                return; // Wait for more chunks
+              }
+              // Buffer is filled, start playback
+              isBufferingRef.current = false;
+              // Provide a very small safety margin for the first chunk
+              nextStartTimeRef.current = Math.max(ctx.currentTime + 0.1, nextStartTimeRef.current);
+            }
+
+            // Flush synchronously! Do not yield the event loop / main thread!
+            // This pushes everything natively into the AudioContext upfront.
             while (audioQueueRef.current.length > 0) {
               const base64Data = audioQueueRef.current.shift();
               if (!base64Data) continue;
 
-              const audioBuffer = await decodeAudioData(decode(base64Data), ctx, 24000);
+              const audioBuffer = decodeAudioData(decode(base64Data), ctx, 24000);
 
               // We could have been interrupted while decoding
               if (!isProcessingAudioRef.current || audioContextRef.current?.state === "closed")
                 break;
 
-              let startTime = nextStartTimeRef.current;
-              // If we suffered a buffer underrun (audio finished playing before we got the next chunk)
-              // We add an artificial delay (Jitter Buffer) of 300ms to let more chunks pile up.
-              if (startTime <= ctx.currentTime) {
-                startTime = ctx.currentTime + 0.4;
+              const startTime = nextStartTimeRef.current;
+
+              // ── BUFFER UNDERRUN (Low Water Mark) ──
+              // If the time to play this chunk has already passed, we fell behind.
+              if (startTime < ctx.currentTime) {
+                logTrace("Buffer underrun. Pausing to rebuild cache buffer...");
+                // Enter buffering state to let chunks pile up again
+                isBufferingRef.current = true;
+                // Re-queue the chunk since we didn't play it
+                audioQueueRef.current.unshift(base64Data);
+                break;
               }
 
               const source = ctx.createBufferSource();
@@ -348,6 +373,7 @@ export function useGeminiCore({
             logInfo("Barge-in: Interrupted by ADK.");
             audioQueueRef.current = [];
             isProcessingAudioRef.current = false;
+            isBufferingRef.current = true;
             stopAudio(0);
             currentTurnIdRef.current = crypto.randomUUID(); // Cycle turn immediately
             return;
@@ -403,33 +429,71 @@ export function useGeminiCore({
             }
             // Cycle turn ID for the next complete model response
             currentTurnIdRef.current = crypto.randomUUID();
+
+            // ── FLUSH CACHE BUFFER ──
+            // The generation is complete. Even if we have less than MIN_CHUNKS piled up,
+            // play out whatever is at the end of the queue.
+            if (audioQueueRef.current.length > 0) {
+              isBufferingRef.current = false;
+              processAudioQueue();
+            }
           }
         };
 
         ws.onerror = (e) => {
           console.error("[GeminiCore] WebSocket Error:", e);
-          setIsConnected(false);
-          setIsConnecting(false);
-          stopAudio(0);
-
-          if (reconnectAttemptRef.current < 3) {
-            reconnectAttemptRef.current += 1;
-            toast.warning("Connection lost. Reconnecting...", { id: "ws-retry" });
-            setTimeout(() => {
-              if (connectRef.current) void connectRef.current(true);
-            }, 1000);
-            return;
-          }
-          setError("Connection error to local relay.");
-          resolve(false);
+          // Note: In WebSockets, onerror doesn't provide fine-grained codes.
+          // We handle the specific drop reasons and the reconnection sequence in onclose.
         };
 
         ws.onclose = (e) => {
+          logInfo(`WebSocket closed. Code: ${e.code}, Clean: ${e.wasClean}, Reason: ${e.reason}`);
           socketRef.current = null;
           isConnectedRef.current = false;
           setIsConnected(false);
           setIsConnecting(false);
           stopAudio(0);
+
+          if (!manualCloseRef.current) {
+            const isServerError = e.code === 1011;
+            const reasonText =
+              e.reason ||
+              (isServerError
+                ? "The Gemini API operation timed out or failed (Deadline Expired)."
+                : "Connection was lost abnormally.");
+
+            // Alert the user immediately if it was a server crash / deadline
+            if (isServerError) {
+              toast.error("Gemini Server Error", {
+                description: reasonText,
+                duration: 6000,
+              });
+              setError(reasonText);
+              setErrorCode(e.code.toString());
+              setErrorMessage(reasonText);
+            }
+
+            if (reconnectAttemptRef.current < 3) {
+              reconnectAttemptRef.current += 1;
+              toast.warning(
+                `Connection lost. Reconnecting (Attempt ${reconnectAttemptRef.current}/3)...`,
+                {
+                  id: "ws-retry",
+                },
+              );
+              setTimeout(() => {
+                if (connectRef.current) void connectRef.current(true);
+              }, 1000);
+              return; // Wait for the reconnect attempt
+            }
+
+            // We exceeded reconnect attempts or there's no reason to reconnect
+            if (!isServerError) {
+              setError("Connection error to local relay.");
+            }
+            toast.error("Could not reconnect to the server.");
+          }
+
           resolve(false);
         };
       });

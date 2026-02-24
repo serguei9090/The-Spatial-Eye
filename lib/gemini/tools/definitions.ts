@@ -132,7 +132,6 @@ export const segmentStoryTool: FunctionDeclaration = {
 };
 
 export const DIRECTOR_TOOLS = [
-  renderVisualTool,
-  /* ambientAudioTool, */ defineWorldRuleTool,
+  /* renderVisualTool, ambientAudioTool, */ defineWorldRuleTool,
   segmentStoryTool,
 ];
