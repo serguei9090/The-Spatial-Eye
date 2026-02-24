@@ -27,12 +27,27 @@ resource "google_cloud_run_v2_service" "default" {
   ingress  = "INGRESS_TRAFFIC_ALL"
 
   template {
+    # CRITICAL FOR WEBSOCKETS: Cloud Run has a default timeout of 5 minutes.
+    # Setting it to 3600s (1 hour) allows for long-running Live Agent sessions.
+    timeout = "3600s"
+
+    # CRITICAL FOR WEBSOCKETS: Session affinity ensures WebSocket traffic hits the same container
+    session_affinity = true
+
+    # Allows concurrent connections up to limits
+    max_instance_request_concurrency = 50
+
     containers {
       image = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.repo.name}/${var.service_name}:latest"
       
       env {
         name  = "NODE_ENV"
         value = "production"
+      }
+      
+      # Expose the correct port for FastAPI
+      ports {
+        container_port = 8000
       }
       
       resources {
@@ -44,6 +59,7 @@ resource "google_cloud_run_v2_service" "default" {
     }
   }
 }
+
 
 # Allow unauthenticated access
 resource "google_cloud_run_service_iam_binding" "public" {

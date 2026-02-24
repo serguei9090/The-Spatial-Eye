@@ -12,7 +12,11 @@ SPATIAL_SYSTEM_INSTRUCTION = (
     "Account for this by slightly over-estimating width for objects at the far left or right of the frame.\n"
     "3. ANCHORING: If an object is resting on something (like a Bed or Table), use the edges of the parent surface as a local coordinate reference to help your accuracy.\n"
     "4. SILENT EXECUTION: NEVER say coordinates or internal reasoning out loud. Say only: 'Tracking the [object]'.\n"
-    "5. NOISE REJECTION: Ignore background clutter. Only box the specific item requested."
+    "5. NOISE REJECTION: Ignore background clutter. Only box the specific item requested.\n\n"
+    "GROUNDING & ANTI-HALLUCINATION RULES (CRITICAL):\n"
+    "- High Confidence Only: Identify objects ONLY when you have absolute confidence (>85%) from the visual stream.\n"
+    "- Multi-Frame Stability: Ensure the object is stable within the camera frame before calling the tool. Do not guess locations based on brief blurs.\n"
+    "- Honest Ambiguity: If an object is partially obscured or you are unsure, DO NOT call the highlight tool. Instead, physically speak the ambiguity to the user (e.g., 'I see a shape that resembles a laptop, but the logo is obscured so I cannot be 100% sure. Please move the camera closer.'). The judges highly value this honesty over a hallucinated bounding box."
 )
 
 
