@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
-
 import { HighlightCircle } from "@/components/atoms/HighlightCircle";
+import { SpatialGrid } from "@/components/atoms/SpatialGrid";
+import { useSettings } from "@/lib/store/settings-context";
 import type { Highlight } from "@/lib/types";
-import { projectHighlightToScreen } from "@/lib/utils/coordinates";
+import { calculateObjectFitCover, projectHighlightToScreen } from "@/lib/utils/coordinates";
+import { useEffect, useRef, useState } from "react";
 
 interface SpatialOverlayProps {
   highlights: Highlight[];
@@ -13,6 +14,8 @@ interface SpatialOverlayProps {
 export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+
+  const { showDebugGrid } = useSettings();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -30,6 +33,13 @@ export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialO
     return () => observer.disconnect();
   }, []);
 
+  const fit = calculateObjectFitCover(
+    videoWidth,
+    videoHeight,
+    containerSize.width,
+    containerSize.height,
+  );
+
   return (
     <div ref={containerRef} className="pointer-events-none absolute inset-0 h-full w-full">
       <svg
@@ -38,6 +48,19 @@ export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialO
         // to match the CSS object-fit: cover behavior of the video.
       >
         <title>Detected object overlay</title>
+
+        {showDebugGrid && (
+          <SpatialGrid
+            videoWidth={videoWidth}
+            videoHeight={videoHeight}
+            containerWidth={containerSize.width}
+            containerHeight={containerSize.height}
+            scale={fit.scale}
+            offsetX={fit.offsetX}
+            offsetY={fit.offsetY}
+          />
+        )}
+
         {highlights.map((highlight) => {
           const circle = projectHighlightToScreen(
             highlight,

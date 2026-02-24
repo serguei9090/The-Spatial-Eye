@@ -21,36 +21,57 @@ export function handleSpatialToolCall(
       let rawObjects: unknown[] = [];
       if (Array.isArray(args.objects)) {
         rawObjects = args.objects;
-      } else if ("center_x" in args || "center_y" in args) {
+      } else if ("center_x" in args || "center_y" in args || "box_2d" in args) {
         // Direct tool call where args is the object itself
         rawObjects = [args];
       }
 
       if (rawObjects.length > 0) {
-        const validObjects = rawObjects.filter(
-          (
-            obj,
-          ): obj is { label: string; center_x: number; center_y: number; render_scale: number } =>
-            typeof obj === "object" && obj !== null && "center_x" in obj,
-        );
-
-        if (validObjects.length > 0) {
-          const newHighlights = validObjects.map((obj) => {
-            const cx = Number(obj.center_x);
-            const cy = Number(obj.center_y);
-            // Default render_scale to 200 if missing
-            const r = (Number(obj.render_scale) || 200) / 2;
-            return {
-              id: crypto.randomUUID(),
-              objectName: obj.label || "Detected Object",
-              ymin: Math.max(0, cy - r),
-              xmin: Math.max(0, cx - r),
-              ymax: Math.min(1000, cy + r),
-              xmax: Math.min(1000, cx + r),
-              timestamp: Date.now(),
+        const newHighlights = rawObjects
+          .map((item) => {
+            const obj = item as {
+              label?: string;
+              box_2d?: number[];
+              center_x?: number;
+              center_y?: number;
+              render_scale?: number;
             };
-          });
+            const label = obj.label || "Detected Object";
 
+            // 1. Prioritize native box_2d format [ymin, xmin, ymax, xmax]
+            if (Array.isArray(obj.box_2d) && obj.box_2d.length === 4) {
+              const [ymin, xmin, ymax, xmax] = obj.box_2d.map(Number);
+              return {
+                id: crypto.randomUUID(),
+                objectName: label,
+                ymin,
+                xmin,
+                ymax,
+                xmax,
+                timestamp: Date.now(),
+              };
+            }
+
+            // 2. Fallback to center/scale if provided (legacy or model deviation)
+            if ("center_x" in obj && "center_y" in obj) {
+              const cx = Number(obj.center_x);
+              const cy = Number(obj.center_y);
+              const r = (Number(obj.render_scale) || 200) / 2;
+              return {
+                id: crypto.randomUUID(),
+                objectName: label,
+                ymin: Math.max(0, cy - r),
+                xmin: Math.max(0, cx - r),
+                ymax: Math.min(1000, cy + r),
+                xmax: Math.min(1000, cx + r),
+                timestamp: Date.now(),
+              };
+            }
+            return null;
+          })
+          .filter((h): h is Highlight => h !== null);
+
+        if (newHighlights.length > 0) {
           setActiveHighlights((prev) => [...prev, ...newHighlights]);
         }
       }

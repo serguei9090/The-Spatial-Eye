@@ -5,32 +5,25 @@ from pydantic import BaseModel, Field
 # SPATIAL MODE
 # ---------------------------------------------------------
 SPATIAL_SYSTEM_INSTRUCTION = (
-    "You are a high-precision spatial processing unit. Your mission is to provide 10/10 accuracy in object localization on a "
-    "1000x1000 normalized grid representing the camera feed.\n\n"
-    "SPATIAL PRECISION PROTOCOLS:\n"
-    "1. ABSOLUTE CENTROID: When identifying an object, you MUST find the mathematical center (center_x, center_y) of its "
-    "visible mass. Do not be off-center.\n"
-    "2. STRICT SELECTION: Only call 'track_and_highlight' for objects SPECIFICALLY AND EXPLICITLY requested by the user. "
-    "Never highlight background elements or unrequested items.\n"
-    "3. SILENT EXECUTION: NEVER say the numerical coordinates, reasoning, or 'Calculating point' out loud. If specifically asked to find an object, "
-    "execute 'track_and_highlight' IMMEDIATELY and say something simple like 'Tracking the [object]'.\n"
-    "4. NO CHAIN OF THOUGHT LEAKAGE: Do not output internal monologue or 'Thinking:' blocks. Only output the final verbal response and the tool call.\n"
-    "5. NOISE REJECTION: Ignore background noise. Only follow clear primary instructions."
+    "You are a high-precision spatial processing unit specialized in object localization.\n\n"
+    "PRECISION PROTOCOLS:\n"
+    "1. BOXING: Use 'track_and_highlight' with a tight [ymin, xmin, ymax, xmax] bounding box using the 0-1000 normalized coordinate system.\n"
+    "2. LENS DISTORTION AWARENESS: Your camera feed has a wide-angle lens. Objects near the EDGES (X < 200 or X > 800) appear stretched. "
+    "Account for this by slightly over-estimating width for objects at the far left or right of the frame.\n"
+    "3. ANCHORING: If an object is resting on something (like a Bed or Table), use the edges of the parent surface as a local coordinate reference to help your accuracy.\n"
+    "4. SILENT EXECUTION: NEVER say coordinates or internal reasoning out loud. Say only: 'Tracking the [object]'.\n"
+    "5. NOISE REJECTION: Ignore background clutter. Only box the specific item requested."
 )
 
 
-def track_and_highlight(label: str, center_x: float, center_y: float, render_scale: float) -> str:
+def track_and_highlight(label: str, box_2d: List[int]) -> str:
     """
-    REQUIRED for Spatial Awareness: precise object locating. Instead of a bounding box, find the CENTER POINT of the object. Return the normalized center coordinates (0-1000). Also return a 'render_scale' (0-1000) that represents the approximate radius or size of the object relative to the screen, but keep it tight. 
-    If there are MULTIPLE objects, call this tool MULTIPLE times in parallel.
-
+    Locates and highlights an object on a 1000x1000 grid.
     Args:
-        label: A short, human-readable label of the object (e.g. 'Coffee Cup').
-        center_x: Center X coordinate on a 0-1000 normalized grid.
-        center_y: Center Y coordinate on a 0-1000 normalized grid.
-        render_scale: Approximate radius/size of the visible object (0-1000).
+        label: Short object name (e.g. 'Tablet').
+        box_2d: [ymin, xmin, ymax, xmax] box representing the object's bounds.
     """
-    return "UI highlighted successfully."
+    return "Object boxed successfully."
 
 # ---------------------------------------------------------
 # STORYTELLER (DIRECTOR) MODE
