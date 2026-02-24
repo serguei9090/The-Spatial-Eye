@@ -547,9 +547,21 @@ export function useGeminiCore({
     };
   }, [stopAudio]);
 
+  const [isAiTalking, setIsAiTalking] = useState(false);
+
+  // Sync isAiTalking with activeSourcesRef
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const currentlyTalking = activeSourcesRef.current.size > 0;
+      setIsAiTalking(currentlyTalking);
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
+
   return {
     isConnected,
     isConnecting,
+    isAiTalking,
     error,
     errorCode,
     errorMessage,

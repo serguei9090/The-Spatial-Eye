@@ -11,10 +11,16 @@ interface AudioCaptureProps {
    * Reference: https://ai.google.dev/gemini-api/docs/live
    */
   onAudioChunk?: (data: Int16Array) => void;
+  onTalkingChange?: (isTalking: boolean) => void;
   inputDeviceId?: string;
 }
 
-export function AudioCapture({ isActive, onAudioChunk, inputDeviceId }: AudioCaptureProps) {
+export function AudioCapture({
+  isActive,
+  onAudioChunk,
+  onTalkingChange,
+  inputDeviceId,
+}: AudioCaptureProps) {
   const streamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const workletNodeRef = useRef<AudioWorkletNode | null>(null);
@@ -49,7 +55,20 @@ export function AudioCapture({ isActive, onAudioChunk, inputDeviceId }: AudioCap
         event: MessageEvent<{ type: string; samples: Float32Array }>,
       ) => {
         if (event.data.type === "pcm" && isActive) {
-          const int16Samples = pcmFloat32ToInt16(event.data.samples);
+          const samples = event.data.samples;
+
+          // Simple VAD: Check if max amplitude exceeds threshold
+          let maxAmp = 0;
+          for (const sample of samples) {
+            const abs = Math.abs(sample);
+            if (abs > maxAmp) maxAmp = abs;
+          }
+
+          // Threshold: 0.01 is usually enough to filter background noise
+          const isTalking = maxAmp > 0.01;
+          onTalkingChange?.(isTalking);
+
+          const int16Samples = pcmFloat32ToInt16(samples);
           onAudioChunk?.(int16Samples);
         }
       };
@@ -59,7 +78,7 @@ export function AudioCapture({ isActive, onAudioChunk, inputDeviceId }: AudioCap
     } catch (error) {
       console.error("[AudioCapture] Failed to start audio capture:", error);
     }
-  }, [inputDeviceId, onAudioChunk, isActive]);
+  }, [inputDeviceId, onAudioChunk, onTalkingChange, isActive]);
 
   const stopRecording = useCallback(() => {
     if (workletNodeRef.current) {

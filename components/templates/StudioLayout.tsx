@@ -46,6 +46,7 @@ export function StudioLayout() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const [videoSize, setVideoSize] = useState({ width: 0, height: 0 }); // Track video size
   const [isListening, setIsListening] = useState(false);
+  const [isUserTalking, setIsUserTalking] = useState(false);
 
   // useAudioDevices is now consumed via context in ControlBar
   // const { ... } = useAudioDevices();
@@ -60,6 +61,7 @@ export function StudioLayout() {
     latestTranscript,
     isConnected,
     isConnecting,
+    isAiTalking,
     checkModelAvailability,
     connect,
     disconnect,
@@ -237,11 +239,11 @@ export function StudioLayout() {
       {/* Global AI Assistant Overlay - Hide in Storyteller mode which has its own stream */}
       {mode !== "storyteller" && <AITranscriptOverlay transcript={latestTranscript} />}
 
-      {/* Hidden Audio Capture - Always Active when listening */}
       <div className="hidden">
         <AudioCapture
           isActive={isListening}
           onAudioChunk={sendAudioChunk}
+          onTalkingChange={setIsUserTalking}
           inputDeviceId={selectedInputId}
         />
       </div>
@@ -321,6 +323,8 @@ export function StudioLayout() {
             isConnected={isConnected}
             isConnecting={isConnecting}
             isListening={isListening}
+            isAiTalking={isAiTalking}
+            isUserTalking={isUserTalking}
             activeHighlight={activeHighlights?.[0]}
             mode={mode}
             onToggleListening={onToggleListening}
