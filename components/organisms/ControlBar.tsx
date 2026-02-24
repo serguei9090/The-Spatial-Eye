@@ -172,7 +172,7 @@ export function ControlBar({
           <div className="mx-1 h-8 w-px bg-border/50" />
 
           {/* Settings Menu (Popover) */}
-          <SettingsMenu />
+          <SettingsMenu mode={mode} />
         </div>
       </div>
 

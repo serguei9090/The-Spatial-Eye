@@ -9,8 +9,20 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/Popo
 import { type HighlightDuration, useSettings } from "@/lib/store/settings-context";
 import { cn } from "@/lib/utils";
 
-export function SettingsMenu() {
-  const { t, language, setLanguage, highlightDuration, setHighlightDuration } = useSettings();
+interface SettingsMenuProps {
+  mode?: "spatial" | "storyteller" | "it-architecture";
+}
+
+export function SettingsMenu({ mode }: SettingsMenuProps) {
+  const {
+    t,
+    language,
+    setLanguage,
+    highlightDuration,
+    setHighlightDuration,
+    showDebugGrid,
+    setShowDebugGrid,
+  } = useSettings();
   const [open, setOpen] = useState(false);
 
   return (
@@ -70,45 +82,71 @@ export function SettingsMenu() {
           </div>
 
           {/* Highlight Duration Setting */}
-          <div className="space-y-2">
-            <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {t.settings.highlightDuration}
-            </Label>
-            <div className="grid grid-cols-4 gap-2">
-              {(["3000", "5000", "10000", "always"] as const).map((d) => {
-                const val = d === "always" ? "always" : Number(d);
-                const isActive = highlightDuration === val;
+          {mode === "spatial" && (
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                {t.settings.highlightDuration}
+              </Label>
+              <div className="grid grid-cols-4 gap-2">
+                {(["3000", "5000", "10000", "always"] as const).map((d) => {
+                  const val = d === "always" ? "always" : Number(d);
+                  const isActive = highlightDuration === val;
 
-                let label = "";
-                if (d === "3000") label = "3s";
-                else if (d === "5000") label = "5s";
-                else if (d === "10000") label = "10s";
-                else label = "∞";
+                  let label = "";
+                  if (d === "3000") label = "3s";
+                  else if (d === "5000") label = "5s";
+                  else if (d === "10000") label = "10s";
+                  else label = "∞";
 
-                let titleText = "";
-                if (d === "3000") titleText = t.settings.durations.short;
-                else if (d === "5000") titleText = t.settings.durations.medium;
-                else if (d === "10000") titleText = t.settings.durations.long;
-                else titleText = t.settings.durations.always;
+                  let titleText = "";
+                  if (d === "3000") titleText = t.settings.durations.short;
+                  else if (d === "5000") titleText = t.settings.durations.medium;
+                  else if (d === "10000") titleText = t.settings.durations.long;
+                  else titleText = t.settings.durations.always;
 
-                return (
-                  <Button
-                    key={d}
-                    variant={isActive ? "secondary" : "outline"}
-                    size="sm"
-                    onClick={() => setHighlightDuration(val as HighlightDuration)}
-                    className={cn(
-                      isActive &&
-                        "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20",
-                    )}
-                    title={titleText}
-                  >
-                    {label}
-                  </Button>
-                );
-              })}
+                  return (
+                    <Button
+                      key={d}
+                      variant={isActive ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={() => setHighlightDuration(val as HighlightDuration)}
+                      className={cn(
+                        isActive &&
+                          "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20",
+                      )}
+                      title={titleText}
+                    >
+                      {label}
+                    </Button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Debug Grid Setting */}
+          {mode === "spatial" && (
+            <div className="space-y-2">
+              <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Debug Overlay
+              </Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={showDebugGrid ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={() => setShowDebugGrid(!showDebugGrid)}
+                  className={cn(
+                    "flex-1",
+                    showDebugGrid &&
+                      "bg-primary/10 text-primary hover:bg-primary/20 border-primary/20",
+                  )}
+                >
+                  {showDebugGrid ? "Hide Spatial Grid" : "Show Spatial Grid"}
+                  {showDebugGrid && <Check className="h-3.5 w-3.5 ml-2" />}
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </PopoverContent>
     </Popover>

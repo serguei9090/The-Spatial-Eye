@@ -283,8 +283,13 @@ export function useGeminiCore({
               }
               // Buffer is filled, start playback
               isBufferingRef.current = false;
-              // Provide a very small safety margin for the first chunk
-              nextStartTimeRef.current = Math.max(ctx.currentTime + 0.1, nextStartTimeRef.current);
+            }
+
+            // ── CLOCK SYNC ──
+            // If the next playback time is in the past (e.g. after a silent pause),
+            // resync it to the current context time with a small safety margin.
+            if (nextStartTimeRef.current < ctx.currentTime) {
+              nextStartTimeRef.current = ctx.currentTime + 0.1;
             }
 
             // Flush synchronously! Do not yield the event loop / main thread!
@@ -437,6 +442,8 @@ export function useGeminiCore({
               isBufferingRef.current = false;
               processAudioQueue();
             }
+            // Reset buffering for the next turn to ensure jitter protection
+            isBufferingRef.current = true;
           }
         };
 

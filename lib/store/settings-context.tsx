@@ -15,6 +15,10 @@ interface SettingsContextType {
   // Highlight Settings
   highlightDuration: HighlightDuration;
   setHighlightDuration: (duration: HighlightDuration) => void;
+
+  // Debug Settings
+  showDebugGrid: boolean;
+  setShowDebugGrid: (show: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -23,6 +27,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   // Initialize with defaults (could load from localStorage here)
   const [language, setLanguage] = useState<Language>("en");
   const [highlightDuration, setHighlightDuration] = useState<HighlightDuration>(5000);
+  const [showDebugGrid, setShowDebugGrid] = useState<boolean>(false);
 
   const value = useMemo(
     () => ({
@@ -31,8 +36,10 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       t: translations[language],
       highlightDuration,
       setHighlightDuration,
+      showDebugGrid,
+      setShowDebugGrid,
     }),
-    [language, highlightDuration],
+    [language, highlightDuration, showDebugGrid],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
