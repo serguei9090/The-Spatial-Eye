@@ -107,6 +107,7 @@ async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial"):
     # 3. Define the Upstream Task (receives bytes from FE, sends to queue)
     async def upstream_task() -> None:
         audio_chunk_count = 0
+        video_frame_count = 0
         try:
             while True:
                 data = await websocket.receive()
@@ -136,8 +137,12 @@ async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial"):
                                 ))
 
                             if "video" in ri:
+                                video_frame_count += 1
+                                if video_frame_count % 10 == 0:
+                                    logger.debug(f"[{session_id}] Upstream: Received {video_frame_count} Video Frames")
                                 video = ri["video"]
                                 raw_video = base64.b64decode(video["data"])
+                                
                                 live_request_queue.send_realtime(types.Blob(
                                     mime_type=video.get("mimeType", "image/jpeg"),
                                     data=raw_video

@@ -86,25 +86,35 @@ export function projectHighlightToScreen(
     containerHeight,
   );
 
-  // 1. Normalized to Intrinsic Video Coordinates
-  // 1. Normalized to Intrinsic Video Coordinates
-  const intrinsicY = ((highlight.ymin + highlight.ymax) / 2 / 1000) * videoHeight;
-  const intrinsicX = ((highlight.xmin + highlight.xmax) / 2 / 1000) * videoWidth;
+  // 1. Normalized to Intrinsic Video Dimensions
+  const hWidthIntrinsic = ((highlight.xmax - highlight.xmin) / 1000) * videoWidth;
+  const hHeightIntrinsic = ((highlight.ymax - highlight.ymin) / 1000) * videoHeight;
+  const intrinsicCenterX = ((highlight.xmin + highlight.xmax) / 2 / 1000) * videoWidth;
+  const intrinsicCenterY = ((highlight.ymin + highlight.ymax) / 2 / 1000) * videoHeight;
 
-  // Calculate Radius (Use largest dimension or explicit scale)
-  // Assuming highlight box size if render_scale not available
-  const hWidth = ((highlight.xmax - highlight.xmin) / 1000) * videoWidth;
-  const hHeight = ((highlight.ymax - highlight.ymin) / 1000) * videoHeight;
-  const intrinsicRadius = Math.max(hWidth, hHeight) / 2;
+  // 2. Apply Object Fit Transform to Center and Scale Dimensions
+  const screenCenterX = intrinsicCenterX * scale + offsetX;
+  const screenCenterY = intrinsicCenterY * scale + offsetY;
+  const screenWidth = hWidthIntrinsic * scale;
+  const screenHeight = hHeightIntrinsic * scale;
 
-  // 2. Apply Object Fit Transform
-  const screenX = intrinsicX * scale + offsetX;
-  const screenY = intrinsicY * scale + offsetY;
-  const screenRadius = intrinsicRadius * scale;
+  // 3. Calculate derived radii
+  // "Circle" mode: Max dimension
+  const radiusMax = Math.max(screenWidth, screenHeight) / 2;
+  // "Fitted Circle" mode: Min dimension + 10%
+  const radiusFitted = (Math.min(screenWidth, screenHeight) / 2) * 1.1;
 
   return {
-    cx: screenX,
-    cy: screenY,
-    radius: screenRadius,
+    // Circle props
+    cx: screenCenterX,
+    cy: screenCenterY,
+    radius: radiusMax,
+    fittedRadius: radiusFitted,
+
+    // Rect props (Top-Left Origin)
+    x: screenCenterX - screenWidth / 2,
+    y: screenCenterY - screenHeight / 2,
+    width: screenWidth,
+    height: screenHeight,
   };
 }

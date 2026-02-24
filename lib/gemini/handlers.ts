@@ -72,9 +72,14 @@ export function handleSpatialToolCall(
           .filter((h): h is Highlight => h !== null);
 
         if (newHighlights.length > 0) {
-          setActiveHighlights((prev) => [...prev, ...newHighlights]);
+          // Replace previous highlights with the new ones to ensure fresh grounding
+          // and avoid "stationary ghosts" after objects move.
+          setActiveHighlights(newHighlights);
         }
       }
+    } else if (fc.name === "clear_spatial_highlights") {
+      logTrace("Executing clear_spatial_highlights");
+      setActiveHighlights([]);
     }
   }
 }

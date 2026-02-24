@@ -5,6 +5,7 @@ import type React from "react";
 import { createContext, useContext, useMemo, useState } from "react";
 
 export type HighlightDuration = 3000 | 5000 | 10000 | "always";
+export type HighlightType = "circle" | "rounded-rect" | "fitted-circle";
 
 interface SettingsContextType {
   // Language Settings
@@ -15,6 +16,8 @@ interface SettingsContextType {
   // Highlight Settings
   highlightDuration: HighlightDuration;
   setHighlightDuration: (duration: HighlightDuration) => void;
+  highlightType: HighlightType;
+  setHighlightType: (type: HighlightType) => void;
 
   // Debug Settings
   showDebugGrid: boolean;
@@ -27,6 +30,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   // Initialize with defaults (could load from localStorage here)
   const [language, setLanguage] = useState<Language>("en");
   const [highlightDuration, setHighlightDuration] = useState<HighlightDuration>(5000);
+  const [highlightType, setHighlightType] = useState<HighlightType>("circle");
   const [showDebugGrid, setShowDebugGrid] = useState<boolean>(false);
 
   const value = useMemo(
@@ -36,10 +40,12 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
       t: translations[language],
       highlightDuration,
       setHighlightDuration,
+      highlightType,
+      setHighlightType,
       showDebugGrid,
       setShowDebugGrid,
     }),
-    [language, highlightDuration, showDebugGrid],
+    [language, highlightDuration, highlightType, showDebugGrid],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;

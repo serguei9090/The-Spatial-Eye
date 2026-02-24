@@ -22,7 +22,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAudioDeviceContext } from "@/lib/store/audio-context";
-import { type HighlightDuration, useSettings } from "@/lib/store/settings-context";
+import {
+  type HighlightDuration,
+  type HighlightType,
+  useSettings,
+} from "@/lib/store/settings-context";
 import { cn } from "@/lib/utils";
 
 interface SettingsMenuProps {
@@ -36,6 +40,8 @@ export function SettingsMenu({ mode }: SettingsMenuProps) {
     setLanguage,
     highlightDuration,
     setHighlightDuration,
+    highlightType,
+    setHighlightType,
     showDebugGrid,
     setShowDebugGrid,
   } = useSettings();
@@ -226,6 +232,37 @@ export function SettingsMenu({ mode }: SettingsMenuProps) {
                       );
                     })}
                   </div>
+                </div>
+
+                {/* Highlight Type */}
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 leading-none">
+                    <Disc className="h-3 w-3" />
+                    {/* @ts-ignore - added to translations */}
+                    {t.settings.highlightType}
+                  </Label>
+                  <Select
+                    value={highlightType}
+                    onValueChange={(val) => setHighlightType(val as HighlightType)}
+                  >
+                    <SelectTrigger className="h-9 text-xs bg-muted/30 border-muted/50 w-full overflow-hidden">
+                      <SelectValue placeholder="Select Shape" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="circle" className="text-xs">
+                        {/* @ts-ignore - added to translations */}
+                        {t.settings.types.circle}
+                      </SelectItem>
+                      <SelectItem value="rounded-rect" className="text-xs">
+                        {/* @ts-ignore - added to translations */}
+                        {t.settings.types.rect}
+                      </SelectItem>
+                      <SelectItem value="fitted-circle" className="text-xs">
+                        {/* @ts-ignore - added to translations */}
+                        {t.settings.types.fitted}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Debug Overlay */}

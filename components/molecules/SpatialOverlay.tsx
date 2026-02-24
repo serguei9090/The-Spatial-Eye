@@ -15,7 +15,7 @@ export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialO
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
-  const { showDebugGrid } = useSettings();
+  const { showDebugGrid, highlightType } = useSettings();
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -62,7 +62,7 @@ export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialO
         )}
 
         {highlights.map((highlight) => {
-          const circle = projectHighlightToScreen(
+          const geometry = projectHighlightToScreen(
             highlight,
             videoWidth,
             videoHeight,
@@ -74,9 +74,8 @@ export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialO
             <HighlightCircle
               key={highlight.id}
               id={highlight.id}
-              cx={circle.cx}
-              cy={circle.cy}
-              radius={circle.radius}
+              type={highlightType}
+              geometry={geometry}
             />
           );
         })}

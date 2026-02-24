@@ -99,9 +99,9 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
 
   const handleTranscript = (
     text: string,
-    metadata: { invocationId?: string; finished?: boolean },
+    metadata: { invocationId?: string; finished?: boolean; isPartial?: boolean },
   ) => {
-    const { invocationId, finished } = metadata;
+    const { invocationId, finished, isPartial } = metadata;
     // For IT Architecture mode, skip raw tool call strings from transcript
     const isToolCallText =
       mode === "it-architecture" && /call:\s*\w+|add_node|add_edge|clear_diagram/.test(text);
@@ -110,7 +110,13 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
       const cleanText = text
         .replaceAll(/call:\s*(add_node|add_edge|clear_diagram)[\s\S]*/g, "")
         .trimEnd();
-      if (cleanText) setLatestTranscript((prev) => prev + cleanText);
+
+      // The Gemini API sends incremental chunks with partial=true,
+      // and then sends the FULL assembled string with partial=false.
+      // To avoid duplicating the sentence, we only append the partial chunks.
+      if (cleanText && isPartial !== false) {
+        setLatestTranscript((prev) => prev + cleanText);
+      }
     }
 
     if (mode !== "storyteller") return;

@@ -82,9 +82,15 @@ export function SpatialLayout() {
         return;
       }
 
+      // Optimize: Standardize AI resolution to 640x360 (or maintain aspect ratio)
+      // This reduces token usage and processing latency significantly.
+      const AI_W = 640;
+      const aspect = (video.videoHeight || 720) / (video.videoWidth || 1280);
+      const AI_H = Math.round(AI_W * aspect);
+
       const canvas = document.createElement("canvas");
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 360;
+      canvas.width = AI_W;
+      canvas.height = AI_H;
 
       const context = canvas.getContext("2d");
       if (!context) {
@@ -92,12 +98,12 @@ export function SpatialLayout() {
       }
 
       context.drawImage(video, 0, 0, canvas.width, canvas.height);
-      const data = canvas.toDataURL("image/jpeg", 0.5).split(",")[1];
+      const data = canvas.toDataURL("image/jpeg", 0.6).split(",")[1];
 
       if (data) {
         sendVideoFrame(data, "image/jpeg");
       }
-    }, 800);
+    }, 500); // 2 FPS is the sweet spot for Gemini Live real-time grounding
 
     return () => {
       globalThis.clearInterval(intervalId);

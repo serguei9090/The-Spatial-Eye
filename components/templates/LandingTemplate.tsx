@@ -3,8 +3,9 @@
 import { ParticleBackground } from "@/components/backgrounds/ParticleBackground";
 import { FeatureCard } from "@/components/molecules/FeatureCard";
 import { LandingHero } from "@/components/organisms/LandingHero";
-import { motion } from "framer-motion";
-import { BookOpen, Eye, GithubIcon, Share2, Terminal } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Bug, ChevronDown, Cpu, Eye, Github, Share2, Terminal } from "lucide-react";
+import { useRef, useState } from "react";
 
 const FEATURES = [
   {
@@ -17,24 +18,111 @@ const FEATURES = [
     mode: "spatial",
   },
   {
-    title: "Creative Storyteller",
-    description:
-      "Multimodal narrative generation with interleaved output. The AI weaves together live narration, generated imagery, and soundscapes based on your current physical surroundings.",
-    icon: BookOpen,
-    color: "#d946ef",
-    delay: 0.2,
-    mode: "storyteller",
-  },
-  {
     title: "IT Architecture Studio",
     description:
       "Visual system design and documentation. The AI interprets complex technical diagrams and assists in building real-time architecture models with industry-standard patterns.",
     icon: Terminal,
     color: "#06b6d4",
-    delay: 0.3,
+    delay: 0.2,
     mode: "it-architecture",
   },
 ];
+
+const ISSUES_SOLUTIONS = [
+  {
+    id: "ai-looping",
+    title: "Action-Looping & Input Hallucination",
+    issue:
+      "The spatial AI would repeatedly trigger greetings or 'hallucinate' user input, causing infinite conversational loops and redundant tool invocations.",
+    solution:
+      "Re-architected the client-server bridge. The React frontend now acts purely as an ultra-low-latency A/V conduit, offloading all session orchestration, state management, and tool routing to a robust FastAPI Python backend.",
+    icon: Bug,
+    color: "#eab308",
+  },
+  {
+    id: "tool-execution",
+    title: "Ghost Highlights & Verbalized Coordinates",
+    issue:
+      "During spatial tracking, the agent successfully executed the `track_and_highlight` tool but would speak the raw bounding box coordinates aloud while the UI failed to render the visual.",
+    solution:
+      "Refined prompt engineering to enforce silent spatial tool execution. Bound backend coordinate payloads directly to Framer Motion components on the frontend canvas layer for surgical, seamless visual highlighting.",
+    icon: Cpu,
+    color: "#22c55e",
+  },
+];
+
+interface IssueSolutionItem {
+  id: string;
+  title: string;
+  issue: string;
+  solution: string;
+  icon: React.ElementType;
+  color: string;
+}
+
+function AccordionItem({ item, idx }: { item: IssueSolutionItem; idx: number }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const Icon = item.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ delay: idx * 0.1 }}
+      className="border border-white/10 rounded-2xl bg-white/5 overflow-hidden"
+    >
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-6 text-left hover:bg-white/5 transition-colors"
+      >
+        <div className="flex items-center gap-4">
+          <div
+            className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/5 border border-white/10"
+            style={{ color: item.color }}
+          >
+            <Icon className="h-6 w-6" />
+          </div>
+          <h3 className="text-xl font-bold">{item.title}</h3>
+        </div>
+        <ChevronDown
+          className={`h-5 w-5 text-muted-foreground transition-transform duration-300 ${isOpen ? "rotate-180" : ""}`}
+        />
+      </button>
+
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+            className="overflow-hidden"
+          >
+            <div className="p-6 pt-0 border-t border-white/5 mt-2 bg-black/20">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+                <div>
+                  <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-red-500" />
+                    The Issue
+                  </h4>
+                  <p className="text-white/80 leading-relaxed text-sm">{item.issue}</p>
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    Our Solution
+                  </h4>
+                  <p className="text-white/80 leading-relaxed text-sm">{item.solution}</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
 
 export function LandingTemplate() {
   return (
@@ -66,7 +154,7 @@ export function LandingTemplate() {
               className="p-2 rounded-full hover:bg-white/5 transition-colors"
               rel="noreferrer"
             >
-              <GithubIcon className="h-5 w-5" />
+              <Github className="h-5 w-5" />
             </a>
           </div>
         </div>
@@ -80,14 +168,33 @@ export function LandingTemplate() {
           <div className="mb-16 text-center">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">Unified Intelligence</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Explore the three core dimensions of The Spatial Eye, each leveraging Gemini&apos;s
+              Explore the two core dimensions of The Spatial Eye, each leveraging Gemini&apos;s
               multimodal power in unique ways.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {FEATURES.map((feature) => (
               <FeatureCard key={feature.title} {...feature} />
+            ))}
+          </div>
+        </section>
+
+        {/* Issues & Solutions Section */}
+        <section id="issues" className="py-24 border-t border-white/5">
+          <div className="mb-16 text-center">
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+              Challenges & Architecture Decisions
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Building a real-time multimodal agent requires solving complex synchronization and
+              state management challenges. Here's how we tackled them.
+            </p>
+          </div>
+
+          <div className="max-w-4xl mx-auto space-y-4">
+            {ISSUES_SOLUTIONS.map((item, idx) => (
+              <AccordionItem key={item.id} item={item} idx={idx} />
             ))}
           </div>
         </section>
@@ -109,12 +216,12 @@ export function LandingTemplate() {
               <ul className="space-y-4">
                 {[
                   { label: "Gemini 2.5 Live", detail: "Low-latency WebSocket interaction" },
-                  { label: "Cloud Run", detail: "Serverless containerized backend" },
-                  { label: "Terraform/Pulumi", detail: "Automated IaC for reliability" },
+                  { label: "Google Cloud Run", detail: "Serverless backend orchestration" },
+                  { label: "Firebase Auth", detail: "Secure Google Sign-In" },
+                  { label: "Firebase Hosting", detail: "Managed CDN & Static Assets" },
+                  { label: "Terraform", detail: "Automated IaC for reliability" },
                   { label: "Next.js 15", detail: "Cutting-edge frontend performance" },
-                  { label: "React 19", detail: "Component-based UI architecture" },
-                  { label: "shadcn/ui", detail: "Beautifully designed atomic components" },
-                  { label: "Antigravity IDE", detail: "Advanced agentic development" },
+                  { label: "shadcn/ui", detail: "Atomic design components" },
                 ].map((item, idx) => (
                   <motion.li
                     key={item.label}

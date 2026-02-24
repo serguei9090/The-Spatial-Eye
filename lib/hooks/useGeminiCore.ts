@@ -40,7 +40,10 @@ export interface UseGeminiCoreProps {
     toolCall: LiveServerMessage["toolCall"],
     metadata: { invocationId?: string },
   ) => void;
-  onTranscript?: (text: string, metadata: { invocationId?: string; finished?: boolean }) => void;
+  onTranscript?: (
+    text: string,
+    metadata: { invocationId?: string; finished?: boolean; isPartial?: boolean },
+  ) => void;
   onTurnComplete?: (invocationId?: string) => void;
   resumePrompt?: string;
 }
@@ -276,7 +279,7 @@ export function useGeminiCore({
             // Wait until we have accumulated a minimum number of chunks before playing,
             // to absorb network/generation jitter.
             if (isBufferingRef.current) {
-              const MIN_CHUNKS = 40; // ~400-800ms of buffered audio, prevents React UI jitter
+              const MIN_CHUNKS = mode === "storyteller" ? 40 : 2; // ~400-800ms of buffered audio for Storyteller, instant for Spatial/IT
               if (audioQueueRef.current.length < MIN_CHUNKS) {
                 isProcessingAudioRef.current = false;
                 return; // Wait for more chunks
@@ -412,6 +415,7 @@ export function useGeminiCore({
 
           // 4. Transcript
           const transcript = msg.outputTranscription || msg.output_transcription;
+          const isPartial = (msg as { partial?: boolean }).partial ?? true;
           const transcriptFinished =
             (msg as { outputTranscription?: { text: string; finished?: boolean } })
               .outputTranscription?.finished ??
@@ -423,6 +427,7 @@ export function useGeminiCore({
             onTranscript(transcript.text, {
               invocationId: currentTurnId,
               finished: transcriptFinished,
+              isPartial: isPartial,
             });
           }
 
