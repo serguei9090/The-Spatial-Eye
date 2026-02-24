@@ -37,9 +37,7 @@ export function StudioLayout() {
   const initialMode = searchParams.get("mode") as AppMode;
 
   const [mode, setMode] = useState<AppMode>(
-    initialMode && ["spatial", "storyteller", "it-architecture"].includes(initialMode)
-      ? initialMode
-      : "spatial",
+    initialMode && ["spatial", "it-architecture"].includes(initialMode) ? initialMode : "spatial",
   );
   const { selectedInputId, selectedVideoId } = useAudioDeviceContext();
 

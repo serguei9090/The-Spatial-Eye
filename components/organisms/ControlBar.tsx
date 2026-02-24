@@ -61,6 +61,7 @@ export function ControlBar({
         >
           {t.modes.live}
         </Button>
+        {/* Storyteller Mode Hidden for Hakentoch Focus 
         <Button
           type="button"
           variant="ghost"
@@ -73,6 +74,7 @@ export function ControlBar({
         >
           {t.modes.storyteller}
         </Button>
+        */}
         <Button
           type="button"
           variant="ghost"
