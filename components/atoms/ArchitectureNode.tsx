@@ -33,7 +33,7 @@ export type ArchitectureNodeData = {
 export type ArchitectureNodeObject = Node<ArchitectureNodeData, "architecture">;
 
 export function ArchitectureNode({ data, selected }: NodeProps<ArchitectureNodeObject>) {
-  const Icon = (iconMap[data.type as keyof typeof iconMap] || Server) as React.ElementType;
+  const Icon = iconMap[data.type as keyof typeof iconMap] || Server;
 
   return (
     <div
@@ -56,6 +56,8 @@ export function ArchitectureNode({ data, selected }: NodeProps<ArchitectureNodeO
 
       <Handle type="target" position={Position.Top} className="w-3 h-3 bg-muted-foreground" />
       <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-muted-foreground" />
+      <Handle type="source" position={Position.Right} className="w-2 h-2 bg-muted-foreground/50" />
+      <Handle type="target" position={Position.Left} className="w-2 h-2 bg-muted-foreground/50" />
     </div>
   );
 }

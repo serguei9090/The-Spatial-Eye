@@ -7,7 +7,7 @@ import {
   SPATIAL_SYSTEM_INSTRUCTION,
   STORYTELLER_SYSTEM_INSTRUCTION,
 } from "@/lib/api/gemini_websocket";
-import { handleSpatialToolCall } from "@/lib/gemini/handlers";
+
 import {
   IT_ARCHITECTURE_SYSTEM_INSTRUCTION,
   IT_ARCHITECTURE_TOOLS,
@@ -15,7 +15,9 @@ import {
 } from "@/lib/gemini/it-architecture-handlers";
 import { handleDirectorToolCall, triggerStoryVisual } from "@/lib/gemini/storyteller-handlers";
 import { DIRECTOR_TOOLS, SPATIAL_TOOLS } from "@/lib/gemini/tools/definitions";
+import { useArchitectureMode } from "@/lib/hooks/useArchitectureMode";
 import { useGeminiCore } from "@/lib/hooks/useGeminiCore";
+import { useSpatialMode } from "@/lib/hooks/useSpatialMode";
 import { useSettings } from "@/lib/store/settings-context";
 import type { Highlight, StoryItem } from "@/lib/types";
 import type { Edge, Node } from "@xyflow/react";
@@ -24,13 +26,15 @@ export type GeminiMode = "spatial" | "storyteller" | "it-architecture";
 
 export interface UseGeminiLiveProps {
   mode?: GeminiMode; // default "spatial"
+  onTurnComplete?: (invocationId?: string) => void;
 }
 
-export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
-  const [activeHighlights, setActiveHighlights] = useState<Highlight[]>([]);
+export function useGeminiLive({ mode = "spatial", onTurnComplete }: UseGeminiLiveProps = {}) {
+  const { activeHighlights, setActiveHighlights, handleSpatialToolCall } = useSpatialMode();
+
+  const { nodes, edges, setNodes, setEdges, handleArchitectureToolCall } = useArchitectureMode();
+
   const [storyStream, setStoryStream] = useState<StoryItem[]>([]);
-  const [nodes, setNodes] = useState<Node[]>([]);
-  const [edges, setEdges] = useState<Edge[]>([]);
   const [latestTranscript, setLatestTranscript] = useState<string>("");
   const triggeredVisualsRef = useRef<Set<string>>(new Set());
   const cumulativeTranscriptRef = useRef<string>("");
@@ -39,27 +43,6 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
   let systemInstruction = SPATIAL_SYSTEM_INSTRUCTION;
   if (mode === "storyteller") systemInstruction = STORYTELLER_SYSTEM_INSTRUCTION;
   if (mode === "it-architecture") systemInstruction = IT_ARCHITECTURE_SYSTEM_INSTRUCTION;
-
-  const { highlightDuration } = useSettings();
-
-  // Highlight Pruning Logic
-  useEffect(() => {
-    if (highlightDuration === "always") return;
-    const durationCount = Number(highlightDuration);
-
-    const interval = setInterval(() => {
-      setActiveHighlights((prev) => {
-        const now = Date.now();
-        const filtered = prev.filter((h) => now - h.timestamp < durationCount);
-        if (filtered.length !== prev.length) {
-          console.debug(`[GeminiLive] Pruned ${prev.length - filtered.length} highlights.`);
-        }
-        return filtered;
-      });
-    }, 500);
-
-    return () => clearInterval(interval);
-  }, [highlightDuration]);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Reset state when mode changes
   useEffect(() => {
@@ -89,11 +72,11 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
     metadata: { invocationId?: string },
   ) => {
     if (mode === "spatial") {
-      handleSpatialToolCall(toolCall, setActiveHighlights);
+      handleSpatialToolCall(toolCall, metadata.invocationId);
     } else if (mode === "storyteller") {
       handleDirectorToolCall(toolCall, setStoryStream, metadata);
     } else if (mode === "it-architecture") {
-      handleArchitectureToolCall(toolCall, setNodes, setEdges);
+      handleArchitectureToolCall(toolCall);
     }
   };
 
@@ -104,7 +87,8 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
     const { invocationId, finished, isPartial } = metadata;
     // For IT Architecture mode, skip raw tool call strings from transcript
     const isToolCallText =
-      mode === "it-architecture" && /call:\s*\w+|add_node|add_edge|clear_diagram/.test(text);
+      mode === "it-architecture" &&
+      /call:\s*\w+|add_node|add_edge|clear_diagram|delete_node|remove_edge|update_node/.test(text);
     if (!isToolCallText) {
       // Strip out any partial tool call artifacts that may bleed through
       const cleanText = text
@@ -293,7 +277,7 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
     const MAX_RESUME_NODES = 8;
     const nodeNames = nodes
       .slice(0, MAX_RESUME_NODES)
-      .map((n) => n.data.label)
+      .map((n: Node) => n.data.label)
       .join(", ");
     const moreNodes =
       nodes.length > MAX_RESUME_NODES ? ` (and ${nodes.length - MAX_RESUME_NODES} more)` : "";
@@ -312,7 +296,7 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
     mode,
     onToolCall: handleToolCall,
     onTranscript: handleTranscript,
-    onTurnComplete: () => {
+    onTurnComplete: (invocationId) => {
       if (mode !== "storyteller") return;
       setStoryStream((prev) => {
         let updated = [...prev];
@@ -356,6 +340,8 @@ export function useGeminiLive({ mode = "spatial" }: UseGeminiLiveProps = {}) {
 
         return updated;
       });
+      // Call external handler if provided
+      onTurnComplete?.(invocationId);
     },
     resumePrompt,
   });

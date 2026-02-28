@@ -14,8 +14,8 @@ export const translations = {
       aiAssistant: "AI Assistant",
     },
     controls: {
-      start: "Start Session",
-      end: "End Session",
+      start: "Start",
+      stop: "Stop",
     },
     devices: {
       camera: "Camera",
@@ -53,8 +53,8 @@ export const translations = {
       aiAssistant: "Asistente IA",
     },
     controls: {
-      start: "Iniciar Sesión",
-      end: "Finalizar Sesión",
+      start: "Comenzar",
+      stop: "Detener",
     },
     devices: {
       camera: "Cámara",

@@ -6,7 +6,7 @@
 
 The application features three distinct operational modes:
 1.  **🔵 Spatial Live:** The AI analyzes a live camera feed and can highlight and identify real-world objects with surgical precision.
-2.  **📖 Creative Storyteller:** Transforms physical objects seen by the camera into vivid, interleaved narratives accompanied by AI-generated storyboard images.
+2.  **📖 Creative Storyteller (Out of Scope):** Transforms physical objects seen by the camera into vivid, interleaved narratives accompanied by AI-generated storyboard images. *Note: Disabled for current release.*
 3.  **🖧 IT Architecture:** Listens to a user's verbal project ideas and generates interactive, evolving IT architecture diagrams in real time using ReactFlow.
 
 The project is architected for resilience, featuring a robust error-handling system that provides specific user notifications (toasts) when different AI models are unavailable due to billing issues or quota limits.

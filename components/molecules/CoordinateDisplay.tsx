@@ -1,7 +1,7 @@
 import type { Highlight } from "@/lib/types";
 
 interface CoordinateDisplayProps {
-  highlight?: Highlight;
+  readonly highlight?: Highlight;
 }
 
 export function CoordinateDisplay({ highlight }: CoordinateDisplayProps) {
@@ -10,7 +10,7 @@ export function CoordinateDisplay({ highlight }: CoordinateDisplayProps) {
   }
 
   return (
-    <p className="font-mono text-xs text-slate-700">
+    <p className="font-mono text-xs text-muted-foreground">
       [{highlight.ymin}, {highlight.xmin}, {highlight.ymax}, {highlight.xmax}]
     </p>
   );

@@ -21,6 +21,9 @@ export function SpatialGrid({
   offsetX,
   offsetY,
 }: SpatialGridProps) {
+  // Prevent division by zero or NaN rendering
+  if (!containerWidth || !containerHeight) return null;
+
   // Generate grid lines for every 10% (100 units in 0-1000 range)
   const lines = [];
   for (let i = 0; i <= 10; i++) {

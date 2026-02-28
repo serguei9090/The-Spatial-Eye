@@ -31,10 +31,38 @@ export function useAudioDevices(): AudioDevicesState {
   const [inputDevices, setInputDevices] = useState<MediaDeviceInfo[]>([]);
   const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
-  const [selectedInputId, setSelectedInputId] = useState<string>("");
-  const [selectedOutputId, setSelectedOutputId] = useState<string>("");
-  const [selectedVideoId, setSelectedVideoId] = useState<string>("");
+  const [selectedInputId, setSelectedInputId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("spatial-eye-input-id") ?? "";
+    }
+    return "";
+  });
+  const [selectedOutputId, setSelectedOutputId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("spatial-eye-output-id") ?? "";
+    }
+    return "";
+  });
+  const [selectedVideoId, setSelectedVideoId] = useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("spatial-eye-video-id") ?? "";
+    }
+    return "";
+  });
   const [outputSelectionSupported, setOutputSelectionSupported] = useState(false);
+
+  // Persistence effects
+  useEffect(() => {
+    if (selectedInputId) localStorage.setItem("spatial-eye-input-id", selectedInputId);
+  }, [selectedInputId]);
+
+  useEffect(() => {
+    if (selectedOutputId) localStorage.setItem("spatial-eye-output-id", selectedOutputId);
+  }, [selectedOutputId]);
+
+  useEffect(() => {
+    if (selectedVideoId) localStorage.setItem("spatial-eye-video-id", selectedVideoId);
+  }, [selectedVideoId]);
 
   const refreshDevices = useCallback(
     async (requestPermission = false) => {
@@ -67,6 +95,7 @@ export function useAudioDevices(): AudioDevicesState {
       setOutputDevices(outputs);
       setVideoDevices(videos);
 
+      // Only set defaults if no selection exists AND persistence also failed
       if (!selectedInputId && inputs.length > 0) {
         setSelectedInputId(inputs[0]?.deviceId ?? "");
       }

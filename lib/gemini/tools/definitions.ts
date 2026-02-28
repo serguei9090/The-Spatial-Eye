@@ -1,41 +1,46 @@
 import { type FunctionDeclaration, Type } from "@google/genai";
 
 /**
- * Tool definition for tracking and highlighting objects in the spatial view.
- * Now supports multi-object selection via the `objects` array.
+ * Frontend tool definitions for Spatial/Live mode.
+ * NOTE: These tools are primarily for type reference. The actual tool schemas
+ * sent to the Gemini API are registered in backend/tools_config.py.
+ * Keep these in sync with the backend definitions.
  */
 export const highlightTool: FunctionDeclaration = {
   name: "track_and_highlight",
   description:
-    "REQUIRED for Spatial Awareness: precise object locating. Instead of a bounding box, find the CENTER POINT of the object. Return the normalized center coordinates (0-1000). Also return a 'render_scale' (0-1000) that represents the approximate radius or size of the object relative to the screen, but keep it tight. If there are MULTIPLE objects, call this tool MULTIPLE times in parallel.",
+    "LOCATE and MARK objects. Return a tight bounding box [ymin, xmin, ymax, xmax] on a 1000-normalized grid. If there are MULTIPLE objects, call this tool MULTIPLE times in parallel. DO NOT narrate your coordinates or use words like 'ymin' in speech.",
   parameters: {
     type: Type.OBJECT,
     properties: {
       label: {
         type: Type.STRING,
-        description: "A short, human-readable label of the object (e.g. 'Coffee Cup').",
+        description: "Short object name (e.g. 'Screw Hole').",
       },
-      center_x: {
-        type: Type.NUMBER,
-        description: "Center X coordinate on a 0-1000 normalized grid.",
-      },
-      center_y: {
-        type: Type.NUMBER,
-        description: "Center Y coordinate on a 0-1000 normalized grid.",
-      },
-      render_scale: {
-        type: Type.NUMBER,
-        description: "Approximate radius/size of the visible object (0-1000).",
+      box_2d: {
+        type: Type.ARRAY,
+        items: { type: Type.NUMBER },
+        description: "[ymin, xmin, ymax, xmax] normalized coordinates.",
       },
     },
-    required: ["label", "center_x", "center_y", "render_scale"],
+    required: ["label", "box_2d"],
+  },
+};
+
+export const clearHighlightsTool: FunctionDeclaration = {
+  name: "clear_spatial_highlights",
+  description:
+    "Clears all active spatial highlights from the user's screen. Use when an object is no longer visible or the user asks to stop highlighting.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: {},
   },
 };
 
 /**
  * Collection of tools available for Spatial/Live mode.
  */
-export const SPATIAL_TOOLS = [highlightTool];
+export const SPATIAL_TOOLS = [highlightTool, clearHighlightsTool];
 
 /**
  * Creative Director Tools

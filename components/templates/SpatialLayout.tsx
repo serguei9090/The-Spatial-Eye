@@ -263,17 +263,18 @@ export function SpatialLayout() {
         />
       </div>
 
-      <section className="relative h-screen w-full overflow-hidden">
+      <section className="fixed inset-0 overflow-hidden bg-black z-0">
         <VideoFeed
           videoRef={videoRef}
           deviceId={selectedVideoId}
           onVideoReady={updateVideoSize}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-contain"
         />
         <SpatialOverlay
           highlights={visibleHighlights}
           videoWidth={videoSize.width}
           videoHeight={videoSize.height}
+          fit="contain"
         />
       </section>
 

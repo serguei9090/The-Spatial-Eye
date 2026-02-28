@@ -1,0 +1,36 @@
+# Dependencies - these are Windows-compiled binaries and MUST be excluded.
+# The Dockerfile installs fresh Linux-compatible versions via `npm ci`.
+node_modules
+.next
+
+# Python virtual environments
+backend/__pycache__
+backend/.venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+
+# Environment files - never bake secrets into the image
+.env
+.env.local
+.env.*.local
+
+# Dev/local tooling
+.git
+.gitignore
+.github
+*.md
+*.log
+.DS_Store
+Thumbs.db
+
+# Build/CI artifacts
+IaC
+.agent
+.gemini
+
+# Test files
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx

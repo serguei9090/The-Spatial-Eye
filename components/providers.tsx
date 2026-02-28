@@ -26,7 +26,7 @@ import { SettingsProvider } from "@/lib/store/settings-context";
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
       <SettingsProvider>
         <AuthProvider>
           <AudioDeviceProvider>

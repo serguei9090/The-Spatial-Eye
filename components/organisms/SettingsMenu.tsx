@@ -2,12 +2,13 @@ import {
   Camera,
   Check,
   Disc,
-  Headphones,
+  Download,
   Languages,
   Mic,
   Settings as SettingsIcon,
   Speaker,
   Timer,
+  Upload,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -30,10 +31,12 @@ import {
 import { cn } from "@/lib/utils";
 
 interface SettingsMenuProps {
-  mode?: "spatial" | "storyteller" | "it-architecture";
+  readonly mode?: "spatial" | "storyteller" | "it-architecture";
+  readonly onDownload?: () => void;
+  readonly onUpload?: (file: File) => void;
 }
 
-export function SettingsMenu({ mode }: SettingsMenuProps) {
+export function SettingsMenu({ mode, onDownload, onUpload }: SettingsMenuProps) {
   const {
     t,
     language,
@@ -68,8 +71,8 @@ export function SettingsMenu({ mode }: SettingsMenuProps) {
           variant="ghost"
           size="icon"
           className={cn(
-            "h-10 w-10 rounded-full transition-all hover:bg-secondary text-white/70 hover:text-white",
-            open && "bg-secondary text-secondary-foreground ring-2 ring-primary/20 text-white",
+            "h-10 w-10 rounded-full transition-all hover:bg-secondary text-muted-foreground hover:text-foreground",
+            open && "bg-secondary text-foreground ring-2 ring-primary/20",
           )}
         >
           <SettingsIcon className="h-5 w-5" />
@@ -162,6 +165,47 @@ export function SettingsMenu({ mode }: SettingsMenuProps) {
 
           {/* --- Application Settings --- */}
           <div className="p-4 grid gap-5 bg-muted/5">
+            {/* Architecture Actions */}
+            {mode === "it-architecture" && (
+              <div className="space-y-3">
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 leading-none">
+                  <Download className="h-3 w-3" />
+                  Diagram Actions
+                </Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onDownload}
+                    className="h-9 text-xs flex items-center justify-center gap-2 bg-muted/30 border-muted/50 transition-all hover:bg-primary/10 hover:border-primary/30"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    Export JSON
+                  </Button>
+                  <label className="cursor-pointer">
+                    <div className="h-9 w-full rounded-md border border-muted/50 bg-muted/30 px-3 py-1 text-xs flex items-center justify-center gap-2 transition-all hover:bg-primary/10 hover:border-primary/30">
+                      <Upload className="h-3.5 w-3.5" />
+                      Import JSON
+                    </div>
+                    <input
+                      type="file"
+                      id="diagram-upload"
+                      className="hidden"
+                      accept=".json"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file && onUpload) {
+                          onUpload(file);
+                          // Clear input so same file can be uploaded again if modified
+                          e.target.value = "";
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+            )}
+
             {/* Language */}
             <div className="space-y-2">
               <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 leading-none">

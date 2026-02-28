@@ -1,5 +1,6 @@
 "use client";
 
+import { cn } from "@/lib/utils";
 import { useEffect } from "react";
 
 interface VideoFeedProps {
@@ -7,6 +8,7 @@ interface VideoFeedProps {
   readonly deviceId?: string;
   readonly onVideoReady?: () => void;
   readonly className?: string;
+  readonly containerClassName?: string;
   readonly enabled?: boolean;
 }
 
@@ -15,6 +17,7 @@ export function VideoFeed({
   deviceId,
   onVideoReady,
   className,
+  containerClassName,
   enabled = true,
 }: VideoFeedProps) {
   useEffect(() => {
@@ -76,14 +79,8 @@ export function VideoFeed({
   if (!enabled) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-slate-200 bg-black">
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className={className || "h-screen w-full object-cover"}
-      />
+    <div className={cn("relative h-full w-full overflow-hidden bg-black", containerClassName)}>
+      <video ref={videoRef} autoPlay playsInline muted className={cn("h-full w-full", className)} />
     </div>
   );
 }

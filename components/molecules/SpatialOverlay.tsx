@@ -2,16 +2,22 @@ import { HighlightCircle } from "@/components/atoms/HighlightCircle";
 import { SpatialGrid } from "@/components/atoms/SpatialGrid";
 import { useSettings } from "@/lib/store/settings-context";
 import type { Highlight } from "@/lib/types";
-import { calculateObjectFitCover, projectHighlightToScreen } from "@/lib/utils/coordinates";
+import { calculateObjectFit, projectHighlightToScreen } from "@/lib/utils/coordinates";
 import { useEffect, useRef, useState } from "react";
 
 interface SpatialOverlayProps {
   highlights: Highlight[];
   videoWidth: number;
   videoHeight: number;
+  fit?: "cover" | "contain";
 }
 
-export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialOverlayProps) {
+export function SpatialOverlay({
+  highlights,
+  videoWidth,
+  videoHeight,
+  fit = "cover",
+}: SpatialOverlayProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
 
@@ -33,19 +39,26 @@ export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialO
     return () => observer.disconnect();
   }, []);
 
-  const fit = calculateObjectFitCover(
+  const fitParams = calculateObjectFit(
     videoWidth,
     videoHeight,
     containerSize.width,
     containerSize.height,
+    fit,
   );
+
+  if (containerSize.width === 0 || containerSize.height === 0) {
+    return (
+      <div ref={containerRef} className="pointer-events-none absolute inset-0 h-full w-full" />
+    );
+  }
 
   return (
     <div ref={containerRef} className="pointer-events-none absolute inset-0 h-full w-full">
       <svg
         className="h-full w-full"
         // We don't use viewBox scaling anymore; we project to pixel coordinates directly
-        // to match the CSS object-fit: cover behavior of the video.
+        // to match the CSS object-fit behavior of the video.
       >
         <title>Detected object overlay</title>
 
@@ -55,9 +68,9 @@ export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialO
             videoHeight={videoHeight}
             containerWidth={containerSize.width}
             containerHeight={containerSize.height}
-            scale={fit.scale}
-            offsetX={fit.offsetX}
-            offsetY={fit.offsetY}
+            scale={fitParams.scale}
+            offsetX={fitParams.offsetX}
+            offsetY={fitParams.offsetY}
           />
         )}
 
@@ -68,6 +81,7 @@ export function SpatialOverlay({ highlights, videoWidth, videoHeight }: SpatialO
             videoHeight,
             containerSize.width,
             containerSize.height,
+            fit,
           );
 
           return (

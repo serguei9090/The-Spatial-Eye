@@ -18,6 +18,8 @@ export interface ControlBarProps {
   readonly mode: "spatial" | "storyteller" | "it-architecture";
   readonly onToggleListening: () => void;
   readonly onModeChange: (mode: "spatial" | "storyteller" | "it-architecture") => void;
+  readonly onDownload?: () => void;
+  readonly onUpload?: (file: File) => void;
 }
 
 export function ControlBar({
@@ -30,14 +32,17 @@ export function ControlBar({
   mode,
   onToggleListening,
   onModeChange,
+  onDownload,
+  onUpload,
 }: ControlBarProps) {
   const { t } = useSettings();
 
-  const connectionLabel = isConnecting
-    ? t.status.connecting
-    : isConnected
-      ? t.status.live
-      : t.status.ready;
+  let connectionLabel = t.status.ready;
+  if (isConnecting) {
+    connectionLabel = t.status.connecting;
+  } else if (isConnected) {
+    connectionLabel = t.status.live;
+  }
 
   const renderMicIcon = () => {
     if (isConnecting) return <Loader2 className="h-6 w-6 animate-spin" />;
@@ -55,7 +60,7 @@ export function ControlBar({
           size="sm"
           onClick={() => onModeChange("spatial")}
           className={cn(
-            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-white/10",
+            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-accent",
             mode === "spatial" && "bg-primary/20 text-primary hover:bg-primary/30",
           )}
         >
@@ -68,7 +73,7 @@ export function ControlBar({
           size="sm"
           onClick={() => onModeChange("storyteller")}
           className={cn(
-            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-white/10",
+            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-accent",
             mode === "storyteller" && "bg-primary/20 text-primary hover:bg-primary/30",
           )}
         >
@@ -81,7 +86,7 @@ export function ControlBar({
           size="sm"
           onClick={() => onModeChange("it-architecture")}
           className={cn(
-            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-white/10",
+            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-accent",
             mode === "it-architecture" && "bg-primary/20 text-primary hover:bg-primary/30",
           )}
         >
@@ -97,7 +102,7 @@ export function ControlBar({
           size="lg"
           variant={isListening ? "destructive" : "default"}
           className={cn(
-            "h-12 w-12 rounded-xl shadow-md transition-all sm:w-auto sm:px-6",
+            "h-12 w-auto min-w-[3rem] px-3 rounded-xl shadow-md transition-all sm:px-6",
             isListening && "animate-pulse ring-4 ring-destructive/20",
           )}
           onClick={() => {
@@ -107,8 +112,8 @@ export function ControlBar({
           disabled={isConnecting}
         >
           {renderMicIcon()}
-          <span className="hidden text-base font-semibold sm:inline-block sm:ml-2">
-            {isListening ? t.controls.end : t.controls.start}
+          <span className="inline-block ml-1.5 text-xs font-semibold sm:text-base sm:ml-2">
+            {isListening ? t.controls.stop : t.controls.start}
           </span>
         </Button>
 
@@ -136,7 +141,7 @@ export function ControlBar({
                 {activeHighlight.objectName}
               </span>
             ) : (
-              <span className="text-[11px] text-white/30 leading-none font-medium">
+              <span className="text-[11px] text-muted-foreground/60 leading-none font-medium">
                 {isListening ? "Listening..." : "Idle"}
               </span>
             )}
@@ -147,7 +152,7 @@ export function ControlBar({
 
         <div className="flex items-center gap-0.5">
           {/* Settings Menu (Popover) now handles device selection (Camera, Mic, Speaker) */}
-          <SettingsMenu mode={mode} />
+          <SettingsMenu mode={mode} onDownload={onDownload} onUpload={onUpload} />
         </div>
       </div>
 

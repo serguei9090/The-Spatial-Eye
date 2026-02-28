@@ -11,6 +11,23 @@ import { toast } from "sonner";
 
 type LiveSession = Awaited<ReturnType<GoogleGenAI["live"]["connect"]>>;
 
+interface RelayMessage {
+  interrupted?: boolean;
+  invocationId?: string;
+  partial?: boolean;
+  turnComplete?: boolean;
+  content?: {
+    parts?: Array<{
+      inlineData?: { data: string; mimeType: string };
+      inline_data?: { data: string; mimeType: string };
+      functionCall?: { name: string; args: Record<string, unknown> };
+      function_call?: { name: string; args: Record<string, unknown> };
+    }>;
+  };
+  outputTranscription?: { text: string; finished?: boolean };
+  output_transcription?: { text: string; finished?: boolean };
+}
+
 const DEBUG_MODE = process.env.NEXT_PUBLIC_DEBUG === "true";
 
 const logTrace = (msg: string, ...args: unknown[]) => {
@@ -70,6 +87,7 @@ export function useGeminiCore({
   const isBufferingRef = useRef<boolean>(true); // Anti-jitter cache buffer state
   const keepAliveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentTurnIdRef = useRef<string>(crypto.randomUUID());
+  const interruptedTurnIdsRef = useRef<Set<string>>(new Set()); // Track interrupted turns to discard late audio
 
   const audioSendCountRef = useRef(0);
   const audioRecvCountRef = useRef(0);
@@ -226,7 +244,14 @@ export function useGeminiCore({
       }
 
       return new Promise((resolve) => {
-        const baseUrl = process.env.NEXT_PUBLIC_RELAY_WS_URL || "ws://localhost:8000/ws/live";
+        let baseUrl = process.env.NEXT_PUBLIC_RELAY_WS_URL;
+
+        if (!baseUrl) {
+          // Automatic detection for unified deployment (sharing host/port)
+          const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+          baseUrl = `${protocol}//${window.location.host}/ws/live`;
+        }
+
         const wsUrl = mode ? `${baseUrl}?mode=${mode}` : baseUrl;
         const ws = new WebSocket(wsUrl);
 
@@ -348,27 +373,14 @@ export function useGeminiCore({
             return;
           }
 
-          const msg = payload as {
-            interrupted?: boolean;
-            invocationId?: string;
-            content?: {
-              parts?: Array<{
-                inlineData?: { data: string; mimeType: string };
-                inline_data?: { data: string; mimeType: string };
-                functionCall?: { name: string; args: Record<string, unknown> };
-                function_call?: { name: string; args: Record<string, unknown> };
-              }>;
-            };
-            outputTranscription?: { text: string };
-            output_transcription?: { text: string };
-          };
+          const msg = payload as RelayMessage;
 
           if (DEBUG_MODE) {
             const partTypes =
               msg.content?.parts?.map((p) => {
                 const isAudio = p.inlineData || p.inline_data;
                 const isTool = p.functionCall || p.function_call;
-                return isAudio ? "audio" : isTool ? "tool_call" : "unknown";
+                return isAudio ? "audio" : isTool ? "tool_call" : ("unknown" as const);
               }) || [];
             logTrace(`Incoming Event [${partTypes.join(", ")}]`, payload);
           }
@@ -379,10 +391,11 @@ export function useGeminiCore({
           // 1. Interruption
           if (msg.interrupted === true) {
             logInfo("Barge-in: Interrupted by ADK.");
+            interruptedTurnIdsRef.current.add(currentTurnId); // Mark this turn as interrupted
             audioQueueRef.current = [];
             isProcessingAudioRef.current = false;
             isBufferingRef.current = true;
-            stopAudio(0);
+            stopAudio(0); // Immediate stop — no fade, user wants silence NOW
             currentTurnIdRef.current = crypto.randomUUID(); // Cycle turn immediately
             return;
           }
@@ -393,6 +406,10 @@ export function useGeminiCore({
             // 2. Audio Playback
             const inlineData = part.inlineData || part.inline_data;
             if (inlineData?.data && inlineData.mimeType?.startsWith("audio/")) {
+              // Drop audio that belongs to an interrupted turn (late arrivals)
+              if (interruptedTurnIdsRef.current.has(currentTurnId)) {
+                continue;
+              }
               audioRecvCountRef.current += 1;
               if (audioRecvCountRef.current % 30 === 0) {
                 logTrace(`Received ${audioRecvCountRef.current} PCM Audio Blocks from Relay`);
@@ -415,13 +432,9 @@ export function useGeminiCore({
 
           // 4. Transcript
           const transcript = msg.outputTranscription || msg.output_transcription;
-          const isPartial = (msg as { partial?: boolean }).partial ?? true;
+          const isPartial = msg.partial ?? true;
           const transcriptFinished =
-            (msg as { outputTranscription?: { text: string; finished?: boolean } })
-              .outputTranscription?.finished ??
-            (msg as { output_transcription?: { text: string; finished?: boolean } })
-              .output_transcription?.finished ??
-            false;
+            msg.outputTranscription?.finished ?? msg.output_transcription?.finished ?? false;
 
           if (transcript?.text && onTranscript) {
             onTranscript(transcript.text, {
@@ -432,7 +445,7 @@ export function useGeminiCore({
           }
 
           // 5. Turn Complete
-          const isTurnComplete = (msg as { turnComplete?: boolean }).turnComplete === true;
+          const isTurnComplete = msg.turnComplete === true;
           if (isTurnComplete) {
             if (onTurnComplete) {
               onTurnComplete(currentTurnId);
@@ -440,22 +453,28 @@ export function useGeminiCore({
             // Cycle turn ID for the next complete model response
             currentTurnIdRef.current = crypto.randomUUID();
 
-            // ── FLUSH CACHE BUFFER ──
-            // The generation is complete. Even if we have less than MIN_CHUNKS piled up,
-            // play out whatever is at the end of the queue.
-            if (audioQueueRef.current.length > 0) {
-              isBufferingRef.current = false;
-              processAudioQueue();
+            // If this turn was interrupted, drain the queue (AI Studio pattern)
+            // instead of flushing remaining audio for playback.
+            if (interruptedTurnIdsRef.current.has(currentTurnId)) {
+              audioQueueRef.current = [];
+              interruptedTurnIdsRef.current.delete(currentTurnId);
+              isBufferingRef.current = true;
+            } else {
+              // ── FLUSH CACHE BUFFER ──
+              // The generation is complete. Even if we have less than MIN_CHUNKS piled up,
+              // play out whatever is at the end of the queue.
+              if (audioQueueRef.current.length > 0) {
+                isBufferingRef.current = false;
+                processAudioQueue();
+              }
+              // Reset buffering for the next turn to ensure jitter protection
+              isBufferingRef.current = true;
             }
-            // Reset buffering for the next turn to ensure jitter protection
-            isBufferingRef.current = true;
           }
         };
 
         ws.onerror = (e) => {
           console.error("[GeminiCore] WebSocket Error:", e);
-          // Note: In WebSockets, onerror doesn't provide fine-grained codes.
-          // We handle the specific drop reasons and the reconnection sequence in onclose.
         };
 
         ws.onclose = (e) => {
@@ -474,7 +493,6 @@ export function useGeminiCore({
                 ? "The Gemini API operation timed out or failed (Deadline Expired)."
                 : "Connection was lost abnormally.");
 
-            // Alert the user immediately if it was a server crash / deadline
             if (isServerError) {
               toast.error("Gemini Server Error", {
                 description: reasonText,
@@ -489,17 +507,14 @@ export function useGeminiCore({
               reconnectAttemptRef.current += 1;
               toast.warning(
                 `Connection lost. Reconnecting (Attempt ${reconnectAttemptRef.current}/3)...`,
-                {
-                  id: "ws-retry",
-                },
+                { id: "ws-retry" },
               );
               setTimeout(() => {
                 if (connectRef.current) void connectRef.current(true);
               }, 1000);
-              return; // Wait for the reconnect attempt
+              return;
             }
 
-            // We exceeded reconnect attempts or there's no reason to reconnect
             if (!isServerError) {
               setError("Connection error to local relay.");
             }

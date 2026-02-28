@@ -155,7 +155,11 @@ export function CreativeStudio({ stream, videoRef }: CreativeStudioProps) {
         dragMomentum={false}
         className="absolute top-4 right-4 z-50 w-48 rounded-xl border border-white/20 bg-black/80 shadow-2xl backdrop-blur-md overflow-hidden aspect-video cursor-move touch-none"
       >
-        <VideoFeed videoRef={videoRef} className="h-full w-full object-cover pointer-events-none" />
+        <VideoFeed
+          videoRef={videoRef}
+          containerClassName="rounded-xl border border-white/20 shadow-2xl"
+          className="h-full w-full object-cover pointer-events-none"
+        />
       </motion.div>
 
       <div className="flex h-full w-full items-center justify-center p-4">

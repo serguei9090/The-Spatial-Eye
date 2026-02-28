@@ -3,9 +3,10 @@
 import { ParticleBackground } from "@/components/backgrounds/ParticleBackground";
 import { FeatureCard } from "@/components/molecules/FeatureCard";
 import { LandingHero } from "@/components/organisms/LandingHero";
+import { TechArchitectureVisual } from "@/components/organisms/TechArchitectureVisual";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bug, ChevronDown, Cpu, Eye, Github, Share2, Terminal } from "lucide-react";
-import { useRef, useState } from "react";
+import { Bug, ChevronDown, Cpu, Eye, Github, Terminal } from "lucide-react";
+import { useState } from "react";
 
 const FEATURES = [
   {
@@ -132,12 +133,29 @@ export function LandingTemplate() {
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 z-[100] border-b border-white/5 bg-black/20 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-2 font-bold text-xl tracking-tighter">
-            <div className="h-6 w-6 rounded-full bg-primary" />
-            THE SPATIAL EYE
+          <div className="flex items-center gap-3 font-bold text-xl tracking-tighter group cursor-pointer">
+            <div className="relative h-7 w-7 flex items-center justify-center">
+              {/* Outer rotating ring */}
+              <motion.div
+                className="absolute inset-0 rounded-full border border-primary/30 group-hover:border-primary/60 transition-colors"
+                animate={{ rotate: 360 }}
+                transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+              />
+              {/* Inner dashed rotating ring */}
+              <motion.div
+                className="absolute inset-[3px] rounded-full border border-dashed border-primary/50 group-hover:border-primary transition-colors"
+                animate={{ rotate: -360 }}
+                transition={{ duration: 12, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+              />
+              {/* Core 'Eye' Pupil */}
+              <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary))] group-hover:scale-150 transition-transform duration-500" />
+            </div>
+            <span className="bg-gradient-to-r from-white to-white/60 bg-clip-text text-transparent group-hover:text-white transition-colors duration-300">
+              THE SPATIAL EYE
+            </span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground mr-10">
-            <a href="#features" className="hover:text-white transition-colors">
+            <a href="#features" className="hover:text-primary transition-colors">
               Project Modules
             </a>
             <a href="#tech" className="hover:text-white transition-colors">
@@ -149,7 +167,7 @@ export function LandingTemplate() {
           </div>
           <div className="flex items-center gap-4">
             <a
-              href="https://github.com/your-repo"
+              href="https://github.com/serguei9090/The-Spatial-Eye"
               target="_blank"
               className="p-2 rounded-full hover:bg-white/5 transition-colors"
               rel="noreferrer"
@@ -188,7 +206,7 @@ export function LandingTemplate() {
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
               Building a real-time multimodal agent requires solving complex synchronization and
-              state management challenges. Here's how we tackled them.
+              state management challenges. Here&apos;s how we tackled them.
             </p>
           </div>
 
@@ -230,7 +248,7 @@ export function LandingTemplate() {
                     transition={{ delay: idx * 0.1 }}
                     className="flex items-center gap-3 text-sm"
                   >
-                    <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.8)]" />
+                    <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
                     <span className="font-bold text-white/90">{item.label}:</span>
                     <span className="text-muted-foreground">{item.detail}</span>
                   </motion.li>
@@ -239,13 +257,12 @@ export function LandingTemplate() {
             </div>
 
             <motion.div
-              whileHover={{ rotateY: 10, rotateX: 5 }}
-              className="relative aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-primary/20 to-transparent p-1 overflow-hidden"
+              whileHover={{ scale: 1.02 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="relative aspect-square rounded-3xl border border-white/10 bg-gradient-to-br from-primary/20 to-transparent p-1 overflow-hidden shadow-[0_0_40px_rgba(0,0,0,0.5)] group hover:shadow-[0_0_80px_rgba(var(--color-primary),0.15)] transition-shadow"
             >
               <div className="absolute inset-0 bg-[url('https://www.gstatic.com/lamda/images/gemini_wordmark_604x164.png')] bg-center bg-no-repeat bg-contain opacity-20 filter invert" />
-              <div className="flex h-full w-full items-center justify-center rounded-[calc(1.5rem-2px)] bg-black/80 backdrop-blur-xl">
-                <Share2 className="h-24 w-24 text-primary/30" />
-              </div>
+              <TechArchitectureVisual />
             </motion.div>
           </div>
         </section>
