@@ -1,4 +1,6 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, Mic, MicOff } from "lucide-react";
+import { useEffect, useState } from "react";
 
 import { AIOrb } from "@/components/atoms/AIOrb";
 import { CoordinateDisplay } from "@/components/molecules/CoordinateDisplay";
@@ -36,6 +38,28 @@ export function ControlBar({
   onUpload,
 }: ControlBarProps) {
   const { t } = useSettings();
+  const [showHelp, setShowHelp] = useState(false);
+
+  useEffect(() => {
+    // Show help bubble when connected and listening
+    if (isConnected && isListening) {
+      setShowHelp(true);
+      // Auto-hide after 5 seconds
+      const timeout = setTimeout(() => {
+        setShowHelp(false);
+      }, 5000);
+      return () => clearTimeout(timeout);
+    }
+
+    setShowHelp(false);
+  }, [isConnected, isListening]);
+
+  // Also hide if user starts speaking
+  useEffect(() => {
+    if (isUserTalking && showHelp) {
+      setShowHelp(false);
+    }
+  }, [isUserTalking, showHelp]);
 
   let connectionLabel = t.status.ready;
   if (isConnecting) {
@@ -97,25 +121,40 @@ export function ControlBar({
       {/* Main Dock / Control Bar */}
       <div className="group flex items-center gap-2 rounded-2xl border bg-background/80 p-2 pr-3 shadow-2xl backdrop-blur-xl transition-all hover:scale-[1.01] hover:bg-background/90">
         {/* Connection Toggle (Primary Action) */}
-        <Button
-          type="button"
-          size="lg"
-          variant={isListening ? "destructive" : "default"}
-          className={cn(
-            "h-12 w-auto min-w-[3rem] px-3 rounded-xl shadow-md transition-all sm:px-6",
-            isListening && "animate-pulse ring-4 ring-destructive/20",
-          )}
-          onClick={() => {
-            console.log("[ControlBar] Toggle button clicked");
-            onToggleListening();
-          }}
-          disabled={isConnecting}
-        >
-          {renderMicIcon()}
-          <span className="inline-block ml-1.5 text-xs font-semibold sm:text-base sm:ml-2">
-            {isListening ? t.controls.stop : t.controls.start}
-          </span>
-        </Button>
+        <div className="relative">
+          <AnimatePresence>
+            {showHelp && (
+              <motion.div
+                initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                className="pointer-events-none absolute -top-12 left-1/2 z-50 -translate-x-1/2 whitespace-nowrap rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg after:absolute after:left-1/2 after:top-full after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-primary"
+              >
+                Say "Hi" or "Hello" 👋
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <Button
+            type="button"
+            size="lg"
+            variant={isListening ? "destructive" : "default"}
+            className={cn(
+              "h-12 w-auto min-w-[3rem] px-3 rounded-xl shadow-md transition-all sm:px-6",
+              isListening && "animate-pulse ring-4 ring-destructive/20",
+            )}
+            onClick={() => {
+              console.log("[ControlBar] Toggle button clicked");
+              onToggleListening();
+            }}
+            disabled={isConnecting}
+          >
+            {renderMicIcon()}
+            <span className="inline-block flex-shrink-0 ml-1.5 text-xs font-semibold sm:text-base sm:ml-2">
+              {isListening ? t.controls.stop : t.controls.start}
+            </span>
+          </Button>
+        </div>
 
         <div className="mx-1 h-8 w-px bg-border/50" />
 

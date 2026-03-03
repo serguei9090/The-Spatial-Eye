@@ -4,6 +4,7 @@ import {
   Disc,
   Download,
   Languages,
+  MessageSquare,
   Mic,
   Settings as SettingsIcon,
   Speaker,
@@ -47,6 +48,9 @@ export function SettingsMenu({ mode, onDownload, onUpload }: SettingsMenuProps) 
     setHighlightType,
     showDebugGrid,
     setShowDebugGrid,
+    isDiagnosticsEnabled,
+    showTranscript,
+    setShowTranscript,
   } = useSettings();
 
   const {
@@ -309,27 +313,51 @@ export function SettingsMenu({ mode, onDownload, onUpload }: SettingsMenuProps) 
                   </Select>
                 </div>
 
-                {/* Debug Overlay */}
+                {/* AI Transcript */}
                 <div className="space-y-2">
                   <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 leading-none">
-                    <Disc className="h-3 w-3" />
-                    Debug Overlay
+                    <MessageSquare className="h-3 w-3" />
+                    AI Transcript
                   </Label>
                   <Button
-                    variant={showDebugGrid ? "secondary" : "outline"}
+                    variant={showTranscript ? "secondary" : "outline"}
                     size="sm"
-                    onClick={() => setShowDebugGrid(!showDebugGrid)}
+                    onClick={() => setShowTranscript(!showTranscript)}
                     className={cn(
                       "w-full h-8 text-xs justify-start px-3",
-                      showDebugGrid && "bg-primary/10 text-primary border-primary/20",
+                      showTranscript && "bg-primary/10 text-primary border-primary/20",
                     )}
                   >
                     <span className="flex-1 text-left">
-                      {showDebugGrid ? "On: Spatial Grid" : "Off: Spatial Grid"}
+                      {showTranscript ? "On: AI Transcript" : "Off: AI Transcript"}
                     </span>
-                    {showDebugGrid && <Check className="h-3 w-3 ml-2" />}
+                    {showTranscript && <Check className="h-3 w-3 ml-2" />}
                   </Button>
                 </div>
+
+                {/* Debug Overlay - Only available in diagnostics mode */}
+                {isDiagnosticsEnabled && (
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 leading-none">
+                      <Disc className="h-3 w-3" />
+                      Debug Overlay
+                    </Label>
+                    <Button
+                      variant={showDebugGrid ? "secondary" : "outline"}
+                      size="sm"
+                      onClick={() => setShowDebugGrid(!showDebugGrid)}
+                      className={cn(
+                        "w-full h-8 text-xs justify-start px-3",
+                        showDebugGrid && "bg-primary/10 text-primary border-primary/20",
+                      )}
+                    >
+                      <span className="flex-1 text-left">
+                        {showDebugGrid ? "On: Spatial Grid" : "Off: Spatial Grid"}
+                      </span>
+                      {showDebugGrid && <Check className="h-3 w-3 ml-2" />}
+                    </Button>
+                  </div>
+                )}
               </>
             )}
           </div>

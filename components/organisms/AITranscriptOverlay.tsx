@@ -11,19 +11,25 @@ export interface AITranscriptOverlayProps {
 }
 
 export function AITranscriptOverlay({ transcript }: AITranscriptOverlayProps) {
-  const { t } = useSettings();
+  const { t, showTranscript } = useSettings();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to bottom when new transcript arrives
   useEffect(() => {
-    if (scrollRef.current && !isCollapsed) {
+    if (transcript && scrollRef.current && !isCollapsed) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [isCollapsed]);
+  }, [transcript, isCollapsed]);
 
-  if (!transcript) return null;
+  if (!showTranscript || !transcript) return null;
+
+  // Simple formatting to add missing spaces after punctuations, and remove spaces before punctuations
+  const formattedTranscript = transcript
+    .replace(/([.!?])([A-Za-z])/g, "$1 $2")
+    .replace(/([,;:!])([A-Za-z])/g, "$1 $2")
+    .replace(/ +([.,!?:;])/g, "$1");
 
   return (
     <motion.div
@@ -89,7 +95,7 @@ export function AITranscriptOverlay({ transcript }: AITranscriptOverlayProps) {
             )}
           >
             <p className="text-sm leading-relaxed text-foreground/90 whitespace-pre-wrap">
-              {transcript}
+              {formattedTranscript}
             </p>
           </div>
         )}

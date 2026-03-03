@@ -23,6 +23,11 @@ interface SettingsContextType {
   // Debug Settings
   showDebugGrid: boolean;
   setShowDebugGrid: (show: boolean) => void;
+  isDiagnosticsEnabled: boolean;
+
+  // View Settings
+  showTranscript: boolean;
+  setShowTranscript: (show: boolean) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -39,6 +44,9 @@ export function SettingsProvider({ children }: Readonly<{ children: React.ReactN
   // Grid is only on by default when diagnostics are enabled
   const [showDebugGrid, setShowDebugGrid] = useState<boolean>(IS_DIAGNOSTICS);
 
+  // Transcript is off by default
+  const [showTranscript, setShowTranscript] = useState<boolean>(false);
+
   const value = useMemo(
     () => ({
       language,
@@ -50,8 +58,11 @@ export function SettingsProvider({ children }: Readonly<{ children: React.ReactN
       setHighlightType,
       showDebugGrid,
       setShowDebugGrid,
+      isDiagnosticsEnabled: IS_DIAGNOSTICS,
+      showTranscript,
+      setShowTranscript,
     }),
-    [language, highlightDuration, highlightType, showDebugGrid],
+    [language, highlightDuration, highlightType, showDebugGrid, showTranscript],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
