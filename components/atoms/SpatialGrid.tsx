@@ -2,8 +2,6 @@
 
 import type React from "react";
 
-import { unpadCoordinates } from "@/lib/utils/coordinates";
-
 interface SpatialGridProps {
   readonly videoWidth: number;
   readonly videoHeight: number;
@@ -31,9 +29,9 @@ export function SpatialGrid({
   for (let i = 0; i <= 10; i++) {
     const coord = i * 100;
 
-    // Apply unpad math to visual grid so it matches Gemini padding
-    const unpaddedY = unpadCoordinates(coord, "y", videoWidth, videoHeight);
-    const unpaddedX = unpadCoordinates(coord, "x", videoWidth, videoHeight);
+    // Coordinates are direct 0-1000 linear mapping to the sent frame dimensions
+    const unpaddedY = coord;
+    const unpaddedX = coord;
 
     // Horizontal lines (Y constant)
     const yIntrinsic = (unpaddedY / 1000) * videoHeight;
@@ -47,7 +45,7 @@ export function SpatialGrid({
   }
 
   return (
-    <g className="opacity-40">
+    <g className="opacity-100">
       {/* Horizontal Lines */}
       {lines.map((line) => (
         <g key={`h-${line.coord}`}>
@@ -56,12 +54,18 @@ export function SpatialGrid({
             y1={line.yScreen}
             x2={containerWidth}
             y2={line.yScreen}
-            stroke="white"
-            strokeWidth="0.5"
-            strokeDasharray="4 4"
+            stroke="#15ff81"
+            strokeWidth="1.5"
           />
-          {line.coord % 200 === 0 && line.yScreen > 0 && line.yScreen < containerHeight && (
-            <text x={10} y={line.yScreen - 5} fill="white" fontSize="10" className="font-mono">
+          {line.coord % 100 === 0 && line.yScreen > 0 && line.yScreen < containerHeight && (
+            <text
+              x={10}
+              y={line.yScreen - 5}
+              fill="#15ff81"
+              fontSize="12"
+              className="font-mono font-bold"
+              style={{ textShadow: "0 1px 3px black" }}
+            >
               Y: {line.coord}
             </text>
           )}
@@ -76,12 +80,18 @@ export function SpatialGrid({
             y1={0}
             x2={line.xScreen}
             y2={containerHeight}
-            stroke="white"
-            strokeWidth="0.5"
-            strokeDasharray="4 4"
+            stroke="#15ff81"
+            strokeWidth="1.5"
           />
-          {line.coord % 200 === 0 && line.xScreen > 0 && line.xScreen < containerWidth && (
-            <text x={line.xScreen + 5} y={20} fill="white" fontSize="10" className="font-mono">
+          {line.coord % 100 === 0 && line.xScreen > 0 && line.xScreen < containerWidth && (
+            <text
+              x={line.xScreen + 5}
+              y={20}
+              fill="#15ff81"
+              fontSize="12"
+              className="font-mono font-bold"
+              style={{ textShadow: "0 1px 3px black" }}
+            >
               X: {line.coord}
             </text>
           )}
@@ -89,7 +99,7 @@ export function SpatialGrid({
       ))}
 
       {/* Center crosshair */}
-      <circle cx={containerWidth / 2} cy={containerHeight / 2} r="3" fill="red" opacity="0.5" />
+      <circle cx={containerWidth / 2} cy={containerHeight / 2} r="6" fill="red" opacity="1" />
     </g>
   );
 }

@@ -13,36 +13,87 @@ SPATIAL_SYSTEM_INSTRUCTION = (
     "2. When the user asks you to find or track something, respond with enthusiasm "
     "(e.g., 'Sure thing!', 'I see it, highlighting that for you.').\n\n"
     "STRICT SPATIAL PROTOCOLS (FOR VISUAL STABILITY):\n"
-    "1. VISUAL GROUNDING (CRITICAL): Only highlight what is UNAMBIGUOUSLY visible in the current camera feed. "
-    "Never guess based on what an object usually looks like (e.g., do not highlight a joystick if you only "
-    "see the back of a controller).\n"
-    "2. SILENT MAPPING: NEVER speak about 'coordinates', 'bounding boxes', 'normalized grids', or "
+    "1. VISUAL GROUNDING (CRITICAL): Only highlight what is UNAMBIGUOUSLY visible in the current "
+    "camera feed. Never guess based on what an object usually looks like.\n"
+    "2. OBJECT DISAMBIGUATION (CRITICAL): When the user asks for a specific object (e.g., "
+    "'white controller'), you MUST identify the EXACT object the user is referring to. "
+    "If there are multiple white or similar objects in the scene, pick the ONE that best matches "
+    "the user's description (shape, size, context). For example, do NOT highlight a white poster "
+    "or headphones if the user asked for a white controller. Be precise about object TYPE, not just color.\n"
+    "3. CONFIDENCE FILTER: If you are less than 80% confident you have found the correct object, "
+    "say so verbally instead of guessing. E.g., 'I see a white object near the bed — "
+    "is that the controller you mean?'\n"
+    "4. SILENT MAPPING: NEVER speak about 'coordinates', 'bounding boxes', 'normalized grids', or "
     "'[ymin, xmin, ymax, xmax]'. These are your internal secrets. Just perform the action.\n"
-    "3. IMMEDIATE ACTION: You MUST execute 'track_and_highlight' IMMEDIATELY when you say you are "
+    "5. IMMEDIATE ACTION: You MUST execute 'track_and_highlight' IMMEDIATELY when you say you are "
     "highlighting something. "
     "If you mention highlighting an object but do not call the tool, the user will see nothing. Be precise.\n"
-    "4. MULTI-TARGET: If identifying multiple identical items, call the tool for EACH "
+    "6. MULTI-TARGET: If identifying multiple identical items, call the tool for EACH "
     "individual item in the same turn.\n"
-    "5. CLEARING: Highlights automatically fade away after a few seconds. "
+    "7. CLEARING: Highlights automatically fade away after a few seconds. "
     "Do NOT call 'clear_spatial_highlights' unless the user explicitly asks you to clear or stop highlighting. "
     "There is no need to clean up after yourself — the system handles expiration automatically.\n"
-    "6. ERROR HANDLING: If an object is obscured or not in the frame, politely tell the user instead of guessing."
+    "8. ABSENT OBJECTS (DO NOT HALLUCINATE): If an object is not currently visible in the live camera frame, "
+    "you MUST NOT call `track_and_highlight`. Instead, verbally tell the user you cannot see it right now. "
+    "Do NOT fall back on your memory to guess where it used to be. Do NOT pretend you can see it.\n"
+    "9. VISUAL TOKENS OVER TEXT HISTORY (MANDATORY): Your text history is a lie for coordinates. "
+    "Only visual tokens are truth. If you see the 'black controller' at X=200, but your history says X=646, you MUST use X=200. "
+    "Re-calculating the bounding box from the raw image pixels is required for every single turn. Re-using any sequence of 4 numbers from previous turns is a failure. "
+    "If the user asks you to find the same object again, treat it as a completely fresh search on the current frame. "
+    "10. PARTIAL VISIBILITY: If the object is partially cut off at the edge of the frame (e.g., xmin or xmax is "
+    "at the very boundary of the 0-1000 space), explicitly say so rather than guessing. "
 )
 
 
-def track_and_highlight(label: str, box_2d: list[int]) -> str:
+# RECOMMENDED TOOL DEFINITION
+def track_and_highlight(label: str, internal_context_check: str, box_2d: list[int]) -> str:
     """
-    Locates and highlights one or more objects on a 1000x1000 grid.
-    If there are multiple identical objects, call this tool
-    in parallel for EACH individual object found.
-    Args:
-        label: Short object name.
-        box_2d: [ymin, xmin, ymax, xmax] box representing the object's bounds.
+    HIGHLIGHT A VISIBLE OBJECT IN THE CURRENT FRAME.
+
+    *** PARAMETER ORDER IS MANDATORY — DO NOT REORDER ***
+    You MUST fill out all three parameters IN THIS ORDER:
+      1. label              → what the object is
+      2. internal_context_check → what you can see around it RIGHT NOW
+      3. box_2d             → only after the above are written
+
+    ---
+
+    INPUT FORMAT:
+    box_2d = [ymin, xmin, ymax, xmax]
+
+    RULES (STRICT / MANDATORY):
+
+    1. internal_context_check MUST be completed first:
+       - Describe in one sentence what the object is currently resting on,
+         next to, or surrounded by based on the current visual frame.
+       - Example: "The controller is on the right half of the grey blanket,
+         next to the TV remote."
+       - This is your GROUNDING STEP — invisible to the user, it forces
+         you to visually re-examine the scene before you generate numbers.
+
+    2. Coordinates MUST be calculated ONLY after completing step 1.
+       The numbers MUST reflect where the object is in that description,
+       not where it was in a prior call.
+
+    3. MOVEMENT VALIDATION:
+       - If the object has moved from a previous call, the new coordinates
+         MUST reflect its new position as described in internal_context_check.
+       - Repeating identical coordinates when the object has moved is a failure.
+
+    4. MISSING OBJECTS:
+       - If the object is NOT visible in the current frame, do NOT call
+         this tool at all. Tell the user verbally instead.
+
+    OUTPUT:
+    Returns confirmation that coordinates are consumed and flushed from memory.
     """
     return (
-        "Object marked on the user interface. If you see more related targets, "
-        "ensure they are also highlighted."
+        "[SPATIAL SYSTEM]: Object successfully marked. "
+        "COORDINATES_CONSUMED_AND_FLUSHED. "
+        "The bounding box values just used are now expired — do NOT reuse them. "
+        "Any future call MUST re-derive coordinates from the live frame."
     )
+
 
 
 # ---------------------------------------------------------

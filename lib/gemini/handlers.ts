@@ -140,8 +140,21 @@ export function handleSpatialToolCall(
     lastSpatialTurnId = turnId ?? null;
 
     if (isSameTurn) {
-      // Same turn → APPEND (AI is sending multiple objects one-by-one)
-      setActiveHighlights((prev) => [...prev, ...highlightsInCall]);
+      // Same turn → UPDATE existing if same objectName, else APPEND
+      setActiveHighlights((prev) => {
+        const result = [...prev];
+        for (const newH of highlightsInCall) {
+          const index = result.findIndex(
+            (p) => p.objectName.toLowerCase() === newH.objectName.toLowerCase(),
+          );
+          if (index !== -1) {
+            result[index] = newH; // Upsert tracking coordinates
+          } else {
+            result.push(newH);
+          }
+        }
+        return result;
+      });
     } else {
       // New turn → REPLACE (fresh grounding, discard stale highlights)
       setActiveHighlights(highlightsInCall);

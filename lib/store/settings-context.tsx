@@ -1,5 +1,6 @@
 "use client";
 
+import { AI_VISION } from "@/lib/constants";
 import { type Language, translations } from "@/lib/i18n/translations";
 import type React from "react";
 import { createContext, useContext, useMemo, useState } from "react";
@@ -26,12 +27,17 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+const IS_DIAGNOSTICS = AI_VISION.SPATIAL_DIAGNOSTICS;
+
 export function SettingsProvider({ children }: Readonly<{ children: React.ReactNode }>) {
-  // Initialize with defaults (could load from localStorage here)
   const [language, setLanguage] = useState<Language>("en");
   const [highlightDuration, setHighlightDuration] = useState<HighlightDuration>(5000);
-  const [highlightType, setHighlightType] = useState<HighlightType>("circle");
-  const [showDebugGrid, setShowDebugGrid] = useState<boolean>(false);
+  // Production default: clean "circle". Debug default: "fitted-circle" (shows tight bbox).
+  const [highlightType, setHighlightType] = useState<HighlightType>(
+    IS_DIAGNOSTICS ? "fitted-circle" : "circle",
+  );
+  // Grid is only on by default when diagnostics are enabled
+  const [showDebugGrid, setShowDebugGrid] = useState<boolean>(IS_DIAGNOSTICS);
 
   const value = useMemo(
     () => ({

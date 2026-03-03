@@ -32,9 +32,12 @@ export function AIVideoProcessor() {
     };
   }, [sendVideoFrame]);
 
-  // Capture Constants
-  const { CAPTURE_WIDTH, CAPTURE_QUALITY, ADAPTIVE_INTERVAL_ACTIVE, ADAPTIVE_INTERVAL_IDLE } =
-    AI_VISION;
+  const {
+    CAPTURE_MAX_DIMENSION,
+    CAPTURE_QUALITY,
+    ADAPTIVE_INTERVAL_ACTIVE,
+    ADAPTIVE_INTERVAL_IDLE,
+  } = AI_VISION;
 
   useEffect(() => {
     if (!isListening || !isConnected || mode === "it-architecture") return;
@@ -52,14 +55,23 @@ export function AIVideoProcessor() {
         try {
           // 1. Bulletproof Canvas Capture
           // Avoid direct createImageBitmap(video) as some browsers/devices fail
-          // to apply rotation metadata or native aspect ratios correctly.
-          const targetW = CAPTURE_WIDTH;
-          const targetH = Math.max(1, Math.round((video.videoHeight / video.videoWidth) * targetW));
+          // Cookbook: Ensure max dimension is capped properly while maintaining intrinsic aspect ratio
+          const MAX_DIMENSION = CAPTURE_MAX_DIMENSION; // usually 1024
+          let targetW = video.videoWidth;
+          let targetH = video.videoHeight;
+
+          if (targetW > targetH) {
+            if (targetW > MAX_DIMENSION) {
+              targetH *= MAX_DIMENSION / targetW;
+              targetW = MAX_DIMENSION;
+            }
+          } else if (targetH > MAX_DIMENSION) {
+            targetW *= MAX_DIMENSION / targetH;
+            targetH = MAX_DIMENSION;
+          }
 
           // Use a singleton canvas to avoid memory churn
-          if (!globalCaptureCanvas) {
-            globalCaptureCanvas = document.createElement("canvas");
-          }
+          globalCaptureCanvas ??= document.createElement("canvas");
           const canvas = globalCaptureCanvas;
           canvas.width = Math.round(targetW);
           canvas.height = Math.round(targetH);
@@ -97,7 +109,7 @@ export function AIVideoProcessor() {
     isUserTalking,
     isAiTalking,
     videoRef,
-    CAPTURE_WIDTH,
+    CAPTURE_MAX_DIMENSION,
     CAPTURE_QUALITY,
     ADAPTIVE_INTERVAL_ACTIVE,
     ADAPTIVE_INTERVAL_IDLE,

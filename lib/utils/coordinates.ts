@@ -1,3 +1,4 @@
+import { AI_VISION } from "@/lib/constants";
 import type { Highlight } from "@/lib/types";
 
 export interface PixelBox {
@@ -39,12 +40,10 @@ export function normalizedToPixels(
   videoWidth: number,
   videoHeight: number,
 ): PixelBox {
-  const [rawYMin, rawXMin, rawYMax, rawXMax] = coordinates;
-
-  const ymin = unpadCoordinates(rawYMin, "y", videoWidth, videoHeight);
-  const ymax = unpadCoordinates(rawYMax, "y", videoWidth, videoHeight);
-  const xmin = unpadCoordinates(rawXMin, "x", videoWidth, videoHeight);
-  const xmax = unpadCoordinates(rawXMax, "x", videoWidth, videoHeight);
+  // Gemini Multimodal Live streams rectangular frames (e.g. 1024×576 JPEG).
+  // The 0-1000 coordinate space maps DIRECTLY to the frame's width and height.
+  // No square-padding correction (unpadCoordinates) is needed or correct here.
+  const [ymin, xmin, ymax, xmax] = coordinates;
 
   return {
     top: (ymin / 1000) * videoHeight,
@@ -157,11 +156,13 @@ export function projectHighlightToScreen(
   const rawYMax = highlight.ymax ?? 0;
   const rawXMax = highlight.xmax ?? 0;
 
-  // Unpad Gemini's 1000x1000 square padding back to the intrinsic aspect ratio
-  const ymin = unpadCoordinates(rawYMin, "y", videoWidth, videoHeight);
-  const ymax = unpadCoordinates(rawYMax, "y", videoWidth, videoHeight);
-  const xmin = unpadCoordinates(rawXMin, "x", videoWidth, videoHeight);
-  const xmax = unpadCoordinates(rawXMax, "x", videoWidth, videoHeight);
+  // Gemini Multimodal Live streams rectangular JPEG frames (e.g. 1024×576),
+  // not square-padded images. The 0-1000 normalized coordinates map DIRECTLY
+  // to the sent frame's width and height — no padding correction is applied.
+  const ymin = rawYMin;
+  const ymax = rawYMax;
+  const xmin = rawXMin;
+  const xmax = rawXMax;
 
   // 1. Normalized to Intrinsic Video Dimensions
   const hWidthIntrinsic = ((xmax - xmin) / 1000) * videoWidth;
@@ -174,6 +175,24 @@ export function projectHighlightToScreen(
   const screenCenterY = intrinsicCenterY * scale + offsetY;
   const screenWidth = hWidthIntrinsic * scale;
   const screenHeight = hHeightIntrinsic * scale;
+
+  // Extremely Detailed Transformation Trace Layer
+  if (globalThis.window && AI_VISION.SPATIAL_DIAGNOSTICS) {
+    console.debug(
+      `%c[SpatialMath: ${highlight.objectName}]%c
+  RAW:
+    ymin: ${rawYMin}, xmin: ${rawXMin}
+    ymax: ${rawYMax}, xmax: ${rawXMax}
+  INTRINSIC (${videoWidth}x${videoHeight}):
+    hWidth: ${hWidthIntrinsic.toFixed(2)}, hHeight: ${hHeightIntrinsic.toFixed(2)}
+    center: (${intrinsicCenterX.toFixed(2)}, ${intrinsicCenterY.toFixed(2)})
+  SCREEN (${containerWidth}x${containerHeight} | Scale: ${scale.toFixed(3)} | Offset: ${offsetX.toFixed(1)},${offsetY.toFixed(1)}):
+    screenWidth: ${screenWidth.toFixed(2)}, screenHeight: ${screenHeight.toFixed(2)}
+    center: (${screenCenterX.toFixed(2)}, ${screenCenterY.toFixed(2)})`,
+      "color: #a855f7; font-weight: bold;",
+      "color: inherit;",
+    );
+  }
 
   // 3. Calculate derived radii
   // "Circle" mode: Max dimension

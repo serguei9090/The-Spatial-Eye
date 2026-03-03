@@ -26,12 +26,13 @@ from google.adk.sessions import InMemorySessionService
 from google.genai import Client, types
 from loguru import logger
 
-import tools_config
-from firebase_auth import initialize_firebase, verify_token
-
-# Resolve the path to the root .env.local file
+# Resolve the path to the root .env.local file (load BEFORE local imports that read env)
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env.local"
 load_dotenv(ENV_PATH)
+
+import tools_config
+from firebase_auth import initialize_firebase, verify_token
+from frame_diagnostics import FrameDiagnostics
 
 DEBUG_MODE: bool = os.getenv("DEBUG", "false").lower() == "true"
 
@@ -157,15 +158,22 @@ async def websocket_endpoint(
                 prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Puck")
             )
         ),
+        # Real-time grounding: Force model to consider ALL inputs for every turn
+        realtime_input_config=types.RealtimeInputConfig(
+            turn_coverage="TURN_INCLUDES_ALL_INPUT"
+        ),
+        # Context Management: Tighter window to prevent 'ghost' objects from minutes ago.
+        # Video is ~258 tokens/sec. 15k tokens = ~58 seconds of memory.
         context_window_compression=types.ContextWindowCompressionConfig(
-            trigger_tokens=104857,
-            sliding_window=types.SlidingWindow(target_tokens=52428),
+            trigger_tokens=15000,
+            sliding_window=types.SlidingWindow(target_tokens=7500),
         ),
         input_audio_transcription=types.AudioTranscriptionConfig(),
         output_audio_transcription=types.AudioTranscriptionConfig(),
     )
 
     live_request_queue = LiveRequestQueue()
+    diag = FrameDiagnostics(session_id)
 
     async def upstream_task() -> None:
         """Handles incoming messages from the frontend."""
@@ -223,6 +231,12 @@ async def websocket_endpoint(
                                         f"[{session_id}] Upstream: {counts['video']} Frames ({w}x{h})"
                                     )
                                 raw_video = base64.b64decode(video["data"])
+                                # Capture frame for diagnostics
+                                diag.capture_frame(
+                                    raw_video,
+                                    width=int(video.get("width", 0)),
+                                    height=int(video.get("height", 0)),
+                                )
                                 live_request_queue.send_realtime(
                                     types.Blob(
                                         mime_type=video.get("mimeType", "image/jpeg"),
@@ -232,12 +246,29 @@ async def websocket_endpoint(
                             continue
 
                         # Process Explicit Text Input
-                        input_text = parsed.get("text")
+                        input_text = parsed.get("text", "").lower()
                         if input_text:
-                            logger.info(f"[{session_id}] Upstream: Text -> {input_text[:50]}")
-                            live_request_queue.send_content(
-                                types.Content(parts=[types.Part.from_text(text=input_text)])
-                            )
+                            # 3. Handle Manual Context Reset
+                            if "reset context" in input_text or "clear memory" in input_text:
+                                logger.info(f"[{session_id}] Injecting MANDATORY SPATIAL RESET")
+                                live_request_queue.send_content(
+                                    types.Content(
+                                        role="user",
+                                        parts=[
+                                            types.Part.from_text(
+                                                text="[SYSTEM RESET]: Disregard ALL previous video frames and object positions. "
+                                                "The environment has changed. Completely clear your spatial memory and re-analyze "
+                                                "only the most recent frame for future requests."
+                                            )
+                                        ],
+                                    ),
+                                    turn_complete=True,
+                                )
+                            else:
+                                logger.info(f"[{session_id}] Upstream: Text -> {input_text[:50]}")
+                                live_request_queue.send_content(
+                                    types.Content(parts=[types.Part.from_text(text=input_text)])
+                                )
 
                     except json.JSONDecodeError:
                         # Fallback for raw non-JSON text
@@ -284,6 +315,8 @@ async def websocket_endpoint(
                                 logger.success(
                                     f"[{session_id}] Tool Call Sent -> {call_name}({call_args})"
                                 )
+                                # Annotate frame for diagnostics
+                                diag.annotate_tool_call(call_name, call_args)
 
                                 if call_id in processed_calls:
                                     is_duplicate = True

@@ -44,3 +44,4 @@ firebasekey.json
 
 # Python
 __pycache__
+backend/diagnostics/

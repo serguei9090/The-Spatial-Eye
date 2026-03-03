@@ -1,5 +1,6 @@
 import { HighlightCircle } from "@/components/atoms/HighlightCircle";
 import { SpatialGrid } from "@/components/atoms/SpatialGrid";
+import { AI_VISION } from "@/lib/constants";
 import { useSettings } from "@/lib/store/settings-context";
 import type { Highlight } from "@/lib/types";
 import { calculateObjectFit, projectHighlightToScreen } from "@/lib/utils/coordinates";
@@ -39,18 +40,36 @@ export function SpatialOverlay({
     return () => observer.disconnect();
   }, []);
 
+  // Determine what resolution was actually sent to Gemini
+  const MAX_DIMENSION = AI_VISION.CAPTURE_MAX_DIMENSION;
+  let targetW = videoWidth;
+  let targetH = videoHeight;
+
+  if (targetW > targetH) {
+    if (targetW > MAX_DIMENSION) {
+      targetH *= MAX_DIMENSION / targetW;
+      targetW = MAX_DIMENSION;
+    }
+  } else if (targetH > MAX_DIMENSION) {
+    targetW *= MAX_DIMENSION / targetH;
+    targetH = MAX_DIMENSION;
+  }
+
+  const sentWidth = Math.round(targetW);
+  const sentHeight = Math.round(targetH);
+
   const fitParams = calculateObjectFit(
-    videoWidth,
-    videoHeight,
+    sentWidth,
+    sentHeight,
     containerSize.width,
     containerSize.height,
     fit,
   );
 
   // Debug log to verify coordinate pipeline when debug grid is visible
-  if (showDebugGrid && highlights.length > 0) {
+  if (AI_VISION.SPATIAL_DIAGNOSTICS && showDebugGrid && highlights.length > 0) {
     console.debug(
-      `%c[SpatialOverlay]%c video=${videoWidth}×${videoHeight} container=${containerSize.width}×${containerSize.height} ` +
+      `%c[SpatialOverlay]%c video=${videoWidth}×${videoHeight} sent=${sentWidth}×${sentHeight} container=${containerSize.width}×${containerSize.height} ` +
         `scale=${fitParams.scale.toFixed(3)} offset=(${fitParams.offsetX.toFixed(1)}, ${fitParams.offsetY.toFixed(1)})`,
       "color: #15ff81; font-weight: bold;",
       "color: inherit;",
@@ -74,8 +93,8 @@ export function SpatialOverlay({
 
         {showDebugGrid && (
           <SpatialGrid
-            videoWidth={videoWidth}
-            videoHeight={videoHeight}
+            videoWidth={sentWidth}
+            videoHeight={sentHeight}
             containerWidth={containerSize.width}
             containerHeight={containerSize.height}
             scale={fitParams.scale}
@@ -87,8 +106,8 @@ export function SpatialOverlay({
         {highlights.map((highlight) => {
           const geometry = projectHighlightToScreen(
             highlight,
-            videoWidth,
-            videoHeight,
+            sentWidth,
+            sentHeight,
             containerSize.width,
             containerSize.height,
             fit,
@@ -98,6 +117,7 @@ export function SpatialOverlay({
             <HighlightCircle
               key={highlight.id}
               id={highlight.id}
+              label={highlight.objectName ?? ""}
               type={highlightType}
               geometry={geometry}
             />
