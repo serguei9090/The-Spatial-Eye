@@ -17,7 +17,7 @@ interface AudioDevicesState {
 }
 
 function supportsSinkIdSelection(): boolean {
-  if (typeof window === "undefined") {
+  if (globalThis.window === undefined) {
     return false;
   }
 
@@ -32,19 +32,19 @@ export function useAudioDevices(): AudioDevicesState {
   const [outputDevices, setOutputDevices] = useState<MediaDeviceInfo[]>([]);
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedInputId, setSelectedInputId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
+    if (globalThis.window !== undefined) {
       return localStorage.getItem("spatial-eye-input-id") ?? "";
     }
     return "";
   });
   const [selectedOutputId, setSelectedOutputId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
+    if (globalThis.window !== undefined) {
       return localStorage.getItem("spatial-eye-output-id") ?? "";
     }
     return "";
   });
   const [selectedVideoId, setSelectedVideoId] = useState<string>(() => {
-    if (typeof window !== "undefined") {
+    if (globalThis.window !== undefined) {
       return localStorage.getItem("spatial-eye-video-id") ?? "";
     }
     return "";
@@ -66,7 +66,7 @@ export function useAudioDevices(): AudioDevicesState {
 
   const refreshDevices = useCallback(
     async (requestPermission = false) => {
-      if (typeof window === "undefined" || !navigator.mediaDevices?.enumerateDevices) {
+      if (globalThis.window === undefined || !navigator.mediaDevices?.enumerateDevices) {
         setInputDevices([]);
         setOutputDevices([]);
         setVideoDevices([]);
@@ -95,17 +95,26 @@ export function useAudioDevices(): AudioDevicesState {
       setOutputDevices(outputs);
       setVideoDevices(videos);
 
-      // Only set defaults if no selection exists AND persistence also failed
-      if (!selectedInputId && inputs.length > 0) {
-        setSelectedInputId(inputs[0]?.deviceId ?? "");
+      // Auto-switch logic: if selected device is gone, or none selected, pick first available
+      if (inputs.length > 0) {
+        const stillExists = inputs.some((d) => d.deviceId === selectedInputId);
+        if (!selectedInputId || !stillExists) {
+          setSelectedInputId(inputs[0].deviceId);
+        }
       }
 
-      if (!selectedOutputId && outputs.length > 0) {
-        setSelectedOutputId(outputs[0]?.deviceId ?? "");
+      if (outputs.length > 0) {
+        const stillExists = outputs.some((d) => d.deviceId === selectedOutputId);
+        if (!selectedOutputId || !stillExists) {
+          setSelectedOutputId(outputs[0].deviceId);
+        }
       }
 
-      if (!selectedVideoId && videos.length > 0) {
-        setSelectedVideoId(videos[0]?.deviceId ?? "");
+      if (videos.length > 0) {
+        const stillExists = videos.some((d) => d.deviceId === selectedVideoId);
+        if (!selectedVideoId || !stillExists) {
+          setSelectedVideoId(videos[0].deviceId);
+        }
       }
     },
     [selectedInputId, selectedOutputId, selectedVideoId],

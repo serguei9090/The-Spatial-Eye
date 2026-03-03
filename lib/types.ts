@@ -1,44 +1,44 @@
 export interface Highlight {
-  id: string;
-  objectName: string;
-  ymin: number;
-  xmin: number;
-  ymax: number;
-  xmax: number;
-  timestamp: number;
-  confidence?: number;
+  readonly id: string;
+  readonly objectName: string;
+  readonly ymin: number;
+  readonly xmin: number;
+  readonly ymax: number;
+  readonly xmax: number;
+  readonly timestamp: number;
+  readonly confidence?: number;
 }
 
 export interface SessionRecord {
-  id: string;
-  userId: string;
-  startTime: Date;
-  endTime?: Date;
-  objectsDetected: number;
-  isRecording: boolean;
+  readonly id: string;
+  readonly userId: string;
+  readonly startTime: Date;
+  readonly endTime?: Date;
+  readonly objectsDetected: number;
+  readonly isRecording: boolean;
 }
 
 export interface DetectionRecord {
-  id: string;
-  objectName: string;
-  coordinates: [number, number, number, number];
-  timestamp: Date;
-  userCommand: string;
-  confidence?: number;
+  readonly id: string;
+  readonly objectName: string;
+  readonly coordinates: readonly [number, number, number, number];
+  readonly timestamp: Date;
+  readonly userCommand: string;
+  readonly confidence?: number;
 }
 
 export interface UIState {
-  isListening: boolean;
-  isConnected: boolean;
-  error: string | null;
+  readonly isListening: boolean;
+  readonly isConnected: boolean;
+  readonly error: string | null;
 }
 
 export interface StoryWorldRule {
-  id: string;
-  name: string;
-  description: string;
-  consequence: string;
-  active: boolean;
+  readonly id: string;
+  readonly name: string;
+  readonly description: string;
+  readonly consequence: string;
+  readonly active: boolean;
 }
 
 export type StoryItemType =
@@ -50,13 +50,13 @@ export type StoryItemType =
   | "director_prompt";
 
 export interface StoryItem {
-  id: string;
-  type: StoryItemType;
-  content: string; // URL for image, Text for text, Description for audio
-  metadata?: Record<string, string | number | boolean | undefined>; // Extra data like rule details
-  isGenerating?: boolean; // For loading states
-  timestamp: number;
-  isStory?: boolean; // True if it's actual narrative content
-  invocationId?: string; // Links items to the same turn/beat
-  isPlaceholder?: boolean; // True for auto-created separators awaiting the real segment_story title
+  readonly id: string;
+  readonly type: StoryItemType;
+  readonly content: string; // URL for image, Text for text, Description for audio
+  readonly metadata?: Readonly<Record<string, string | number | boolean | undefined>>; // Extra data like rule details
+  readonly isGenerating?: boolean; // For loading states
+  readonly timestamp: number;
+  readonly isStory?: boolean; // True if it's actual narrative content
+  readonly invocationId?: string; // Links items to the same turn/beat
+  readonly isPlaceholder?: boolean; // True for auto-created separators awaiting the real segment_story title
 }

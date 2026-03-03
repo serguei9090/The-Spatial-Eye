@@ -50,8 +50,16 @@ export function VideoFeed({
 
       try {
         const videoConstraints: MediaTrackConstraints = deviceId
-          ? { deviceId: { exact: deviceId } }
-          : { facingMode: "environment" };
+          ? {
+              deviceId: { exact: deviceId },
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            }
+          : {
+              facingMode: "environment",
+              width: { ideal: 1920 },
+              height: { ideal: 1080 },
+            };
 
         stream = await navigator.mediaDevices.getUserMedia({
           video: videoConstraints,
@@ -60,8 +68,16 @@ export function VideoFeed({
 
         if (mounted && videoRef.current) {
           videoRef.current.srcObject = stream;
+
+          // Fire onVideoReady only after loadedmetadata, which is when
+          // video.videoWidth / videoHeight are guaranteed to be populated.
+          // Calling it after play() is too early — dimensions may still be 0.
+          const handleMetadata = () => {
+            if (mounted) onVideoReady?.();
+          };
+          videoRef.current.addEventListener("loadedmetadata", handleMetadata, { once: true });
+
           await videoRef.current.play();
-          onVideoReady?.();
         }
       } catch {
         // Ignore camera errors at this layer; parent hook handles user-facing errors.

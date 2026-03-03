@@ -6,10 +6,10 @@ import { calculateObjectFit, projectHighlightToScreen } from "@/lib/utils/coordi
 import { useEffect, useRef, useState } from "react";
 
 interface SpatialOverlayProps {
-  highlights: Highlight[];
-  videoWidth: number;
-  videoHeight: number;
-  fit?: "cover" | "contain";
+  readonly highlights: readonly Highlight[];
+  readonly videoWidth: number;
+  readonly videoHeight: number;
+  readonly fit?: "cover" | "contain";
 }
 
 export function SpatialOverlay({
@@ -46,6 +46,16 @@ export function SpatialOverlay({
     containerSize.height,
     fit,
   );
+
+  // Debug log to verify coordinate pipeline when debug grid is visible
+  if (showDebugGrid && highlights.length > 0) {
+    console.debug(
+      `%c[SpatialOverlay]%c video=${videoWidth}×${videoHeight} container=${containerSize.width}×${containerSize.height} ` +
+        `scale=${fitParams.scale.toFixed(3)} offset=(${fitParams.offsetX.toFixed(1)}, ${fitParams.offsetY.toFixed(1)})`,
+      "color: #15ff81; font-weight: bold;",
+      "color: inherit;",
+    );
+  }
 
   if (containerSize.width === 0 || containerSize.height === 0) {
     return (

@@ -33,7 +33,7 @@ export type ArchitectureNodeData = {
 export type ArchitectureNodeObject = Node<ArchitectureNodeData, "architecture">;
 
 export function ArchitectureNode({ data, selected }: NodeProps<ArchitectureNodeObject>) {
-  const Icon = iconMap[data.type as keyof typeof iconMap] || Server;
+  const Icon = iconMap[data.type] || Server;
 
   return (
     <div

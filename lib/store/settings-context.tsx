@@ -26,7 +26,7 @@ interface SettingsContextType {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
-export function SettingsProvider({ children }: { children: React.ReactNode }) {
+export function SettingsProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   // Initialize with defaults (could load from localStorage here)
   const [language, setLanguage] = useState<Language>("en");
   const [highlightDuration, setHighlightDuration] = useState<HighlightDuration>(5000);

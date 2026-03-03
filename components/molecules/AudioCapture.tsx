@@ -57,15 +57,15 @@ export function AudioCapture({
         if (event.data.type === "pcm" && isActive) {
           const samples = event.data.samples;
 
-          // Simple VAD: Check if max amplitude exceeds threshold
-          let maxAmp = 0;
+          // VAD: count samples above threshold (not just peak amplitude).
+          // A single transient noise spike at 0.01 would trigger isTalking.
+          // Requiring >30% of samples above 0.015 filters out pops/clicks.
+          const THRESHOLD = 0.015;
+          let aboveCount = 0;
           for (const sample of samples) {
-            const abs = Math.abs(sample);
-            if (abs > maxAmp) maxAmp = abs;
+            if (Math.abs(sample) > THRESHOLD) aboveCount++;
           }
-
-          // Threshold: 0.01 is usually enough to filter background noise
-          const isTalking = maxAmp > 0.01;
+          const isTalking = aboveCount / samples.length > 0.3;
           onTalkingChange?.(isTalking);
 
           const int16Samples = pcmFloat32ToInt16(samples);

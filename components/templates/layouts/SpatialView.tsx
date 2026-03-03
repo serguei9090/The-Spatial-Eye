@@ -9,13 +9,14 @@ import { useAudioDeviceContext } from "@/lib/store/audio-context";
 import { useStudioContext } from "@/lib/store/studio-context";
 
 export function SpatialView() {
-  const { videoRef, activeHighlights, updateVideoSize } = useStudioContext();
+  const { videoRef, activeHighlights, updateVideoSize, videoSize } = useStudioContext();
   const { selectedVideoId } = useAudioDeviceContext();
   const visibleHighlights = useHighlightDetection(activeHighlights);
 
-  // Constants must match AIVideoProcessor's capture resolution!
-  const CAPTURE_WIDTH = 640;
-  const CAPTURE_HEIGHT = 360;
+  // Use the actual native video dimensions so the overlay's object-fit math
+  // matches exactly what the browser renders — not the (potentially different)
+  // capture resolution that was sent to the AI.
+  const { width: videoWidth, height: videoHeight } = videoSize;
 
   return (
     <AIErrorBoundary key="spatial" label="Spatial mode">
@@ -27,12 +28,14 @@ export function SpatialView() {
           className="h-full w-full object-contain"
         />
         <LandscapePrompt />
-        <SpatialOverlay
-          highlights={visibleHighlights}
-          videoWidth={CAPTURE_WIDTH}
-          videoHeight={CAPTURE_HEIGHT}
-          fit="contain"
-        />
+        {videoWidth > 0 && videoHeight > 0 && (
+          <SpatialOverlay
+            highlights={visibleHighlights}
+            videoWidth={videoWidth}
+            videoHeight={videoHeight}
+            fit="contain"
+          />
+        )}
       </div>
     </AIErrorBoundary>
   );

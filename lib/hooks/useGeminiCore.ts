@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { DEFAULT_GEMINI_LIVE_MODEL } from "@/lib/api/gemini_websocket";
 import { useAuth } from "@/lib/auth/auth-context";
 import { notifyModelError } from "@/lib/gemini/model-error";
+import { useSettings } from "@/lib/store/settings-context";
 import { decode, decodeAudioData } from "@/lib/utils/audio";
 import { toast } from "sonner";
 
@@ -63,6 +64,7 @@ export interface UseGeminiCoreProps {
   ) => void;
   onTurnComplete?: (invocationId?: string) => void;
   resumePrompt?: string;
+  getToken?: () => Promise<string | null>;
 }
 
 export function useGeminiCore({
@@ -72,6 +74,7 @@ export function useGeminiCore({
   onToolCall,
   onTranscript,
   onTurnComplete,
+  getToken,
   resumePrompt = "The connection to the server was briefly interrupted. Please resume what you were doing exactly where you left off.",
 }: UseGeminiCoreProps) {
   const socketRef = useRef<WebSocket | null>(null);
@@ -85,9 +88,8 @@ export function useGeminiCore({
   const audioQueueRef = useRef<string[]>([]);
   const isProcessingAudioRef = useRef<boolean>(false);
   const isBufferingRef = useRef<boolean>(true); // Anti-jitter cache buffer state
-  const keepAliveIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const currentTurnIdRef = useRef<string>(crypto.randomUUID());
-  const interruptedTurnIdsRef = useRef<Set<string>>(new Set()); // Track interrupted turns to discard late audio
+  const isMutedRef = useRef(false); // Track interrupted state to discard late audio
 
   const audioSendCountRef = useRef(0);
   const audioRecvCountRef = useRef(0);
@@ -97,6 +99,7 @@ export function useGeminiCore({
   const connectRef = useRef<((isAutoReconnect?: boolean) => Promise<boolean>) | null>(null);
 
   const { user } = useAuth();
+  const { t } = useSettings();
 
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -127,18 +130,17 @@ export function useGeminiCore({
       }
       // 403 = billing disabled / access denied, anything else = unexpected
       const reason =
-        response.status === 403
-          ? "Access denied — billing may be disabled for this model."
-          : `Server returned ${response.status}.`;
+        response.status === 403 ? t.toasts.accessDenied : `Server returned ${response.status}.`;
       setModelAvailability("unavailable");
       notifyModelError(DEFAULT_GEMINI_LIVE_MODEL, new Error(reason));
       return false;
     } catch {
       // Network error — be optimistic, don't block the user
-      setModelAvailability("available");
-      return true;
+      const status = "available"; // Assume available on network error
+      setModelAvailability(status);
+      return status === "available";
     }
-  }, []);
+  }, [t.toasts.accessDenied]);
 
   // ---------------------------------------------------------------------------
   // Audio Playback & Control
@@ -183,10 +185,6 @@ export function useGeminiCore({
     logInfo("Disconnecting...");
     manualCloseRef.current = true;
     isConnectedRef.current = false;
-    if (keepAliveIntervalRef.current !== null) {
-      clearInterval(keepAliveIntervalRef.current);
-      keepAliveIntervalRef.current = null;
-    }
     try {
       socketRef.current?.close();
     } catch {
@@ -196,6 +194,7 @@ export function useGeminiCore({
     setIsConnected(false);
     setIsConnecting(false);
     stopAudio(0);
+    isMutedRef.current = false;
     if (audioContextRef.current?.state !== "closed") {
       void audioContextRef.current?.close();
       audioContextRef.current = null;
@@ -203,8 +202,14 @@ export function useGeminiCore({
   }, [stopAudio]);
 
   const connect = useCallback(
-    async (isAutoReconnect = false): Promise<boolean> => {
+    async (isAutoReconnect = false, token?: string | null): Promise<boolean> => {
       logInfo("Connect called.");
+
+      let activeToken = token;
+      if (!activeToken && getToken) {
+        logInfo("Fetching auth token...");
+        activeToken = await getToken();
+      }
 
       if (!isAutoReconnect) {
         reconnectAttemptRef.current = 0;
@@ -212,7 +217,7 @@ export function useGeminiCore({
       manualCloseRef.current = false;
 
       if (!user) {
-        const msg = "Sign in required before connecting.";
+        const msg = t.toasts.authRequired;
         setError(msg);
         setErrorCode("AUTH_REQUIRED");
         setErrorMessage(msg);
@@ -245,14 +250,16 @@ export function useGeminiCore({
 
       return new Promise((resolve) => {
         let baseUrl = process.env.NEXT_PUBLIC_RELAY_WS_URL;
-
         if (!baseUrl) {
-          // Automatic detection for unified deployment (sharing host/port)
           const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
           baseUrl = `${protocol}//${window.location.host}/ws/live`;
         }
 
-        const wsUrl = mode ? `${baseUrl}?mode=${mode}` : baseUrl;
+        const params = new URLSearchParams();
+        if (mode) params.append("mode", mode);
+        if (activeToken) params.append("token", activeToken);
+
+        const wsUrl = `${baseUrl}?${params.toString()}`;
         const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
@@ -276,15 +283,6 @@ export function useGeminiCore({
           }
 
           reconnectAttemptRef.current = 0;
-
-          if (keepAliveIntervalRef.current !== null) {
-            clearInterval(keepAliveIntervalRef.current);
-          }
-          keepAliveIntervalRef.current = setInterval(() => {
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-              socketRef.current.send(JSON.stringify({ text: " " }));
-            }
-          }, 25_000);
         };
 
         const processAudioQueue = () => {
@@ -304,7 +302,7 @@ export function useGeminiCore({
             // Wait until we have accumulated a minimum number of chunks before playing,
             // to absorb network/generation jitter.
             if (isBufferingRef.current) {
-              const MIN_CHUNKS = mode === "storyteller" ? 40 : 2; // ~400-800ms of buffered audio for Storyteller, instant for Spatial/IT
+              const MIN_CHUNKS = mode === "storyteller" ? 40 : mode === "it-architecture" ? 15 : 2;
               if (audioQueueRef.current.length < MIN_CHUNKS) {
                 isProcessingAudioRef.current = false;
                 return; // Wait for more chunks
@@ -391,7 +389,7 @@ export function useGeminiCore({
           // 1. Interruption
           if (msg.interrupted === true) {
             logInfo("Barge-in: Interrupted by ADK.");
-            interruptedTurnIdsRef.current.add(currentTurnId); // Mark this turn as interrupted
+            isMutedRef.current = true; // Mark this turn as interrupted
             audioQueueRef.current = [];
             isProcessingAudioRef.current = false;
             isBufferingRef.current = true;
@@ -407,7 +405,7 @@ export function useGeminiCore({
             const inlineData = part.inlineData || part.inline_data;
             if (inlineData?.data && inlineData.mimeType?.startsWith("audio/")) {
               // Drop audio that belongs to an interrupted turn (late arrivals)
-              if (interruptedTurnIdsRef.current.has(currentTurnId)) {
+              if (isMutedRef.current) {
                 continue;
               }
               audioRecvCountRef.current += 1;
@@ -453,11 +451,10 @@ export function useGeminiCore({
             // Cycle turn ID for the next complete model response
             currentTurnIdRef.current = crypto.randomUUID();
 
-            // If this turn was interrupted, drain the queue (AI Studio pattern)
-            // instead of flushing remaining audio for playback.
-            if (interruptedTurnIdsRef.current.has(currentTurnId)) {
+            // If this turn was interrupted, drain any remaining late data
+            if (isMutedRef.current) {
               audioQueueRef.current = [];
-              interruptedTurnIdsRef.current.delete(currentTurnId);
+              isMutedRef.current = false;
               isBufferingRef.current = true;
             } else {
               // ── FLUSH CACHE BUFFER ──
@@ -488,13 +485,10 @@ export function useGeminiCore({
           if (!manualCloseRef.current) {
             const isServerError = e.code === 1011;
             const reasonText =
-              e.reason ||
-              (isServerError
-                ? "The Gemini API operation timed out or failed (Deadline Expired)."
-                : "Connection was lost abnormally.");
+              e.reason || (isServerError ? t.toasts.deadlineExceeded : t.toasts.connectionAbnormal);
 
             if (isServerError) {
-              toast.error("Gemini Server Error", {
+              toast.error(t.toasts.serverError, {
                 description: reasonText,
                 duration: 6000,
               });
@@ -506,8 +500,10 @@ export function useGeminiCore({
             if (reconnectAttemptRef.current < 3) {
               reconnectAttemptRef.current += 1;
               toast.warning(
-                `Connection lost. Reconnecting (Attempt ${reconnectAttemptRef.current}/3)...`,
-                { id: "ws-retry" },
+                t.toasts.reconnecting.replace("{attempt}", reconnectAttemptRef.current.toString()),
+                {
+                  id: "ws-retry",
+                },
               );
               setTimeout(() => {
                 if (connectRef.current) void connectRef.current(true);
@@ -516,16 +512,16 @@ export function useGeminiCore({
             }
 
             if (!isServerError) {
-              setError("Connection error to local relay.");
+              setError(t.toasts.relayError);
             }
-            toast.error("Could not reconnect to the server.");
+            toast.error(t.toasts.reconnectFailed);
           }
 
           resolve(false);
         };
       });
     },
-    [user, mode, onToolCall, onTranscript, onTurnComplete, stopAudio, resumePrompt],
+    [user, mode, onToolCall, onTranscript, onTurnComplete, stopAudio, resumePrompt, getToken, t],
   );
 
   useEffect(() => {
@@ -535,15 +531,21 @@ export function useGeminiCore({
   // ---------------------------------------------------------------------------
   // Sending Methods
   // ---------------------------------------------------------------------------
-  const sendVideoFrame = useCallback((base64Data: string, mimeType = "image/jpeg") => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(
-        JSON.stringify({
-          realtimeInput: { video: { mimeType, data: base64Data } },
-        }),
-      );
-    }
-  }, []);
+  const sendVideoFrame = useCallback(
+    (base64Data: string, mimeType = "image/jpeg", width?: number, height?: number) => {
+      if (socketRef.current?.readyState === WebSocket.OPEN) {
+        if (width && height) {
+          logTrace(`Piping ${width}x${height} video frame to Relay`);
+        }
+        socketRef.current.send(
+          JSON.stringify({
+            realtimeInput: { video: { mimeType, data: base64Data, width, height } },
+          }),
+        );
+      }
+    },
+    [],
+  );
 
   const sendAudioChunk = useCallback((data: Blob | Int16Array) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {

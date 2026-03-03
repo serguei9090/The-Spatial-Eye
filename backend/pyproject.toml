@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastapi>=0.131.0",
+    "firebase-admin>=7.2.0",
     "google-adk[a2a]>=1.25.1",
     "google-genai>=1.64.0",
     "loguru>=0.7.3",
@@ -15,7 +16,7 @@ dependencies = [
 ]
 
 [tool.ruff]
-line-length = 100
+line-length = 120
 target-version = "py313"
 
 [tool.ruff.lint]

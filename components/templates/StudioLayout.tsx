@@ -78,22 +78,22 @@ export function StudioLayout() {
       <PremiumBackground />
       <AIVideoProcessor />
 
-      {/* Error Overlay */}
+      {/* Error Overlay - Repositioned to avoid Transcript collision */}
       <AnimatePresence>
         {error && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed top-20 left-1/2 z-[100] -translate-x-1/2 w-full max-w-md px-4"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-32 left-1/2 z-[80] -translate-x-1/2 w-full max-w-md px-4"
           >
-            <div className="flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-950/40 p-4 backdrop-blur-xl shadow-2xl">
+            <div className="flex items-center gap-3 rounded-2xl border border-red-500/30 bg-red-950/60 p-4 backdrop-blur-2xl shadow-[0_0_50px_rgba(239,68,68,0.2)]">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-500/20">
-                <div className="h-5 w-5 rounded-full bg-red-500" />
+                <div className="h-5 w-5 rounded-full bg-red-500 animate-pulse" />
               </div>
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-bold text-red-100">Session Error</p>
-                <p className="truncate text-xs text-red-200/60 font-mono">
+                <p className="text-sm font-bold text-red-100">Critical Session Error</p>
+                <p className="truncate text-xs text-red-200/70 font-mono">
                   {errorCode}: {errorMessage || error}
                 </p>
               </div>
@@ -101,9 +101,9 @@ export function StudioLayout() {
                 variant="ghost"
                 size="sm"
                 onClick={() => disconnect()}
-                className="text-red-200/50 hover:bg-white/5"
+                className="text-red-200/50 hover:bg-white/5 hover:text-white"
               >
-                Dismiss
+                Reset
               </Button>
             </div>
           </motion.div>
@@ -127,10 +127,45 @@ export function StudioLayout() {
         />
       </div>
 
-      {/* Mode-Specific Layouts */}
-      {mode === "spatial" && <SpatialView />}
-      {mode === "storyteller" && <StorytellerView />}
-      {mode === "it-architecture" && <ArchitectureView />}
+      {/* Mode-Specific Layouts with Motion Transitions */}
+      <AnimatePresence mode="wait">
+        {mode === "spatial" && (
+          <motion.div
+            key="spatial"
+            initial={{ opacity: 0, scale: 1.02 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="flex-1"
+          >
+            <SpatialView />
+          </motion.div>
+        )}
+        {mode === "it-architecture" && (
+          <motion.div
+            key="it-architecture"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="flex-1"
+          >
+            <ArchitectureView />
+          </motion.div>
+        )}
+        {mode === "storyteller" && (
+          <motion.div
+            key="storyteller"
+            initial={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            className="flex-1"
+          >
+            <StorytellerView />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Floating Control Bar - Always on top for both modes */}
       <div className="pointer-events-none fixed inset-0 z-50 flex flex-col justify-end p-4 sm:p-8">

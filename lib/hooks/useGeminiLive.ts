@@ -27,12 +27,18 @@ export type GeminiMode = "spatial" | "storyteller" | "it-architecture";
 export interface UseGeminiLiveProps {
   mode?: GeminiMode; // default "spatial"
   onTurnComplete?: (invocationId?: string) => void;
+  getToken?: () => Promise<string | null>;
 }
 
-export function useGeminiLive({ mode = "spatial", onTurnComplete }: UseGeminiLiveProps = {}) {
+export function useGeminiLive({
+  mode = "spatial",
+  onTurnComplete,
+  getToken,
+}: UseGeminiLiveProps = {}) {
   const { activeHighlights, setActiveHighlights, handleSpatialToolCall } = useSpatialMode();
 
   const { nodes, edges, setNodes, setEdges, handleArchitectureToolCall } = useArchitectureMode();
+  const { t } = useSettings();
 
   const [storyStream, setStoryStream] = useState<StoryItem[]>([]);
   const [latestTranscript, setLatestTranscript] = useState<string>("");
@@ -91,9 +97,19 @@ export function useGeminiLive({ mode = "spatial", onTurnComplete }: UseGeminiLiv
       /call:\s*\w+|add_node|add_edge|clear_diagram|delete_node|remove_edge|update_node/.test(text);
     if (!isToolCallText) {
       // Strip out any partial tool call artifacts that may bleed through
-      const cleanText = text
+      // and replace with localized descriptions from t.settings.tools
+      let cleanText = text
         .replaceAll(/call:\s*(add_node|add_edge|clear_diagram)[\s\S]*/g, "")
         .trimEnd();
+
+      if (cleanText.includes("call:")) {
+        for (const [key, value] of Object.entries(t.settings.tools || {})) {
+          if (cleanText.includes(key)) {
+            const pattern = `call:\\s*${key}.*`;
+            cleanText = cleanText.replaceAll(new RegExp(pattern, "g"), `[${value}]`);
+          }
+        }
+      }
 
       // The Gemini API sends incremental chunks with partial=true,
       // and then sends the FULL assembled string with partial=false.
@@ -268,12 +284,8 @@ export function useGeminiLive({ mode = "spatial", onTurnComplete }: UseGeminiLiv
     });
   };
 
-  let resumePrompt =
-    "The connection to the server was briefly interrupted. Please resume what you were doing exactly where you left off.";
+  let resumePrompt = t.system.resumeAction;
   if (mode === "it-architecture") {
-    // Cap context to avoid buffer overflow on WebSocket reconnect handshake.
-    // Sending all node labels as a large string on reconnect is a primary cause
-    // of "deadline exceeded" / 1006 drops, especially on Hackintosh systems.
     const MAX_RESUME_NODES = 8;
     const nodeNames = nodes
       .slice(0, MAX_RESUME_NODES)
@@ -282,12 +294,11 @@ export function useGeminiLive({ mode = "spatial", onTurnComplete }: UseGeminiLiv
     const moreNodes =
       nodes.length > MAX_RESUME_NODES ? ` (and ${nodes.length - MAX_RESUME_NODES} more)` : "";
     const edgeCount = edges.length;
-    resumePrompt += ` We are building an architecture diagram with ${nodes.length} nodes (e.g., ${nodeNames}${moreNodes}) and ${edgeCount} connections. Please continue the design.`;
+    resumePrompt += ` ${t.system.resumeArchitecture.replace(". ", "")} (${nodes.length} nodes: ${nodeNames}${moreNodes}, ${edgeCount} connections).`;
   } else if (mode === "storyteller") {
-    resumePrompt += " Please continue the story or narrative from where it stopped.";
+    resumePrompt += ` ${t.system.resumeStory}`;
   } else if (mode === "spatial") {
-    resumePrompt +=
-      " I am back online. Await my specific instructions before highlighting any objects.";
+    resumePrompt += ` ${t.system.resumeWaiting}`;
   }
 
   const core = useGeminiCore({
@@ -296,6 +307,7 @@ export function useGeminiLive({ mode = "spatial", onTurnComplete }: UseGeminiLiv
     mode,
     onToolCall: handleToolCall,
     onTranscript: handleTranscript,
+    getToken,
     onTurnComplete: (invocationId) => {
       if (mode !== "storyteller") return;
       setStoryStream((prev) => {
@@ -306,11 +318,14 @@ export function useGeminiLive({ mode = "spatial", onTurnComplete }: UseGeminiLiv
           (i) => i.type === "story_segment" && i.isPlaceholder,
         );
         if (placeholderIdx !== -1) {
-          // Try to read the title from the first narrative sentence still in the stream
           const firstNarrative = updated.find((i) => i.type === "text" && i.isStory);
-          const fallbackTitle = firstNarrative
-            ? (/^([^.!?\n]+[.!?]?)/.exec(firstNarrative.content)?.[1]?.trim() ?? "A Story")
-            : "A Story";
+          const isEn = t.modes.storyteller === "Storyteller";
+          let fallbackTitle = isEn ? "A Story" : "Una Historia";
+          if (firstNarrative) {
+            const match = /^([^.!?\n]+[.!?]?)/.exec(firstNarrative.content);
+            if (match?.[1]) fallbackTitle = match[1].trim();
+          }
+
           updated[placeholderIdx] = {
             ...updated[placeholderIdx],
             content: fallbackTitle,
@@ -332,7 +347,7 @@ export function useGeminiLive({ mode = "spatial", onTurnComplete }: UseGeminiLiv
             {
               id: crypto.randomUUID(),
               type: "director_prompt",
-              content: "The tale is told. Shall we craft another?",
+              content: "[DIRECTOR] The tale is told. Shall we craft another?",
               timestamp: Date.now(),
             },
           ];
@@ -348,6 +363,8 @@ export function useGeminiLive({ mode = "spatial", onTurnComplete }: UseGeminiLiv
 
   return {
     ...core,
+    connect: (isAutoReconnect?: boolean, token?: string | null) =>
+      core.connect(isAutoReconnect, token),
     activeHighlights,
     storyStream,
     nodes,

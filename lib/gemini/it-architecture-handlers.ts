@@ -282,8 +282,8 @@ function processUpdateNode(args: UpdateNodeArgs, setNodes: Dispatch<SetStateActi
       if (args.label) updatedNode.data = { ...node.data, label: String(args.label).trim() };
       if (args.x !== undefined || args.y !== undefined) {
         updatedNode.position = {
-          x: args.x !== undefined ? Number(args.x) : node.position.x,
-          y: args.y !== undefined ? Number(args.y) : node.position.y,
+          x: args.x === undefined ? node.position.x : Number(args.x),
+          y: args.y === undefined ? node.position.y : Number(args.y),
         };
       }
       return updatedNode;
@@ -303,34 +303,19 @@ function processAddEdge(
   const target = String(args.target).trim();
   const label = args.label ? String(args.label).trim() : undefined;
 
-  // Validate that source and target nodes exist
-  setNodes((currentNodes) => {
-    const sourceExists = currentNodes.some((n) => n.id === source);
-    const targetExists = currentNodes.some((n) => n.id === target);
+  // Both exist — add the edge
+  const newEdge: Edge = {
+    id,
+    source,
+    target,
+    label,
+    type: "default",
+    animated: true,
+  };
 
-    if (!sourceExists || !targetExists) {
-      console.warn(
-        `[Architecture] Skipping edge ${id}: source(${source})=${sourceExists}, target(${target})=${targetExists}`,
-      );
-      return currentNodes; // No mutation
-    }
-
-    // Both exist — add the edge
-    const newEdge: Edge = {
-      id,
-      source,
-      target,
-      label,
-      type: "default",
-      animated: true,
-    };
-
-    console.log("[Architecture] Adding edge:", id);
-    setEdges((prev) => {
-      const filtered = prev.filter((e) => e.id !== id);
-      return [...filtered, newEdge];
-    });
-
-    return currentNodes; // No mutation
+  console.log("[Architecture] Adding edge:", id);
+  setEdges((prev) => {
+    const filtered = prev.filter((e) => e.id !== id);
+    return [...filtered, newEdge];
   });
 }

@@ -1,14 +1,16 @@
 "use client";
 
+import { useAuth } from "@/lib/auth/auth-context";
 import { useGeminiLive } from "@/lib/hooks/useGeminiLive";
+import { useSettings } from "@/lib/store/settings-context";
 import type { Highlight, StoryItem } from "@/lib/types";
 import { downloadDiagram, uploadDiagram } from "@/lib/utils/diagram-export";
 import type { Connection, Edge, Node, OnEdgesChange, OnNodesChange } from "@xyflow/react";
 import { addEdge, applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
 import { useSearchParams } from "next/navigation";
 import {
-  type MutableRefObject,
   type ReactNode,
+  type RefObject,
   createContext,
   useCallback,
   useContext,
@@ -43,7 +45,7 @@ interface StudioContextType {
   edges: Edge[];
 
   // Video State
-  videoRef: MutableRefObject<HTMLVideoElement | null>;
+  videoRef: RefObject<HTMLVideoElement | null>;
   videoSize: { width: number; height: number };
   updateVideoSize: () => void;
 
@@ -51,7 +53,7 @@ interface StudioContextType {
   connect: () => Promise<boolean>;
   disconnect: () => void;
   onToggleListening: () => void;
-  sendVideoFrame: (base64: string, mimeType: string) => void;
+  sendVideoFrame: (base64: string, mimeType: string, width?: number, height?: number) => void;
   sendAudioChunk: (data: Blob | Int16Array) => void;
   setIsUserTalking: (isTalking: boolean) => void;
 
@@ -68,7 +70,7 @@ interface StudioContextType {
 
 const StudioContext = createContext<StudioContextType | undefined>(undefined);
 
-export function StudioProvider({ children }: { children: ReactNode }) {
+export function StudioProvider({ children }: Readonly<{ children: ReactNode }>) {
   const searchParams = useSearchParams();
   const initialMode = searchParams.get("mode") as AppMode;
 
@@ -83,6 +85,9 @@ export function StudioProvider({ children }: { children: ReactNode }) {
   const [fitViewCounter, setFitViewCounter] = useState(0);
   const [videoSize, setVideoSize] = useState({ width: 0, height: 0 });
   const videoRef = useRef<HTMLVideoElement | null>(null);
+
+  const { getIdToken } = useAuth();
+  const { t } = useSettings();
 
   const {
     activeHighlights,
@@ -105,6 +110,7 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     checkModelAvailability,
   } = useGeminiLive({
     mode,
+    getToken: getIdToken,
     onTurnComplete: () => {
       if (mode === "it-architecture") {
         setFitViewCounter((prev) => prev + 1);
@@ -128,23 +134,34 @@ export function StudioProvider({ children }: { children: ReactNode }) {
     [mode, isListening, isConnected, coreDisconnect],
   );
 
-  const onToggleListening = useCallback(() => {
+  const onToggleListening = useCallback(async () => {
     if (isListening) {
       coreDisconnect();
       setIsListening(false);
     } else {
-      coreConnect().then((connected) => {
-        if (connected) setIsListening(true);
-      });
+      const token = await getIdToken();
+      if (!token) {
+        console.error(t.toasts.authTokenMissing);
+        return;
+      }
+      const connected = await coreConnect(false, token);
+      if (connected) setIsListening(true);
     }
-  }, [coreConnect, coreDisconnect, isListening]);
+  }, [coreConnect, coreDisconnect, isListening, getIdToken, t]);
 
   const updateVideoSize = useCallback(() => {
-    if (!videoRef.current) return;
-    setVideoSize({
-      width: videoRef.current.videoWidth || videoRef.current.clientWidth,
-      height: videoRef.current.videoHeight || videoRef.current.clientHeight,
-    });
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Only use intrinsic video dimensions (videoWidth / videoHeight).
+    // NEVER fall back to clientWidth/clientHeight — those are the CSS layout
+    // dimensions (viewport-sized) and would give calculateObjectFit a wrong
+    // aspect ratio, shifting highlights off-target.
+    const w = video.videoWidth;
+    const h = video.videoHeight;
+    if (w > 0 && h > 0) {
+      setVideoSize({ width: w, height: h });
+    }
   }, []);
 
   // Diagram Handlers

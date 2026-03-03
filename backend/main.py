@@ -27,6 +27,7 @@ from google.genai import Client, types
 from loguru import logger
 
 import tools_config
+from firebase_auth import initialize_firebase, verify_token
 
 # Resolve the path to the root .env.local file
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env.local"
@@ -55,6 +56,9 @@ session_service = InMemorySessionService()
 agent_model: str = os.getenv(
     "NEXT_PUBLIC_GEMINI_LIVE_MODEL", "gemini-2.5-flash-native-audio-preview-12-2025"
 )
+
+# Initialize Firebase Admin at app startup
+initialize_firebase()
 
 
 # ---------------------------------------------------------------------------
@@ -86,15 +90,38 @@ def read_root() -> dict[str, str]:
 
 
 @app.websocket("/ws/live")
-async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial") -> None:
+async def websocket_endpoint(
+    websocket: WebSocket, mode: str = "spatial", token: str = None
+) -> None:
     """
     Main WebSocket endpoint for real-time interaction with Gemini.
+    Requires a valid Firebase ID token for connection.
     """
     await websocket.accept()
 
+    # Verify Authentication
+    if not token:
+        logger.warning("WebSocket Connection Attempt without token.")
+        await websocket.send_text(
+            json.dumps({"error": "AUTH_REQUIRED", "message": "Firebase token missing."})
+        )
+        await websocket.close(code=1008)
+        return
+
+    decoded = verify_token(token)
+    if not decoded:
+        logger.warning("WebSocket Connection Attempt with invalid token.")
+        await websocket.send_text(
+            json.dumps({"error": "AUTH_INVALID", "message": "Failed to verify Firebase token."})
+        )
+        await websocket.close(code=1008)
+        return
+
+    user_id: str = decoded["uid"]
     session_id: str = str(uuid.uuid4())
-    user_id: str = str(uuid.uuid4())
     mode_clean: str = mode.replace("-", "_")
+
+    logger.info(f"[{session_id}] New Session - User: {user_id} - Mode: {mode}")
 
     await session_service.create_session(
         app_name=f"SpatialEyeApp_{mode_clean}", user_id=user_id, session_id=session_id
@@ -103,7 +130,10 @@ async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial") -> Non
     # Resolve Mode Configuration
     config_map = {
         "storyteller": (tools_config.STORYTELLER_SYSTEM_INSTRUCTION, tools_config.DIRECTOR_TOOLS),
-        "it-architecture": (tools_config.IT_ARCHITECTURE_SYSTEM_INSTRUCTION, tools_config.IT_ARCHITECTURE_TOOLS),
+        "it-architecture": (
+            tools_config.IT_ARCHITECTURE_SYSTEM_INSTRUCTION,
+            tools_config.IT_ARCHITECTURE_TOOLS,
+        ),
         "spatial": (tools_config.SPATIAL_SYSTEM_INSTRUCTION, tools_config.SPATIAL_TOOLS),
     }
     system_instruction, active_tools = config_map.get(mode, config_map["spatial"])
@@ -122,7 +152,6 @@ async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial") -> Non
     run_config = RunConfig(
         streaming_mode=StreamingMode.BIDI,
         response_modalities=[types.Modality.AUDIO],
-        media_resolution="MEDIA_RESOLUTION_MEDIUM",
         speech_config=types.SpeechConfig(
             voice_config=types.VoiceConfig(
                 prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name="Puck")
@@ -168,7 +197,7 @@ async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial") -> Non
 
                     try:
                         parsed: dict[str, Any] = json.loads(text_data)
-                        
+
                         # Process Multimodal Payload
                         if "realtimeInput" in parsed:
                             ri = parsed["realtimeInput"]
@@ -181,17 +210,24 @@ async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial") -> Non
                                 live_request_queue.send_realtime(
                                     types.Blob(
                                         mime_type=media.get("mimeType", "audio/pcm;rate=16000"),
-                                        data=raw_media
+                                        data=raw_media,
                                     )
                                 )
 
                             if video:
                                 counts["video"] += 1
                                 if counts["video"] % 20 == 0:
-                                    logger.debug(f"[{session_id}] Upstream: {counts['video']} Frames")
+                                    w = video.get("width", "unknown")
+                                    h = video.get("height", "unknown")
+                                    logger.debug(
+                                        f"[{session_id}] Upstream: {counts['video']} Frames ({w}x{h})"
+                                    )
                                 raw_video = base64.b64decode(video["data"])
                                 live_request_queue.send_realtime(
-                                    types.Blob(mime_type=video.get("mimeType", "image/jpeg"), data=raw_video)
+                                    types.Blob(
+                                        mime_type=video.get("mimeType", "image/jpeg"),
+                                        data=raw_video,
+                                    )
                                 )
                             continue
 
@@ -234,7 +270,7 @@ async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial") -> Non
                 # Deduplication & Tracing
                 try:
                     p_dict: dict[str, Any] = json.loads(payload)
-                    
+
                     # 1. Filter duplicate tool calls
                     if "content" in p_dict and "parts" in p_dict["content"]:
                         is_duplicate = False
@@ -244,8 +280,10 @@ async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial") -> Non
                                 call_id = fc["id"]
                                 call_name = fc["name"]
                                 call_args = fc.get("args", {})
-                                
-                                logger.success(f"[{session_id}] Tool Call Sent -> {call_name}({call_args})")
+
+                                logger.success(
+                                    f"[{session_id}] Tool Call Sent -> {call_name}({call_args})"
+                                )
 
                                 if call_id in processed_calls:
                                     is_duplicate = True
@@ -261,7 +299,9 @@ async def websocket_endpoint(websocket: WebSocket, mode: str = "spatial") -> Non
                             if "inlineData" in part:
                                 audio_out_count += 1
                                 if audio_out_count % 50 == 0:
-                                    logger.debug(f"[{session_id}] Downstream: {audio_out_count} Audio Blocks")
+                                    logger.debug(
+                                        f"[{session_id}] Downstream: {audio_out_count} Audio Blocks"
+                                    )
 
                 except Exception:
                     pass

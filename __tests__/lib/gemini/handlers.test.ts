@@ -8,7 +8,7 @@ describe("handleSpatialToolCall", () => {
   beforeEach(() => {
     mockSetActiveHighlights = jest.fn();
     // Mock crypto.randomUUID
-    Object.defineProperty(global, "crypto", {
+    Object.defineProperty(globalThis, "crypto", {
       value: {
         randomUUID: () => "mock-uuid",
       },

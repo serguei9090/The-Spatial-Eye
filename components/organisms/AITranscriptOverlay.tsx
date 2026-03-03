@@ -31,7 +31,7 @@ export function AITranscriptOverlay({ transcript }: AITranscriptOverlayProps) {
       dragMomentum={false}
       className={cn(
         "absolute top-20 left-4 z-50 transition-all duration-300 pointer-events-auto",
-        isMaximized ? "w-96" : "w-80",
+        isMaximized ? "w-[calc(100vw-2rem)] sm:w-96" : "w-[calc(100vw-2rem)] sm:w-80",
       )}
     >
       <div className="bg-card/95 backdrop-blur-md rounded-xl border border-border shadow-2xl flex flex-col overflow-hidden">

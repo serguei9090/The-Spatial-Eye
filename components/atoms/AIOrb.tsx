@@ -5,10 +5,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface AIOrbProps {
-  isActive: boolean;
-  isUserTalking?: boolean;
-  isAiTalking?: boolean;
-  className?: string;
+  readonly isActive: boolean;
+  readonly isUserTalking?: boolean;
+  readonly isAiTalking?: boolean;
+  readonly className?: string;
 }
 
 export function AIOrb({
@@ -37,7 +37,12 @@ export function AIOrb({
   };
 
   const isTalking = isUserTalking || isAiTalking;
-  const currentTheme = isUserTalking ? colors.user : isAiTalking ? colors.ai : colors.idle;
+  let currentTheme = colors.idle;
+  if (isUserTalking) {
+    currentTheme = colors.user;
+  } else if (isAiTalking) {
+    currentTheme = colors.ai;
+  }
 
   return (
     <div className={cn("relative flex items-center justify-center", className)}>

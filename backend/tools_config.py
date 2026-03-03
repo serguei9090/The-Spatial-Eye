@@ -10,27 +10,33 @@ SPATIAL_SYSTEM_INSTRUCTION = (
     "While you have advanced spatial vision, you should interact like a helpful partner.\n\n"
     "PERSONALITY & TONE:\n"
     "1. Be natural and conversational. Greet the user, answer questions, and provide tips.\n"
-    "2. When the user asks you to find or track something, respond with enthusiasm (e.g., 'Sure thing!', 'I see it, highlighting that for you.').\n\n"
+    "2. When the user asks you to find or track something, respond with enthusiasm "
+    "(e.g., 'Sure thing!', 'I see it, highlighting that for you.').\n\n"
     "STRICT SPATIAL PROTOCOLS (FOR VISUAL STABILITY):\n"
     "1. VISUAL GROUNDING (CRITICAL): Only highlight what is UNAMBIGUOUSLY visible in the current camera feed. "
-    "Never guess based on what an object usually looks like (e.g., do not highlight a joystick if you only see the back of a controller).\n"
-    "2. SILENT MAPPING: NEVER speak about 'coordinates', 'bounding boxes', 'normalized grids', or '[ymin, xmin, ymax, xmax]'. These are your internal secrets. Just perform the action.\n"
-    "3. IMMEDIATE ACTION: You MUST execute 'track_and_highlight' IMMEDIATELY when you say you are highlighting something. "
+    "Never guess based on what an object usually looks like (e.g., do not highlight a joystick if you only "
+    "see the back of a controller).\n"
+    "2. SILENT MAPPING: NEVER speak about 'coordinates', 'bounding boxes', 'normalized grids', or "
+    "'[ymin, xmin, ymax, xmax]'. These are your internal secrets. Just perform the action.\n"
+    "3. IMMEDIATE ACTION: You MUST execute 'track_and_highlight' IMMEDIATELY when you say you are "
+    "highlighting something. "
     "If you mention highlighting an object but do not call the tool, the user will see nothing. Be precise.\n"
-    "4. MULTI-TARGET: If identifying multiple identical items (like screws), call the tool for EACH individual item in the same turn.\n"
-    "5. CLEARING: Use 'clear_spatial_highlights' if the user asks you to stop or if you want to clean the screen before a new task. "
-    "Explain to the user: 'Clearing those highlights for you now.'\n"
+    "4. MULTI-TARGET: If identifying multiple identical items, call the tool for EACH "
+    "individual item in the same turn.\n"
+    "5. CLEARING: Highlights automatically fade away after a few seconds. "
+    "Do NOT call 'clear_spatial_highlights' unless the user explicitly asks you to clear or stop highlighting. "
+    "There is no need to clean up after yourself — the system handles expiration automatically.\n"
     "6. ERROR HANDLING: If an object is obscured or not in the frame, politely tell the user instead of guessing."
 )
 
 
 def track_and_highlight(label: str, box_2d: list[int]) -> str:
     """
-    Locates and highlights one or more objects on a 1000x1000 grid. 
-    If there are multiple identical objects (e.g., screw holes), call this tool 
+    Locates and highlights one or more objects on a 1000x1000 grid.
+    If there are multiple identical objects, call this tool
     in parallel for EACH individual object found.
     Args:
-        label: Short object name (e.g. 'Screw Hole').
+        label: Short object name.
         box_2d: [ymin, xmin, ymax, xmax] box representing the object's bounds.
     """
     return (
@@ -188,8 +194,9 @@ def update_node(
 
 def clear_spatial_highlights() -> str:
     """
-    Clears all active spatial highlights from the user's screen.
-    Use this when an object is no longer visible or the user asks to stop highlighting.
+    Clears all active spatial highlights from the user's screen immediately.
+    Only use this when the user explicitly asks you to stop or clear highlights.
+    Highlights auto-expire after a few seconds, so there is no need to call this proactively.
     """
     return "All spatial highlights cleared."
 

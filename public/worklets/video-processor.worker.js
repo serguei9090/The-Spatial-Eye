@@ -28,6 +28,8 @@ self.onmessage = async (e) => {
     self.postMessage({
       type: "frame",
       data: base64,
+      width,
+      height,
     });
 
     // 4. Cleanup

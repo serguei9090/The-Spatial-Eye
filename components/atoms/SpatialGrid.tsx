@@ -2,14 +2,16 @@
 
 import type React from "react";
 
+import { unpadCoordinates } from "@/lib/utils/coordinates";
+
 interface SpatialGridProps {
-  videoWidth: number;
-  videoHeight: number;
-  containerWidth: number;
-  containerHeight: number;
-  scale: number;
-  offsetX: number;
-  offsetY: number;
+  readonly videoWidth: number;
+  readonly videoHeight: number;
+  readonly containerWidth: number;
+  readonly containerHeight: number;
+  readonly scale: number;
+  readonly offsetX: number;
+  readonly offsetY: number;
 }
 
 export function SpatialGrid({
@@ -29,12 +31,16 @@ export function SpatialGrid({
   for (let i = 0; i <= 10; i++) {
     const coord = i * 100;
 
+    // Apply unpad math to visual grid so it matches Gemini padding
+    const unpaddedY = unpadCoordinates(coord, "y", videoWidth, videoHeight);
+    const unpaddedX = unpadCoordinates(coord, "x", videoWidth, videoHeight);
+
     // Horizontal lines (Y constant)
-    const yIntrinsic = (coord / 1000) * videoHeight;
+    const yIntrinsic = (unpaddedY / 1000) * videoHeight;
     const yScreen = yIntrinsic * scale + offsetY;
 
     // Vertical lines (X constant)
-    const xIntrinsic = (coord / 1000) * videoWidth;
+    const xIntrinsic = (unpaddedX / 1000) * videoWidth;
     const xScreen = xIntrinsic * scale + offsetX;
 
     lines.push({ coord, xScreen, yScreen });

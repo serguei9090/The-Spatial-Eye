@@ -7,6 +7,7 @@ import { useEffect, useRef } from "react";
 
 import { InterleavedPost } from "@/components/molecules/InterleavedPost";
 import { VideoFeed } from "@/components/molecules/VideoFeed";
+import { useAudioDeviceContext } from "@/lib/store/audio-context";
 
 interface CreativeStudioProps {
   readonly stream: StoryItem[];
@@ -123,6 +124,7 @@ function groupItems(items: StoryItem[]): GroupEntry[] {
 }
 
 export function CreativeStudio({ stream, videoRef }: CreativeStudioProps) {
+  const { selectedVideoId } = useAudioDeviceContext();
   const narrativeRef = useRef<HTMLDivElement>(null);
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Trigger scroll on stream update
@@ -157,6 +159,7 @@ export function CreativeStudio({ stream, videoRef }: CreativeStudioProps) {
       >
         <VideoFeed
           videoRef={videoRef}
+          deviceId={selectedVideoId}
           containerClassName="rounded-xl border border-white/20 shadow-2xl"
           className="h-full w-full object-cover pointer-events-none"
         />

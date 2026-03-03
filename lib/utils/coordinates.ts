@@ -7,12 +7,44 @@ export interface PixelBox {
   right: number;
 }
 
+export function unpadCoordinates(
+  coord: number,
+  dimension: "x" | "y",
+  videoWidth: number,
+  videoHeight: number,
+): number {
+  if (videoWidth === 0 || videoHeight === 0) return coord;
+  const isLandscape = videoWidth > videoHeight;
+
+  let padding = 0;
+  if (dimension === "x" && !isLandscape) {
+    // Portrait padding applied to left/right
+    const ratio = videoWidth / videoHeight;
+    padding = (1000 - 1000 * ratio) / 2;
+  } else if (dimension === "y" && isLandscape) {
+    // Landscape padding applied to top/bottom
+    const ratio = videoHeight / videoWidth;
+    padding = (1000 - 1000 * ratio) / 2;
+  }
+
+  if (padding === 0) return coord;
+
+  const innerScale = 1000 - 2 * padding;
+  const unpadded = ((coord - padding) / innerScale) * 1000;
+  return Math.max(0, Math.min(1000, unpadded));
+}
+
 export function normalizedToPixels(
   coordinates: [number, number, number, number],
   videoWidth: number,
   videoHeight: number,
 ): PixelBox {
-  const [ymin, xmin, ymax, xmax] = coordinates;
+  const [rawYMin, rawXMin, rawYMax, rawXMax] = coordinates;
+
+  const ymin = unpadCoordinates(rawYMin, "y", videoWidth, videoHeight);
+  const ymax = unpadCoordinates(rawYMax, "y", videoWidth, videoHeight);
+  const xmin = unpadCoordinates(rawXMin, "x", videoWidth, videoHeight);
+  const xmax = unpadCoordinates(rawXMax, "x", videoWidth, videoHeight);
 
   return {
     top: (ymin / 1000) * videoHeight,
@@ -120,10 +152,16 @@ export function projectHighlightToScreen(
   );
 
   // Default values to 0 if coordinate fields are missing
-  const ymin = highlight.ymin ?? 0;
-  const xmin = highlight.xmin ?? 0;
-  const ymax = highlight.ymax ?? 0;
-  const xmax = highlight.xmax ?? 0;
+  const rawYMin = highlight.ymin ?? 0;
+  const rawXMin = highlight.xmin ?? 0;
+  const rawYMax = highlight.ymax ?? 0;
+  const rawXMax = highlight.xmax ?? 0;
+
+  // Unpad Gemini's 1000x1000 square padding back to the intrinsic aspect ratio
+  const ymin = unpadCoordinates(rawYMin, "y", videoWidth, videoHeight);
+  const ymax = unpadCoordinates(rawYMax, "y", videoWidth, videoHeight);
+  const xmin = unpadCoordinates(rawXMin, "x", videoWidth, videoHeight);
+  const xmax = unpadCoordinates(rawXMax, "x", videoWidth, videoHeight);
 
   // 1. Normalized to Intrinsic Video Dimensions
   const hWidthIntrinsic = ((xmax - xmin) / 1000) * videoWidth;
