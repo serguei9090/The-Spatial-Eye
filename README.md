@@ -30,7 +30,7 @@ Users face three critical barriers when interacting with the physical world thro
 | Mode | What it does |
 |------|-------------|
 | 🔵 **Spatial Live** | AI circles and highlights real objects directly on the live camera feed with surgical precision |
-| 📖 **Creative Storyteller** | Transforms physical objects into vivid interleaved narratives + AI-generated storyboard images |
+| 📖 **Creative Storyteller** | ***(Out of Scope)*** Transforms physical objects into vivid interleaved narratives + AI-generated storyboard images *(Note: This feature is currently disabled and not part of the presentation)* |
 | 🖧 **IT Architecture** | Listens to verbal project ideas and generates interactive, evolving architecture diagrams in real time |
 
 ---
@@ -39,10 +39,10 @@ Users face three critical barriers when interacting with the physical world thro
 
 ```
 Browser (Next.js 15)
-  ├─ Camera + Microphone → Gemini 2.5 Live API (WebSocket)
+  ├─ Camera + Microphone → Fast API Backend Server → Gemini 2.5 Live API (WebSocket)
   ├─ Audio/Video Stream  → AI responses (audio + tool calls)
-  ├─ Mode Handlers       → UI updates (overlays / diagrams / story cards)
-  └─ Error System        → Named model-unavailability toasts (sonner)
+  ├─ Mode Handlers       → UI updates (overlays / diagrams)
+  └─ Connection Menu     → Dynamically connects users via Bring Your Own Key (API Auth)
          ↓
 Google Cloud Platform
   ├─ Firebase Auth       → User authentication
@@ -59,10 +59,7 @@ Google Cloud Platform
 | Role | Model | Display Name |
 |------|-------|-------------|
 | Live audio + video session | `gemini-2.5-flash-native-audio-preview-12-2025` | Gemini 2.5 Flash Native Audio |
-| Storyboard image generation | `gemini-2.5-flash-image` | Nano Banana |
-| Brand copy + reasoning | `gemini-2-flash` | Gemini 2 Flash |
-| High-throughput background tasks | `gemini-2.5-flash-lite` | Gemini 2.5 Flash Lite |
-| Video synthesis | `veo-3.1-fast-generate-preview` | Veo 3.1 Fast Generate *(disabled, free-tier)* |
+| *Out of Scope / Disabled* | `gemini-2.5-flash-image`, `veo-3.1...` | *(Image and Video models are disabled for this presentation)* |
 
 > Model registry with rate limits: [`lib/gemini/registry.ts`](./lib/gemini/registry.ts)
 
@@ -204,11 +201,11 @@ CI/CD via GitHub Actions (`.github/workflows/deploy.yml`) — pushes to `main` a
 
 ## 🔑 Authentication Flow
 
-1. User signs in with **Firebase Google Auth**
-2. User provides their own **Gemini API key** in Settings
-3. Backend mints a short-lived **ephemeral token** per session
-4. Browser uses the ephemeral token for Live API WebSocket auth
-5. User's API key is **never stored** on our servers
+1. User signs in with **Firebase Google Auth** (App authentication)
+2. User provides their **Gemini AI Studio API key** in the UI Connection Settings (Bring Your Own Key)
+3. Backend mints a short-lived **ephemeral session token** mapped to the Auth session
+4. Browser opens a Secure WebSocket (`/ws/live`) to the Python FastAPI Backend passing the auth token and dynamic API key.
+5. The backend validates the user and securely routes the streaming connection to Google AI Studio. **The user's BYOK API key is NEVER saved to a database or environment file on our server.**
 
 ---
 

@@ -13,10 +13,8 @@ Usage:
   4. Check the annotated images to see if Gemini's boxes match the actual objects.
 """
 
-import base64
 import io
 import os
-import time
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +24,7 @@ from loguru import logger
 DIAGNOSTICS_ENABLED = os.getenv("SPATIAL_DIAGNOSTICS", "false").lower() == "true"
 
 if DIAGNOSTICS_ENABLED:
-    from PIL import Image, ImageDraw, ImageFont
+    from PIL import Image, ImageDraw
 
 
 # Diagnostics output directory

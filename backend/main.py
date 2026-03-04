@@ -72,16 +72,29 @@ initialize_firebase()
 class GeminiBeta(Gemini):
     """Gemini model wrapper that forces api_version='v1beta'."""
 
+    def __init__(self, api_key: str = None, **kwargs):
+        super().__init__(**kwargs)
+        self._custom_api_key = api_key
+
     @property
     def api_client(self) -> Client:
         if not hasattr(self, "_beta_client"):
-            self._beta_client = Client(
-                http_options=types.HttpOptions(
-                    api_version="v1beta",
-                    headers=self._tracking_headers(),
-                )
+            http_options = types.HttpOptions(
+                api_version="v1beta",
+                headers=self._tracking_headers(),
             )
+            
+            if self._custom_api_key:
+                # User provided a Bring-Your-Own-Key via the frontend
+                self._beta_client = Client(
+                    api_key=self._custom_api_key,
+                    http_options=http_options
+                )
+            else:
+                self._beta_client = Client(http_options=http_options)
+                
         return self._beta_client
+
 
 
 @app.get("/")
@@ -92,7 +105,10 @@ def read_root() -> dict[str, str]:
 
 @app.websocket("/ws/live")
 async def websocket_endpoint(
-    websocket: WebSocket, mode: str = "spatial", token: str = None
+    websocket: WebSocket, 
+    mode: str = "spatial", 
+    token: str = None,
+    api_key: str = None
 ) -> None:
     """
     Main WebSocket endpoint for real-time interaction with Gemini.
@@ -141,7 +157,7 @@ async def websocket_endpoint(
 
     agent = Agent(
         name=f"SpatialEye_{mode_clean}",
-        model=GeminiBeta(model=agent_model),
+        model=GeminiBeta(model=agent_model, api_key=api_key),
         instruction=system_instruction,
         tools=active_tools,
     )

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import { AIOrb } from "@/components/atoms/AIOrb";
 import { CoordinateDisplay } from "@/components/molecules/CoordinateDisplay";
+import { ConnectionMenu } from "@/components/organisms/ConnectionMenu";
 import { SettingsMenu } from "@/components/organisms/SettingsMenu";
 import { Button } from "@/components/ui/button";
 import { useSettings } from "@/lib/store/settings-context";
@@ -191,6 +192,7 @@ export function ControlBar({
 
         <div className="flex items-center gap-0.5">
           {/* Settings Menu (Popover) now handles device selection (Camera, Mic, Speaker) */}
+          <ConnectionMenu />
           <SettingsMenu mode={mode} onDownload={onDownload} onUpload={onUpload} />
         </div>
       </div>

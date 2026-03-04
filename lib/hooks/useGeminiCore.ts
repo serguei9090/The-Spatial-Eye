@@ -97,9 +97,8 @@ export function useGeminiCore({
   // Reconnection refs
   const reconnectAttemptRef = useRef(0);
   const connectRef = useRef<((isAutoReconnect?: boolean) => Promise<boolean>) | null>(null);
-
   const { user } = useAuth();
-  const { t } = useSettings();
+  const { t, byokKey } = useSettings();
 
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
@@ -114,15 +113,25 @@ export function useGeminiCore({
   // Check Model Availability
   // ---------------------------------------------------------------------------
   const checkModelAvailability = useCallback(async (): Promise<boolean> => {
-    const key = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-    if (!key?.startsWith("AIza")) {
+    // If no custom key is provided, assume the backend has a valid environment key
+    if (!byokKey?.trim()) {
+      setModelAvailability("available");
+      return true;
+    }
+
+    // If a custom key is provided, it must be valid
+    if (!byokKey.trim().startsWith("AIza")) {
       setModelAvailability("unavailable");
-      notifyModelError(DEFAULT_GEMINI_LIVE_MODEL, new Error("Invalid or missing API key."));
+      notifyModelError(
+        DEFAULT_GEMINI_LIVE_MODEL,
+        new Error("Invalid API key format. Must start with 'AIza'."),
+      );
       return false;
     }
+
     setModelAvailability("checking");
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/${DEFAULT_GEMINI_LIVE_MODEL}?key=${encodeURIComponent(key)}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/${DEFAULT_GEMINI_LIVE_MODEL}?key=${encodeURIComponent(byokKey)}`;
       const response = await fetch(url, { method: "GET" });
       if (response.ok || response.status === 429) {
         setModelAvailability("available");
@@ -140,7 +149,7 @@ export function useGeminiCore({
       setModelAvailability(status);
       return status === "available";
     }
-  }, [t.toasts.accessDenied]);
+  }, [t.toasts.accessDenied, byokKey]);
 
   // ---------------------------------------------------------------------------
   // Audio Playback & Control
@@ -258,6 +267,11 @@ export function useGeminiCore({
         const params = new URLSearchParams();
         if (mode) params.append("mode", mode);
         if (activeToken) params.append("token", activeToken);
+
+        // Pass BYOK key to backend
+        if (byokKey) {
+          params.append("api_key", byokKey);
+        }
 
         const wsUrl = `${baseUrl}?${params.toString()}`;
         const ws = new WebSocket(wsUrl);
@@ -521,7 +535,18 @@ export function useGeminiCore({
         };
       });
     },
-    [user, mode, onToolCall, onTranscript, onTurnComplete, stopAudio, resumePrompt, getToken, t],
+    [
+      user,
+      mode,
+      onToolCall,
+      onTranscript,
+      onTurnComplete,
+      stopAudio,
+      resumePrompt,
+      getToken,
+      t,
+      byokKey,
+    ],
   );
 
   useEffect(() => {

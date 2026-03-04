@@ -28,6 +28,10 @@ interface SettingsContextType {
   // View Settings
   showTranscript: boolean;
   setShowTranscript: (show: boolean) => void;
+
+  // Connection Settings
+  byokKey: string;
+  setByokKey: (key: string) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -47,6 +51,9 @@ export function SettingsProvider({ children }: Readonly<{ children: React.ReactN
   // Transcript is off by default
   const [showTranscript, setShowTranscript] = useState<boolean>(false);
 
+  // AI Connection Settings (API Key starts empty. If empty, the backend proxy uses its private GOOGLE_API_KEY)
+  const [byokKey, setByokKey] = useState<string>("");
+
   const value = useMemo(
     () => ({
       language,
@@ -61,8 +68,10 @@ export function SettingsProvider({ children }: Readonly<{ children: React.ReactN
       isDiagnosticsEnabled: IS_DIAGNOSTICS,
       showTranscript,
       setShowTranscript,
+      byokKey,
+      setByokKey,
     }),
-    [language, highlightDuration, highlightType, showDebugGrid, showTranscript],
+    [language, highlightDuration, highlightType, showDebugGrid, showTranscript, byokKey],
   );
 
   return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
