@@ -119,6 +119,17 @@ def read_root() -> dict[str, str]:
     return {"status": "online", "live_model": agent_model}
 
 
+@app.get("/api/status")
+def api_status() -> dict:
+    """Reports whether the backend has a server-side API key configured.
+    
+    The frontend calls this before opening a WebSocket when no BYOK key is set,
+    so it can bail out early and show a user-friendly error instead of a failed connection.
+    """
+    has_key = bool(os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"))
+    return {"has_server_key": has_key, "live_model": agent_model}
+
+
 @app.websocket("/ws/live")
 async def websocket_endpoint(
     websocket: WebSocket, 

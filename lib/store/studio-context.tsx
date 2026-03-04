@@ -37,6 +37,7 @@ interface StudioContextType {
   errorCode: string | undefined;
   errorMessage: string | undefined;
   latestTranscript: string;
+  modelAvailability: "unknown" | "checking" | "available" | "unavailable";
 
   // Mode-specific Data
   activeHighlights: Highlight[];
@@ -107,6 +108,7 @@ export function StudioProvider({ children }: Readonly<{ children: ReactNode }>) 
     error,
     errorCode,
     errorMessage,
+    modelAvailability,
     checkModelAvailability,
   } = useGeminiLive({
     mode,
@@ -125,13 +127,13 @@ export function StudioProvider({ children }: Readonly<{ children: ReactNode }>) 
   const handleModeChange = useCallback(
     (newMode: AppMode) => {
       if (mode === newMode) return;
-      if (isListening || isConnected) {
+      if (isListening || isConnected || isConnecting) {
         coreDisconnect();
         setIsListening(false);
       }
       setMode(newMode);
     },
-    [mode, isListening, isConnected, coreDisconnect],
+    [mode, isListening, isConnected, isConnecting, coreDisconnect],
   );
 
   const onToggleListening = useCallback(async () => {
@@ -139,15 +141,34 @@ export function StudioProvider({ children }: Readonly<{ children: ReactNode }>) 
       coreDisconnect();
       setIsListening(false);
     } else {
+      // Pre-flight check: if BYOK key is explicitly invalid, abort early.
+      // (empty key = trust backend, so we skip this check for empty keys)
+      const isModelAvailable = await checkModelAvailability();
+      if (!isModelAvailable) {
+        return;
+      }
+
       const token = await getIdToken();
       if (!token) {
         console.error(t.toasts.authTokenMissing);
         return;
       }
+      // We do NOT set isListening here — we let the useEffect below
+      // sync isListening from isConnected to avoid the onopen race condition.
+      setIsListening(true); // Optimistically, but useEffect will correct it if connection fails.
       const connected = await coreConnect(false, token);
-      if (connected) setIsListening(true);
+      if (!connected) {
+        setIsListening(false);
+      }
     }
-  }, [coreConnect, coreDisconnect, isListening, getIdToken, t]);
+  }, [coreConnect, coreDisconnect, isListening, getIdToken, t, checkModelAvailability]);
+
+  // Sync: if the underlying WS drops (error, missing key, etc.), reset isListening.
+  useEffect(() => {
+    if (!isConnected && !isConnecting) {
+      setIsListening(false);
+    }
+  }, [isConnected, isConnecting]);
 
   const updateVideoSize = useCallback(() => {
     const video = videoRef.current;
@@ -210,6 +231,7 @@ export function StudioProvider({ children }: Readonly<{ children: ReactNode }>) 
     errorCode,
     errorMessage,
     latestTranscript,
+    modelAvailability,
     activeHighlights,
     storyStream,
     nodes,

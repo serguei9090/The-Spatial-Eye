@@ -32,6 +32,7 @@ export function StudioLayout() {
     errorMessage,
     latestTranscript,
     activeHighlights,
+    modelAvailability,
     disconnect,
     onToggleListening,
     handleModeChange,
@@ -178,6 +179,7 @@ export function StudioLayout() {
             isUserTalking={isUserTalking}
             activeHighlight={activeHighlights?.[0]}
             mode={mode}
+            modelAvailability={modelAvailability}
             onToggleListening={onToggleListening}
             onModeChange={handleModeChange}
             onDownload={handleDownload}

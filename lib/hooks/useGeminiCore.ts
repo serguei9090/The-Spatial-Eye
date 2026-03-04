@@ -113,42 +113,73 @@ export function useGeminiCore({
   // Check Model Availability
   // ---------------------------------------------------------------------------
   const checkModelAvailability = useCallback(async (): Promise<boolean> => {
-    // If no custom key is provided, assume the backend has a valid environment key
-    if (!byokKey?.trim()) {
-      setModelAvailability("available");
-      return true;
-    }
+    // If a BYOK key is explicitly provided, validate its format first.
+    if (byokKey?.trim()) {
+      if (!byokKey.trim().startsWith("AIza")) {
+        setModelAvailability("unavailable");
+        toast.error("Invalid API key format. Keys must start with 'AIza'.", { duration: 6000 });
+        return false;
+      }
 
-    // If a custom key is provided, it must be valid
-    if (!byokKey.trim().startsWith("AIza")) {
-      setModelAvailability("unavailable");
-      notifyModelError(
-        DEFAULT_GEMINI_LIVE_MODEL,
-        new Error("Invalid API key format. Must start with 'AIza'."),
-      );
-      return false;
-    }
-
-    setModelAvailability("checking");
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/${DEFAULT_GEMINI_LIVE_MODEL}?key=${encodeURIComponent(byokKey)}`;
-      const response = await fetch(url, { method: "GET" });
-      if (response.ok || response.status === 429) {
+      setModelAvailability("checking");
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/${DEFAULT_GEMINI_LIVE_MODEL}?key=${encodeURIComponent(byokKey)}`;
+        const response = await fetch(url, { method: "GET" });
+        if (response.ok || response.status === 429) {
+          setModelAvailability("available");
+          return true;
+        }
+        setModelAvailability("unavailable");
+        if (response.status === 400) {
+          toast.error("Invalid API key. Please check your key and try again.", { duration: 6000 });
+        } else if (response.status === 401) {
+          toast.error("API key is not authorized. Please verify it in AI Studio.", {
+            duration: 6000,
+          });
+        } else if (response.status === 403) {
+          toast.error(t.toasts.accessDenied, { duration: 6000 });
+        } else {
+          toast.error(`API key check failed (HTTP ${response.status}). Please try again.`, {
+            duration: 6000,
+          });
+        }
+        return false;
+      } catch {
+        // Network error — be optimistic
         setModelAvailability("available");
         return true;
       }
-      // 403 = billing disabled / access denied, anything else = unexpected
-      const reason =
-        response.status === 403 ? t.toasts.accessDenied : `Server returned ${response.status}.`;
-      setModelAvailability("unavailable");
-      notifyModelError(DEFAULT_GEMINI_LIVE_MODEL, new Error(reason));
-      return false;
-    } catch {
-      // Network error — be optimistic, don't block the user
-      const status = "available"; // Assume available on network error
-      setModelAvailability(status);
-      return status === "available";
     }
+
+    // No BYOK key — ask the backend if IT has a server-side key configured.
+    // This avoids opening a WebSocket that will immediately be rejected.
+    setModelAvailability("checking");
+    try {
+      // Derive backend HTTP base from the WS relay URL env var:
+      // NEXT_PUBLIC_RELAY_URL = ws://localhost:8000/ws/live
+      //                       → http://localhost:8000
+      const relayUrl = process.env.NEXT_PUBLIC_RELAY_URL ?? "";
+      const backendBase = relayUrl
+        ? relayUrl.replace(/^wss?:/, "http:").replace(/\/ws\/live$/, "")
+        : "http://localhost:8000"; // dev fallback
+      const res = await fetch(`${backendBase}/api/status`);
+      if (res.ok) {
+        const data = (await res.json()) as { has_server_key: boolean };
+        if (!data.has_server_key) {
+          setModelAvailability("unavailable");
+          toast.error("No API key available. Please use the key (🔑) icon to set your key.", {
+            duration: 6000,
+          });
+          return false;
+        }
+        setModelAvailability("available");
+        return true;
+      }
+    } catch {
+      // Can't reach backend at all — let the WebSocket attempt and fail naturally
+    }
+    setModelAvailability("available");
+    return true;
   }, [t.toasts.accessDenied, byokKey]);
 
   // ---------------------------------------------------------------------------
@@ -395,6 +426,7 @@ export function useGeminiCore({
               toast.error(maybeError.message || "Connection error", { duration: 6000 });
               manualCloseRef.current = true;
               ws.close();
+              resolve(false); // <--- Crucial fix: resolve the pending connection attempt as failed!
               return;
             }
           }
@@ -515,6 +547,7 @@ export function useGeminiCore({
               if (e.reason) {
                 toast.error(e.reason, { duration: 6000 });
               }
+              // Explicitly signal this connection run failed to the caller
               resolve(false);
               return;
             }

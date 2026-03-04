@@ -19,6 +19,7 @@ export interface ControlBarProps {
   readonly isUserTalking?: boolean;
   readonly activeHighlight?: Highlight;
   readonly mode: "spatial" | "storyteller" | "it-architecture";
+  readonly modelAvailability?: "unknown" | "checking" | "available" | "unavailable";
   readonly onToggleListening: () => void;
   readonly onModeChange: (mode: "spatial" | "storyteller" | "it-architecture") => void;
   readonly onDownload?: () => void;
@@ -33,6 +34,7 @@ export function ControlBar({
   isUserTalking = false,
   activeHighlight,
   mode,
+  modelAvailability = "unknown",
   onToggleListening,
   onModeChange,
   onDownload,
@@ -40,6 +42,9 @@ export function ControlBar({
 }: ControlBarProps) {
   const { t } = useSettings();
   const [showHelp, setShowHelp] = useState(false);
+
+  const isKeyUnavailable = modelAvailability === "unavailable";
+  const isStartDisabled = isConnecting || isKeyUnavailable;
 
   useEffect(() => {
     // Show help bubble when connected and listening
@@ -142,17 +147,25 @@ export function ControlBar({
             variant={isListening ? "destructive" : "default"}
             className={cn(
               "h-12 w-auto min-w-[3rem] px-3 rounded-xl shadow-md transition-all sm:px-6",
-              isListening && "animate-pulse ring-4 ring-destructive/20",
+              isListening && !isConnecting && "animate-pulse ring-4 ring-destructive/20",
+              isConnecting && "opacity-80 cursor-wait bg-muted text-muted-foreground",
+              isKeyUnavailable && "opacity-50 cursor-not-allowed",
             )}
             onClick={() => {
-              console.log("[ControlBar] Toggle button clicked");
               onToggleListening();
             }}
-            disabled={isConnecting}
+            disabled={isStartDisabled}
+            title={
+              isKeyUnavailable ? "No API key configured — use the 🔑 icon to set one" : undefined
+            }
           >
             {renderMicIcon()}
             <span className="inline-block flex-shrink-0 ml-1.5 text-xs font-semibold sm:text-base sm:ml-2">
-              {isListening ? t.controls.stop : t.controls.start}
+              {isConnecting
+                ? t.status.connecting
+                : isListening
+                  ? t.controls.stop
+                  : t.controls.start}
             </span>
           </Button>
         </div>
