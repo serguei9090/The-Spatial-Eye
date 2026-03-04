@@ -244,6 +244,30 @@ export function SettingsMenu({ mode, onDownload, onUpload }: SettingsMenuProps) 
               </div>
             </div>
 
+            {/* AI Transcript - Available for both mode dimensions except storyteller */}
+            {(mode === "spatial" || mode === "it-architecture") && (
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 leading-none">
+                  <MessageSquare className="h-3 w-3" />
+                  AI Transcript
+                </Label>
+                <Button
+                  variant={showTranscript ? "secondary" : "outline"}
+                  size="sm"
+                  onClick={() => setShowTranscript(!showTranscript)}
+                  className={cn(
+                    "w-full h-8 text-xs justify-start px-3",
+                    showTranscript && "bg-primary/10 text-primary border-primary/20",
+                  )}
+                >
+                  <span className="flex-1 text-left">
+                    {showTranscript ? "On: AI Transcript" : "Off: AI Transcript"}
+                  </span>
+                  {showTranscript && <Check className="h-3 w-3 ml-2" />}
+                </Button>
+              </div>
+            )}
+
             {/* Spatial Mode Specifics */}
             {mode === "spatial" && (
               <>
@@ -311,28 +335,6 @@ export function SettingsMenu({ mode, onDownload, onUpload }: SettingsMenuProps) 
                       </SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-
-                {/* AI Transcript */}
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 leading-none">
-                    <MessageSquare className="h-3 w-3" />
-                    AI Transcript
-                  </Label>
-                  <Button
-                    variant={showTranscript ? "secondary" : "outline"}
-                    size="sm"
-                    onClick={() => setShowTranscript(!showTranscript)}
-                    className={cn(
-                      "w-full h-8 text-xs justify-start px-3",
-                      showTranscript && "bg-primary/10 text-primary border-primary/20",
-                    )}
-                  >
-                    <span className="flex-1 text-left">
-                      {showTranscript ? "On: AI Transcript" : "Off: AI Transcript"}
-                    </span>
-                    {showTranscript && <Check className="h-3 w-3 ml-2" />}
-                  </Button>
                 </div>
 
                 {/* Debug Overlay - Only available in diagnostics mode */}
