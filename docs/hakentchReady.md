@@ -1,82 +1,61 @@
-# Hakentoch Ready Checklist
+# Gemini Live Agent Challenge (Hakentoch) Compliance Checklist
 
-This document evaluates "The Spatial Eye" against the "Gemini Live Agent Challenge" (Hakentoch) requirements outlined in `hakentoch.md`.
+This document tracks "The Spatial Eye" against the official eligibility and submission requirements from the `hakentoch.md` rules, giving us a clear path to 100% compliance.
 
-## Compliance Status: **In Progress**
+---
 
-### 1. Eligibility & Constraints
-- [x] **New Project**: Project appears to be a new creation.
-- [x] **Gemini Model**: Uses `gemini-2.5-flash-native-audio-preview` and `gemini-2.5-flash-image`.
-- [x] **Google Cloud Hosted**: Uses Firebase (GCP).
-- [x] **Proof of Deployment**: `IaC/terraform` configuration provided (Terraform).
+## 🏎️ 1. Project Category & Core Requirements
+- [x] **Category Selection:** **Live Agents** (Focus on Real-time Interaction Audio/Vision).
+- [x] **Mandatory Tech:** Uses Gemini Live API (via our new Python backend).
+- [ ] **Hosting:** Agents *must* be hosted on Google Cloud. *(Pending Cloud Run deployment and infrastructure setup)*
+- [x] **New Project:** Created specifically for this hackathon.
+- [x] **Language:** All UI, instructions, and video must be in English.
 
-### 2. Challenge Categories (Select One)
-The project seems best suited for **Live Agents** or **Creative Storyteller**.
-- **Live Agents**: Real-time interaction (Audio/Video). Current implementation using `useGeminiLive` aligns well.
-- **Creative Storyteller**: Multimodal storytelling. Functional if "Storyteller" mode works as intended with interleaved output.
-- **UI Navigator**: Not currently implemented.
+---
 
-### 3. Submission Requirements (Gap Analysis)
-| Requirement | Status | Action Needed |
-| :--- | :--- | :--- |
-| **Text Description** | ✅ Ready | See [SUMMARY.md](file:///i:/01-Master_Code/Apps/The%20Spatial%20Eye/docs/SUMMARY.md) |
-| **Public Repo** | ✅ Ready | Ensure `.env` is ignored. |
-| **Spin-up Instructions** | ⚠️ Partial | `README.md` has basics, but needs "Cloud Deployment" steps. |
-| **Proof of GCP** | ✅ Ready | Included in [IaC/terraform](file:///i:/01-Master_Code/Apps/The%20Spatial%20Eye/IaC/terraform/main.tf). |
-| **Architecture Diagram** | ✅ Ready | Visualized below. |
+## 📦 2. Mandatory Submission Assets
 
-### System Architecture
-```mermaid
-graph TD
-    User((User))
-    
-    subgraph "Frontend (Next.js 15)"
-        UI[UI Components / Atomic Design]
-        State[React Context / AudioDeviceContext]
-        Hooks[useGeminiLive / useHighlightDetection]
-    end
-    
-    subgraph "AI Engine (Google)"
-        GeminiLive[Gemini 2.5 Live API]
-        GeminiPro[Gemini 3 Pro Preview]
-        GenAI[Google GenAI SDK / Genkit]
-    end
-    
-    subgraph "Backend / Infrastructure (GCP)"
-        Firebase[Firebase Auth]
-        Firestore[Firestore / Session Memory]
-        CloudRun[Cloud Run / Backend Handlers]
-        Terraform[IaC / Terraform]
-    end
+### A. Code & Documentation
+- [x] **Text Description:** Needs a summary of features, tech used, data sources, findings, and learnings. *(Drafted in `README.md` and Landing Page)*
+- [x] **Public Code Repository:** [https://github.com/serguei9090/The-Spatial-Eye](https://github.com/serguei9090/The-Spatial-Eye)
+- [x] **Spin-up Instructions:** Step-by-step guide in `README.md` on how to set up/run locally or deploy.
+- [x] **Architecture Diagram:** A visual representation of the system (Gemini <-> Backend <-> Frontend). *(Completed in `architecture.md`)*
+- [x] **Third-Party Integrations:** Must be specified in the description (e.g., Firebase, ReactFlow, Framer Motion).
 
-    User <--> UI
-    UI <--> State
-    State <--> Hooks
-    Hooks <--> GeminiLive
-    UI <--> GeminiPro
-    Hooks <--> GenAI
-    UI <--> Firebase
-    Hooks <--> Firestore
-    GenAI <--> CloudRun
-    Terraform --> CloudRun
-    Terraform --> Firestore
-```
-| **Demo Video** | ❌ Missing | Record a <4 min video showing the "Live" and "Storyteller" modes. |
+### B. Proof of Google Cloud
+- [ ] **Proof of GCP Deployment:** We MUST provide either:
+  1. A short screen recording (separate from the main demo) showing the GCP console (e.g., Cloud Run deployment logs).
+  2. A direct link to the GitHub repository file that demonstrates GCP service usage.
 
-### 4. Bonus Opportunities (High Priority)
-- [x] **Automated Cloud Deployment**:
-    -   **Status**: Complete.
-    -   **Implementation**: `IaC/terraform` and `IaC/pulumi` directories created.
-    -   **Features**: Cloud Run, Artifact Registry, Firebase Project, Firestore Native (Free Tier compliant).
-- [x] **High-Impact Landing Page**:
-    -   **Status**: Complete.
-    -   **Implementation**: A modern, particle-animated landing page as the root `/`.
-- [ ] **Content Piece**:
-    -   **Missing**: A blog post or video explaining "How we built it". (Landing page text serves as draft content).
-- [ ] **GDG Membership**:
-    -   **Action**: Ensure team members join a local Google Developer Group and include profile links.
+### C. Demonstration Video
+- [ ] **Length:** Strictly **Under 4 Minutes**.
+- [ ] **Content - The Pitch:** Clearly explain the problem we are solving and the solution's value.
+- [ ] **Content - The Proof:** Show the software actually working in real-time (NO mockups!). Must highlight the multimodal/agentic features (Object tracking, live audio/video).
+- [ ] **Hosting:** Uploaded to **YouTube** or **Vimeo** and marked as Public/Unlisted (must be publicly visible).
+- [ ] **Language:** Spoken in English or includes English subtitles.
+- [ ] **Access/Testing Link:** Provide a link to the live website/demo for judges to test, including login credentials if required.
 
-## Immediate Next Steps
-1.  **Terraform Setup**: Create a `main.tf` to define the GCP project and Firebase resources.
-2.  **Architecture Diagram**: Generate a Mermaid diagram in `architecture.md`.
-3.  **Demo Video**: Script and record the walkthrough.
+---
+
+## 🌟 3. Bonus Points (Optional Developer Contributions)
+These directly increase the final judging score:
+
+- [ ] **Automating Cloud Deployment (+0.2 pts):**
+  - Demonstrate automated deployment using scripts or Infrastructure-as-Code (Terraform/Pulumi/GitHub Actions).
+  - Code must be in the public repo.
+- [ ] **Publishing Content (+0.6 pts):**
+  - Write a blog post, podcast, or tutorial video covering how the project was built using Google AI/Cloud.
+  - Post on a public platform (Medium, Dev.to, YouTube).
+  - Must include the disclaimer: *"Created for the purposes of entering the Gemini Live Agent Challenge."*
+  - Share on socials using `#GeminiLiveAgentChallenge`.
+- [x] **Google Developer Group (GDG) Membership (+0.2 pts):**
+  - Cinthya Rodriguez: [https://developers.google.com/profile/u/crhdez](https://developers.google.com/profile/u/crhdez)
+  - Serguei Castillo: [https://developers.google.com/profile/u/serguei9090](https://developers.google.com/profile/u/serguei9090)
+
+---
+
+## 🚀 Immediate Next Steps
+1. **Cloud Deployment:** Set up the Terraform/GitHub Actions pipeline and deploy the FastAPI backend to Google Cloud Run and the Next.js frontend frontend (e.g. Firebase Hosting or Vercel if allowed, though backend *must* be on GCP).
+2. **GCP Proof:** Record the brief GCP console walkthrough.
+3. **Demo Video:** Script, record, and edit the 4-minute demo showcasing the Spatial Eye in action.
+4. **Content Publication:** Draft a quick Dev.to or Medium article explaining the continuous state grounding architecture we built to prevent hallucinations.

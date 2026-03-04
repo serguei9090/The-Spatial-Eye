@@ -9,41 +9,45 @@
 
 ```mermaid
 graph TD
-    subgraph Browser ["Browser (Client)"]
-        UI["UI Layer\n(Atomic Design)"]
-        Hooks["Custom Hooks\n(useGeminiCore, useGeminiLive)"]
-        ErrorSys["Error System\n(model-error.ts + useGlobalErrorHandler)"]
-        Store["State / Context\n(SettingsContext, AudioDeviceContext)"]
+    User((User))
+    
+    subgraph "Frontend (Next.js 15)"
+        UI[React UI Components]
+        AudioVideo["Audio/Video Capture\n(Canvas+Microphone)"]
+        State[React Hooks & State]
+    end
+    
+    subgraph "Backend (Python FastAPI on Cloud Run)"
+        WSRelay["WebSocket Route: /ws/live"]
+        TokenValidator["Firebase Admin\nJWT Validator"]
+        GeminiClient["Google GenAI\nLive Client"]
+        ToolRegistry["Python Tool Orchestration\n(Track & Highlight)"]
+    end
+    
+    subgraph "Google Cloud & AI Platform"
+        GeminiLive[Gemini 2.5 Multimodal Live API]
+        FirebaseAuth[Firebase Authentication]
+        Firestore[Firestore Session DB]
     end
 
-    subgraph AICore ["AI Core (lib/gemini)"]
-        Registry["Model Registry\n(registry.ts)"]
-        Models["Model IDs\n(models.ts)"]
-        Handlers["Mode Handlers\n(Spatial Live Assistant)"]
-        FutureHandlers["Roadmap Handlers\n(storyteller, it-architecture)"]
-        Tools["Function Calling Tools\n(tools.ts)"]
-        ModelErr["notifyModelError\n(model-error.ts)"]
-    end
-
-    subgraph External ["External Services"]
-        GeminiLive["Gemini Live API\n(WebSocket — wss://)"]
-        GeminiREST["Gemini REST API\n(generateContent)"]
-        Firebase["Firebase\n(Auth + Firestore)"]
-    end
-
-    UI -->|"User actions"| Hooks
-    UI -->|"Reads"| Store
-    Hooks -->|"WebSocket"| GeminiLive
-    Hooks -->|"Tool calls"| Handlers
-    Handlers -->|"REST calls"| GeminiREST
-    Handlers -->|"On error"| ModelErr
-    Hooks -->|"On error"| ModelErr
-    ModelErr -->|"Reads names"| Registry
-    ModelErr -->|"Sonner toast"| UI
-    Registry -->|"IDs"| Models
-    Models -->|"Used by"| Hooks
-    Store <-->|"Sync"| Firebase
-    ErrorSys -->|"Unhandled rejections"| ModelErr
+    User <--> UI
+    UI <--> AudioVideo
+    UI <--> State
+    
+    %% Auth Flow
+    UI -->|1. Sign-in / Auth| FirebaseAuth
+    State -->|2. Connect w/ Ephemeral JWT| WSRelay
+    WSRelay -->|3. Validate Token| TokenValidator
+    TokenValidator -.->|Verify Signature| FirebaseAuth
+    
+    %% Streaming Flow
+    AudioVideo <-->|4. Real-time Video Frames / PCM Audio via WSS| WSRelay
+    WSRelay <-->|5. Forward Modalities| GeminiClient
+    GeminiClient <-->|6. Bidirectional Google Stream| GeminiLive
+    
+    %% Tool Orchestration
+    GeminiLive -->|7. Agentic Function Calls| ToolRegistry
+    ToolRegistry -->|8. Parsed Tool Execution to Client| WSRelay
 ```
 
 ---

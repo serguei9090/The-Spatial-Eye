@@ -9,9 +9,8 @@
 * **License:** Open-sourced under the **MIT License** for community educational purposes.
 
 ## 👥 The Team
-## 👥 The Team
-- **[Cinthya Rodriguez](https://github.com/crhdez)** — *Team Leader & Representative* (Primary hackathon competitor and sole prize-eligible applicant).
-- **[Serguei Castillo](https://github.com/serguei9090)** — *Developer Collaborator* (Participating strictly for educational/learning purposes. Explicitly listed as ineligible to receive any cash prizes or hackathon compensation).
+- **[Cinthya Rodriguez](https://github.com/crhdez)** — *Team Leader & Representative* (Primary hackathon competitor and sole prize-eligible applicant). [GDG Profile](https://developers.google.com/profile/u/crhdez)
+- **[Serguei Castillo](https://github.com/serguei9090)** — *Developer Collaborator* (Participating strictly for educational/learning purposes. Explicitly listed as ineligible to receive any cash prizes or hackathon compensation). [GDG Profile](https://developers.google.com/profile/u/serguei9090)
 
 [![Built with Antigravity](https://img.shields.io/badge/Built%20with-Antigravity%20IDE-6366f1?style=flat-square&logo=googlegemini&logoColor=white)](https://antigravity.dev)
 [![Powered by Gemini](https://img.shields.io/badge/Powered%20by-Gemini%202.5%20Live-4285F4?style=flat-square&logo=googlegemini&logoColor=white)](https://ai.google.dev)
