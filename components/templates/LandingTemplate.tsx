@@ -10,25 +10,23 @@ import { useState } from "react";
 
 const FEATURES = [
   {
-    title: "Spatial Assistant",
+    title: "Real-Time Object Tracking",
     description:
-      "Real-time object detection and spatial awareness. The AI identifies your environment, tracks objects, and provides context-aware assistance through high-speed video processing.",
+      "Pinpoint accuracy in the physical world. The AI continuously analyzes the live video feed to identify, track, and visually highlight objects in your environment.",
     icon: Eye,
     color: "#3b82f6",
     delay: 0.1,
     mode: "spatial",
   },
-  /* IT Architecture Mode Hidden for Presentation Focus
   {
-    title: "IT Architecture Studio",
+    title: "Multimodal Context Alignment",
     description:
-      "Visual system design and documentation. The AI interprets complex technical diagrams and assists in building real-time architecture models with industry-standard patterns.",
-    icon: Terminal,
+      "Going beyond simple detection. The assistant understands the relationship between highlighted objects and your verbal queries, providing grounded, context-aware answers.",
+    icon: Cpu,
     color: "#06b6d4",
     delay: 0.2,
-    mode: "it-architecture",
+    mode: "spatial",
   },
-  */
 ];
 
 const ISSUES_SOLUTIONS = [
@@ -51,6 +49,16 @@ const ISSUES_SOLUTIONS = [
       "Refined prompt engineering to enforce silent spatial tool execution. Bound backend coordinate payloads directly to Framer Motion components on the frontend canvas layer for surgical, seamless visual highlighting.",
     icon: Cpu,
     color: "#22c55e",
+  },
+  {
+    id: "context-hallucination",
+    title: "Context Bleed & Tracking Hallucinations",
+    issue:
+      "During long sessions, the AI would start hallucinating old objects or mixing up bounding boxes due to context accumulation, reducing accuracy over time.",
+    solution:
+      "Implemented a 'Continuous State Grounding' strategy. Instead of clearing the session and losing conversational memory, we rigidly structure the tool call loop and inject firm visual anchors, forcing the model to re-evaluate the immediate video frame rather than relying on stale context.",
+    icon: Terminal,
+    color: "#8b5cf6",
   },
 ];
 
