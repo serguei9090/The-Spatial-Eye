@@ -8,6 +8,11 @@
 * **Non-Commercial:** This is a non-commercial prototype. No services are being sold, and no unauthorized employment is being conducted through this project.
 * **License:** Open-sourced under the **MIT License** for community educational purposes.
 
+## 👥 The Team
+## 👥 The Team
+- **[Cinthya Rodriguez](https://github.com/crhdez)** — *Team Leader & Representative* (Primary hackathon competitor and sole prize-eligible applicant).
+- **[Serguei Castillo](https://github.com/serguei9090)** — *Developer Collaborator* (Participating strictly for educational/learning purposes. Explicitly listed as ineligible to receive any cash prizes or hackathon compensation).
+
 [![Built with Antigravity](https://img.shields.io/badge/Built%20with-Antigravity%20IDE-6366f1?style=flat-square&logo=googlegemini&logoColor=white)](https://antigravity.dev)
 [![Powered by Gemini](https://img.shields.io/badge/Powered%20by-Gemini%202.5%20Live-4285F4?style=flat-square&logo=googlegemini&logoColor=white)](https://ai.google.dev)
 [![Next.js 15](https://img.shields.io/badge/Next.js-15-black?style=flat-square&logo=next.js)](https://nextjs.org)
