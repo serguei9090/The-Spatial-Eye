@@ -43,7 +43,7 @@ Users face significant barriers when interacting with complex physical environme
 Browser (Next.js 15)
   ├─ Camera + Microphone → Fast API Backend Server → Gemini 2.5 Live API (WebSocket)
   ├─ Audio/Video Stream  → AI responses (audio + tool calls)
-  ├─ Mode Handlers       → UI updates (overlays / diagrams)
+  ├─ Mode Handlers       → UI updates (spatial overlays)
   └─ Connection Menu     → Dynamically connects users via Bring Your Own Key (API Auth)
          ↓
 Google Cloud Platform
@@ -52,7 +52,7 @@ Google Cloud Platform
   └─ Cloud Run + Terraform → Automated deployment
 ```
 
-> Full diagram set (Live session flow, error handling, image generation, provider tree): [`architecture.md`](./architecture.md)
+> 🗺️ **[View the full System Flowchart and Architecture Diagrams here (`architecture.md`)](./architecture.md)**
 
 ---
 
@@ -144,8 +144,6 @@ lib/
     models.ts           Resolved model ID constants
     model-error.ts      🆕 Centralized model error classification + toast
     handlers.ts         Spatial mode tool call handler
-    storyteller-handlers.ts  Storyteller mode + image generation
-    it-architecture-handlers.ts  IT Architecture diagram tool calls
   hooks/
     useGeminiCore.ts    Live WebSocket session management
     useGeminiLive.ts    Gemini Live integration (audio + video)
@@ -209,7 +207,7 @@ CI/CD via GitHub Actions (`.github/workflows/deploy.yml`) — pushes to `main` a
 | Landing page | ✅ Particle-animated hero at `/` |
 | Demo video | ⚠️ Record `< 4 min` walkthrough |
 
-**Category**: Live Agents + Creative Storyteller
+**Category**: Live Agents
 
 ---
 

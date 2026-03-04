@@ -114,7 +114,7 @@ sequenceDiagram
 
 ---
 
-## 3. Error Handling & Model Notification System
+## 4. Error Handling & Model Notification System
 
 ```mermaid
 flowchart TD
@@ -166,58 +166,7 @@ flowchart TD
 
 ---
 
-## 5. Roadmap Feature: Storyteller Mode — Image Generation Flow
-
-```mermaid
-sequenceDiagram
-    participant GeminiLive as Gemini Live (WSS)
-    participant StoryHandler as storyteller-handlers.ts
-    participant NanoBanana as Nano Banana\n(gemini-2.5-flash-image REST)
-    participant StoryStream as Story Stream UI
-    participant ErrorSys as model-error.ts
-
-    GeminiLive->>StoryHandler: toolCall → render_visual(subject, visual_context)
-    StoryHandler->>StoryStream: Add card (isGenerating: true, SVG placeholder)
-    StoryHandler->>NanoBanana: generateContent(cinematic prompt)
-
-    alt Success
-        NanoBanana-->>StoryHandler: inlineData (base64 image)
-        StoryHandler->>StoryStream: Update card → base64 image URL
-    else Failure (billing / quota / not found)
-        NanoBanana-->>StoryHandler: Error thrown
-        StoryHandler->>ErrorSys: notifyModelError(GEMINI_MODELS.imageSynthesis, error)
-        ErrorSys-->>StoryStream: Sonner toast "Nano Banana is not available"
-        StoryHandler->>StoryStream: Update card → inline SVG placeholder\n(dark themed, keeps layout intact)
-    end
-```
-
----
-
-## 6. Roadmap Feature: IT Architecture Mode — Diagram Update Flow
-
-```mermaid
-sequenceDiagram
-    participant User
-    participant useGeminiCore
-    participant GeminiLive as Gemini Live (WSS)
-    participant ArchHandler as it-architecture-handlers.ts
-    participant ReactFlow as ReactFlow Canvas
-
-    User->>useGeminiCore: "Design a 3-tier AWS app"
-    useGeminiCore->>GeminiLive: sendRealtimeInput (audio)
-    GeminiLive-->>useGeminiCore: toolCall → update_diagram(nodes[], edges[])
-    useGeminiCore->>ArchHandler: handleArchitectureToolCall()
-    ArchHandler->>ReactFlow: setNodes(newNodes) + setEdges(newEdges)
-    ReactFlow-->>User: Canvas updates live
-    GeminiLive-->>useGeminiCore: transcript (verbal explanation)
-    useGeminiCore-->>User: onTranscript → AI Transcript overlay
-```
-
----
-
----
-
-## 7. Provider / Context Tree
+## 5. Provider / Context Tree
 
 ```mermaid
 graph TD
@@ -236,34 +185,26 @@ graph TD
 
 ---
 
-## 8. Model Registry
+## 6. Model Registry
 
 ```mermaid
 graph LR
     subgraph registry.ts
         live["live\nGemini 2.5 Flash Native Audio\n1 RPM · Unlimited RPD"]
-        image["image\nNano Banana\n500 RPM · 2K RPD"]
-        video["video\nVeo 3.1 Fast Generate\n2 RPM · 10 RPD"]
         reasoning["reasoning\nGemini 2 Flash\n2K RPM · Unlimited RPD"]
         lowCost["lowCost\nGemini 2.5 Flash Lite\n4K RPM · Unlimited RPD"]
     end
 
     subgraph models.ts
         liveModel["liveAudioVideoSession"]
-        imageModel["imageSynthesis"]
-        videoModel["videoSynthesis"]
         brandModel["brandCopyAndSearch"]
         ttsModel["tts"]
     end
 
     live --> liveModel
-    image --> imageModel
-    video --> videoModel
     reasoning --> brandModel
 
     liveModel -->|"used by"| useGeminiCore
-    imageModel -->|"used by"| storytellerHandlers["storyteller-handlers.ts"]
-    videoModel -->|"disabled\n(VIDEO_SYNTHESIS_DISABLED)"| N/A
 ```
 
 ---
@@ -278,7 +219,5 @@ graph LR
 | `lib/hooks/useGeminiCore.ts` | Live WebSocket session management |
 | `lib/hooks/useGlobalErrorHandler.ts` | Window-level unhandled error/rejection handler |
 | `lib/gemini/handlers.ts` | Spatial mode tool call handler |
-| `lib/gemini/storyteller-handlers.ts` | Storyteller mode tool calls + image gen |
-| `lib/gemini/it-architecture-handlers.ts` | IT Architecture mode tool calls |
 | `components/providers.tsx` | Context tree + GlobalErrorListener mount |
 | `components/ui/sonner.tsx` | Toast renderer (Sonner, top-right, richColors) |
