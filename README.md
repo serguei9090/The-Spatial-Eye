@@ -17,21 +17,19 @@
 
 ## 🧠 The Problem
 
-Users face three critical barriers when interacting with the physical world through AI:
+Users face significant barriers when interacting with complex physical environments:
 
-1. **Troubleshooting Overload** — In complex environments (car engines, server racks), purely verbal AI instructions are hard to follow. Users need to *see* exactly what to touch.
-2. **Disconnected Creativity** — Turning real-world objects into a child's story requires immediate visual and narrative synthesis that text-only AI can't provide.
-3. **Static Technical Design** — IT specialists lose momentum when project ideas can't be converted into structured architecture diagrams in real time.
+1. **Information Asymmetry** — In specialized settings (mechanical repairs, hardware configurations, surgical setups), users often struggle to match verbal instructions to physical objects.
+2. **Cognitive Overload** — Purely audio or text-based assistants require users to mentally translate "look at the red cable" into their 3D field of view.
+3. **Lack of Grounded Feedback** — Most AI interactions are disconnected from the user's immediate physical reality.
 
 ## 💡 The Solution
 
-**The Spatial Eye** uses the **Gemini 2.5 Live API** to create a high-fidelity cognitive link between the user's reality and AI intelligence — via three specialized modes:
+**The Spatial Eye** creates a high-fidelity cognitive link between the user's physical reality and AI intelligence. Using the **Gemini 2.5 Live API**, it provides **Spatial Live** assistance:
 
-| Mode | What it does |
-|------|-------------|
-| 🔵 **Spatial Live** | AI circles and highlights real objects directly on the live camera feed with surgical precision |
-| 📖 **Creative Storyteller** | ***(Out of Scope)*** Transforms physical objects into vivid interleaved narratives + AI-generated storyboard images *(Note: This feature is currently disabled and not part of the presentation)* |
-| 🖧 **IT Architecture** | Listens to verbal project ideas and generates interactive, evolving architecture diagrams in real time |
+| Feature | Description |
+|---------|-------------|
+| 🔵 **Spatial Live** | AI circles and highlights real objects directly on the live camera feed with surgical precision in real-time. |
 
 ---
 
@@ -155,6 +153,18 @@ lib/
 IaC/                    Terraform + Pulumi (GCP deployment)
 __tests__/              Jest + React Testing Library
 ```
+
+---
+
+## 🚀 Roadmap & Future Extensions
+
+While the core presentation focus is **Spatial Live**, the platform is architected for a broader vision:
+
+| Module | Status | Description |
+|--------|--------|-------------|
+| 📖 **Creative Storyteller** | Research Lab | Transforms physical objects into vivid interleaved narratives with AI-generated storyboards. |
+| 🖧 **IT Architecture** | Beta | Generates real-time, interactive IT architecture diagrams from verbal project brainstorming. |
+| ⚡ **Action Execution** | Concept | Connecting spatial detection to home automation and industrial control loops. |
 
 ---
 

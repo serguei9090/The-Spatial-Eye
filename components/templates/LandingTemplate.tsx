@@ -18,6 +18,7 @@ const FEATURES = [
     delay: 0.1,
     mode: "spatial",
   },
+  /* IT Architecture Mode Hidden for Presentation Focus
   {
     title: "IT Architecture Studio",
     description:
@@ -27,6 +28,7 @@ const FEATURES = [
     delay: 0.2,
     mode: "it-architecture",
   },
+  */
 ];
 
 const ISSUES_SOLUTIONS = [
@@ -186,8 +188,8 @@ export function LandingTemplate() {
           <div className="mb-16 text-center">
             <h2 className="text-3xl md:text-5xl font-bold mb-4">Unified Intelligence</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Explore the two core dimensions of The Spatial Eye, each leveraging Gemini&apos;s
-              multimodal power in unique ways.
+              Experience the future of real-time environmental awareness. The Spatial Eye leverages
+              Gemini&apos;s multimodal power to bridge the gap between AI and physical reality.
             </p>
           </div>
 

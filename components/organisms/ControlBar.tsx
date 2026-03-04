@@ -82,48 +82,6 @@ export function ControlBar({
 
   return (
     <div className="flex w-full flex-col items-center gap-4">
-      {/* Mode Selector */}
-      <div className="flex items-center gap-1 rounded-xl border bg-background/50 p-1 backdrop-blur-md">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => onModeChange("spatial")}
-          className={cn(
-            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-accent",
-            mode === "spatial" && "bg-primary/20 text-primary hover:bg-primary/30",
-          )}
-        >
-          {t.modes.live}
-        </Button>
-        {/* Storyteller Mode Hidden for Hakentoch Focus 
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => onModeChange("storyteller")}
-          className={cn(
-            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-accent",
-            mode === "storyteller" && "bg-primary/20 text-primary hover:bg-primary/30",
-          )}
-        >
-          {t.modes.storyteller}
-        </Button>
-        */}
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={() => onModeChange("it-architecture")}
-          className={cn(
-            "h-8 rounded-lg px-3 text-xs font-medium transition-all hover:bg-accent",
-            mode === "it-architecture" && "bg-primary/20 text-primary hover:bg-primary/30",
-          )}
-        >
-          {t.modes.itArchitecture}
-        </Button>
-      </div>
-
       {/* Main Dock / Control Bar */}
       <div className="group flex items-center gap-2 rounded-2xl border bg-background/80 p-2 pr-3 shadow-2xl backdrop-blur-xl transition-all hover:scale-[1.01] hover:bg-background/90">
         {/* Connection Toggle (Primary Action) */}

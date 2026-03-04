@@ -19,7 +19,8 @@ graph TD
     subgraph AICore ["AI Core (lib/gemini)"]
         Registry["Model Registry\n(registry.ts)"]
         Models["Model IDs\n(models.ts)"]
-        Handlers["Mode Handlers\n(storyteller, it-architecture, spatial)"]
+        Handlers["Mode Handlers\n(Spatial Live Assistant)"]
+        FutureHandlers["Roadmap Handlers\n(storyteller, it-architecture)"]
         Tools["Function Calling Tools\n(tools.ts)"]
         ModelErr["notifyModelError\n(model-error.ts)"]
     end
@@ -47,7 +48,34 @@ graph TD
 
 ---
 
-## 2. Gemini Live Session Flow (All Modes)
+---
+
+## 2. Spatial Mode — Object Detection Flow (Hero Feature)
+
+```mermaid
+sequenceDiagram
+    participant Camera as Webcam / Camera
+    participant StudioLayout
+    participant useGeminiCore
+    participant GeminiLive as Gemini Live (WSS)
+    participant SpatialHandler as handlers.ts
+    participant Overlay as Spatial Overlay
+
+    loop Every ~500ms while connected
+        Camera->>StudioLayout: Video frame (canvas capture)
+        StudioLayout->>useGeminiCore: sendVideoFrame(base64, "image/jpeg")
+        useGeminiCore->>GeminiLive: sendRealtimeInput {media: image/jpeg}
+    end
+
+    GeminiLive-->>useGeminiCore: toolCall → track_and_highlight(objects[])
+    useGeminiCore->>SpatialHandler: handleSpatialToolCall()
+    SpatialHandler->>Overlay: setActiveHighlights(validObjects)
+    Overlay-->>Camera: Animated SVG circles overlaid on feed
+```
+
+---
+
+## 3. Gemini Live Session Flow (Core Orchestration)
 
 ```mermaid
 sequenceDiagram
@@ -132,7 +160,9 @@ flowchart TD
 
 ---
 
-## 4. Storyteller Mode — Image Generation Flow
+---
+
+## 5. Roadmap Feature: Storyteller Mode — Image Generation Flow
 
 ```mermaid
 sequenceDiagram
@@ -159,7 +189,7 @@ sequenceDiagram
 
 ---
 
-## 5. IT Architecture Mode — Diagram Update Flow
+## 6. Roadmap Feature: IT Architecture Mode — Diagram Update Flow
 
 ```mermaid
 sequenceDiagram
@@ -180,29 +210,6 @@ sequenceDiagram
 ```
 
 ---
-
-## 6. Spatial Mode — Object Detection Flow
-
-```mermaid
-sequenceDiagram
-    participant Camera as Webcam / Camera
-    participant StudioLayout
-    participant useGeminiCore
-    participant GeminiLive as Gemini Live (WSS)
-    participant SpatialHandler as handlers.ts
-    participant Overlay as Spatial Overlay
-
-    loop Every ~500ms while connected
-        Camera->>StudioLayout: Video frame (canvas capture)
-        StudioLayout->>useGeminiCore: sendVideoFrame(base64, "image/jpeg")
-        useGeminiCore->>GeminiLive: sendRealtimeInput {media: image/jpeg}
-    end
-
-    GeminiLive-->>useGeminiCore: toolCall → track_and_highlight(objects[])
-    useGeminiCore->>SpatialHandler: handleSpatialToolCall()
-    SpatialHandler->>Overlay: setActiveHighlights(validObjects)
-    Overlay-->>Camera: Animated SVG circles overlaid on feed
-```
 
 ---
 

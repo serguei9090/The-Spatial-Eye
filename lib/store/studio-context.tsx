@@ -75,11 +75,7 @@ export function StudioProvider({ children }: Readonly<{ children: ReactNode }>) 
   const searchParams = useSearchParams();
   const initialMode = searchParams.get("mode") as AppMode;
 
-  const [mode, setMode] = useState<AppMode>(
-    initialMode && ["spatial", "it-architecture", "storyteller"].includes(initialMode)
-      ? initialMode
-      : "spatial",
-  );
+  const [mode, setMode] = useState<AppMode>("spatial");
 
   const [isListening, setIsListening] = useState(false);
   const [isUserTalking, setIsUserTalking] = useState(false);
