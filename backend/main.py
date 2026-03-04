@@ -69,12 +69,12 @@ initialize_firebase()
 # which defaults to an endpoint that rejects tool calls with 1008.
 # The AI Studio sandbox uses v1beta — we match that here.
 # ---------------------------------------------------------------------------
+from pydantic import Field
+
+
 class GeminiBeta(Gemini):
     """Gemini model wrapper that forces api_version='v1beta'."""
-
-    def __init__(self, api_key: str = None, **kwargs):
-        super().__init__(**kwargs)
-        self._custom_api_key = api_key
+    custom_api_key: str | None = Field(default=None, exclude=True)
 
     @property
     def api_client(self) -> Client:
@@ -84,10 +84,10 @@ class GeminiBeta(Gemini):
                 headers=self._tracking_headers(),
             )
             
-            if self._custom_api_key:
+            if self.custom_api_key:
                 # User provided a Bring-Your-Own-Key via the frontend
                 self._beta_client = Client(
-                    api_key=self._custom_api_key,
+                    api_key=self.custom_api_key,
                     http_options=http_options
                 )
             else:
@@ -95,7 +95,23 @@ class GeminiBeta(Gemini):
                 
         return self._beta_client
 
-
+    @property
+    def _live_api_client(self) -> Client:
+        # The ADK internally calls `_live_api_client.aio.live.connect`
+        # We must override this property too so it gets the injected custom key!
+        if not hasattr(self, "_beta_live_client"):
+            http_options = types.HttpOptions(
+                api_version="v1beta",
+                headers=self._tracking_headers(),
+            )
+            if self.custom_api_key:
+                self._beta_live_client = Client(
+                    api_key=self.custom_api_key,
+                    http_options=http_options
+                )
+            else:
+                self._beta_live_client = Client(http_options=http_options)
+        return self._beta_live_client
 
 @app.get("/")
 def read_root() -> dict[str, str]:
@@ -116,13 +132,23 @@ async def websocket_endpoint(
     """
     await websocket.accept()
 
+    # Verify API Key availability First
+    if not api_key and not os.getenv("GEMINI_API_KEY") and not os.getenv("GOOGLE_API_KEY"):
+        logger.warning("WebSocket Connection Attempt without API key.")
+        error_msg = "No API key available. Please use the key (🔑) icon to set your key."
+        await websocket.send_text(
+            json.dumps({"error": "MISSING_API_KEY", "message": error_msg})
+        )
+        await websocket.close(code=1008, reason="Missing API Key")
+        return
+
     # Verify Authentication
     if not token:
         logger.warning("WebSocket Connection Attempt without token.")
         await websocket.send_text(
             json.dumps({"error": "AUTH_REQUIRED", "message": "Firebase token missing."})
         )
-        await websocket.close(code=1008)
+        await websocket.close(code=1008, reason="Token Missing")
         return
 
     decoded = verify_token(token)
@@ -131,7 +157,7 @@ async def websocket_endpoint(
         await websocket.send_text(
             json.dumps({"error": "AUTH_INVALID", "message": "Failed to verify Firebase token."})
         )
-        await websocket.close(code=1008)
+        await websocket.close(code=1008, reason="Token Invalid")
         return
 
     user_id: str = decoded["uid"]
@@ -157,7 +183,7 @@ async def websocket_endpoint(
 
     agent = Agent(
         name=f"SpatialEye_{mode_clean}",
-        model=GeminiBeta(model=agent_model, api_key=api_key),
+        model=GeminiBeta(model=agent_model, custom_api_key=api_key),
         instruction=system_instruction,
         tools=active_tools,
     )
@@ -361,6 +387,13 @@ async def websocket_endpoint(
             logger.info(f"[{session_id}] WebSocket Disconnected (Downstream)")
         except Exception as e:
             logger.error(f"[{session_id}] Downstream Fatal Error: {e}")
+            if "Missing key inputs" in str(e) or "api_key" in str(e):
+                error_msg = "No API key available. Please use the key (🔑) icon to set your key."
+                try:
+                    await websocket.send_text(json.dumps({"error": "MISSING_API_KEY", "message": error_msg}))
+                    await websocket.close(code=1008, reason="Missing API Key")
+                except Exception:
+                    pass
 
     # Orchestration
     logger.info(f"[{session_id}] Starting relay for mode: {mode}")

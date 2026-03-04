@@ -245,8 +245,8 @@ export function useGeminiCore({
       // Init Audio Context
       if (!audioContextRef.current || audioContextRef.current.state === "closed") {
         const AudioContextClass =
-          window.AudioContext ||
-          (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+          globalThis.AudioContext ||
+          (globalThis as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
         const probeCtx = new AudioContextClass();
         audioContextRef.current =
           probeCtx.sampleRate === 24000
@@ -260,8 +260,8 @@ export function useGeminiCore({
       return new Promise((resolve) => {
         let baseUrl = process.env.NEXT_PUBLIC_RELAY_WS_URL;
         if (!baseUrl) {
-          const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-          baseUrl = `${protocol}//${window.location.host}/ws/live`;
+          const protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
+          baseUrl = `${protocol}//${globalThis.location.host}/ws/live`;
         }
 
         const params = new URLSearchParams();
@@ -385,6 +385,20 @@ export function useGeminiCore({
             return;
           }
 
+          const maybeError = payload as { error?: string; message?: string };
+          if (maybeError.error) {
+            if (
+              maybeError.error === "MISSING_API_KEY" ||
+              maybeError.error === "AUTH_REQUIRED" ||
+              maybeError.error === "AUTH_INVALID"
+            ) {
+              toast.error(maybeError.message || "Connection error", { duration: 6000 });
+              manualCloseRef.current = true;
+              ws.close();
+              return;
+            }
+          }
+
           const msg = payload as RelayMessage;
 
           if (DEBUG_MODE) {
@@ -497,6 +511,14 @@ export function useGeminiCore({
           stopAudio(0);
 
           if (!manualCloseRef.current) {
+            if (e.code === 1008) {
+              if (e.reason) {
+                toast.error(e.reason, { duration: 6000 });
+              }
+              resolve(false);
+              return;
+            }
+
             const isServerError = e.code === 1011;
             const reasonText =
               e.reason || (isServerError ? t.toasts.deadlineExceeded : t.toasts.connectionAbnormal);

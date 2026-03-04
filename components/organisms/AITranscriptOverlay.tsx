@@ -27,9 +27,9 @@ export function AITranscriptOverlay({ transcript }: AITranscriptOverlayProps) {
 
   // Simple formatting to add missing spaces after punctuations, and remove spaces before punctuations
   const formattedTranscript = transcript
-    .replace(/([.!?])([A-Za-z])/g, "$1 $2")
-    .replace(/([,;:!])([A-Za-z])/g, "$1 $2")
-    .replace(/ +([.,!?:;])/g, "$1");
+    .replaceAll(/([.!?])([A-Za-z])/g, "$1 $2")
+    .replaceAll(/([,;:!])([A-Za-z])/g, "$1 $2")
+    .replaceAll(/ +([.,!?:;])/g, "$1");
 
   return (
     <motion.div

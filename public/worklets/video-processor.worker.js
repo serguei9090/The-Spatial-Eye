@@ -2,7 +2,7 @@
  * Video Processor Worker (Base64 optimized)
  */
 
-self.onmessage = async (e) => {
+globalThis.onmessage = async (e) => {
   const { imageBitmap, width, height, quality } = e.data;
 
   try {
@@ -50,7 +50,7 @@ async function arrayBufferToBase64(buffer) {
   let binary = "";
   const len = uint8Array.byteLength;
   for (let i = 0; i < len; i++) {
-    binary += String.fromCharCode(uint8Array[i]);
+    binary += String.fromCodePoint(uint8Array[i]);
   }
   return btoa(binary);
 }
