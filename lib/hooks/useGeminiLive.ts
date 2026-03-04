@@ -1,20 +1,15 @@
 "use client";
 
 import type { LiveServerMessage } from "@google/genai";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   SPATIAL_SYSTEM_INSTRUCTION,
   STORYTELLER_SYSTEM_INSTRUCTION,
 } from "@/lib/api/gemini_websocket";
 
-import {
-  IT_ARCHITECTURE_SYSTEM_INSTRUCTION,
-  IT_ARCHITECTURE_TOOLS,
-  handleArchitectureToolCall,
-} from "@/lib/gemini/it-architecture-handlers";
+import { IT_ARCHITECTURE_SYSTEM_INSTRUCTION } from "@/lib/gemini/it-architecture-handlers";
 import { handleDirectorToolCall, triggerStoryVisual } from "@/lib/gemini/storyteller-handlers";
-import { DIRECTOR_TOOLS, SPATIAL_TOOLS } from "@/lib/gemini/tools/definitions";
 import { useArchitectureMode } from "@/lib/hooks/useArchitectureMode";
 import { useGeminiCore } from "@/lib/hooks/useGeminiCore";
 import { useSpatialMode } from "@/lib/hooks/useSpatialMode";
@@ -59,17 +54,6 @@ export function useGeminiLive({
     setLatestTranscript("");
     cumulativeTranscriptRef.current = "";
     triggeredVisualsRef.current.clear();
-  }, [mode]);
-
-  // Tools configuration
-  const tools = useMemo(() => {
-    if (mode === "storyteller") {
-      return [{ functionDeclarations: DIRECTOR_TOOLS }];
-    }
-    if (mode === "it-architecture") {
-      return IT_ARCHITECTURE_TOOLS; // Already wrapped in object
-    }
-    return [{ functionDeclarations: SPATIAL_TOOLS }];
   }, [mode]);
 
   // Handler for tool calls
@@ -303,7 +287,6 @@ export function useGeminiLive({
 
   const core = useGeminiCore({
     systemInstruction,
-    tools,
     mode,
     onToolCall: handleToolCall,
     onTranscript: handleTranscript,

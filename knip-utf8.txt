@@ -1,0 +1,149 @@
+﻿[93m[4mUnused files[24m[39m (54)
+scripts/check-env.js                                                                 
+scripts/list-models.js                                                               
+scripts/list_gemini_models.js                                                        
+scripts/start-unified.js                                                             
+scripts/test_image_gen.js                                                            
+scripts/test_image_gen_v2.js                                                         
+components/atoms/Badge.tsx                                                           
+components/atoms/Icon.tsx                                                            
+components/atoms/Spinner.tsx                                                         
+components/molecules/ContextCard.tsx                                                 
+components/molecules/DeviceSelector.tsx                                              
+components/molecules/ErrorToast.tsx                                                  
+components/molecules/LiveNarration.tsx                                               
+components/molecules/ModeSelector.tsx                                                
+components/organisms/CreativeBoard.tsx                                               
+components/organisms/StoryOrchestrator.tsx                                           
+components/ui/dialog.tsx                                                             
+components/ui/sheet.tsx                                                              
+components/ui/slider.tsx                                                             
+components/ui/switch.tsx                                                             
+components/ui/tabs.tsx                                                               
+components/ui/textarea.tsx                                                           
+IaC/pulumi/index.ts                                                                  
+lib/gemini/tools.ts                                                                  
+lib/hooks/useSpatialLive.ts                                                          
+lib/hooks/useStoryteller.ts                                                          
+lib/i18n/context.tsx                                                                 
+public/worklets/pcm-capture-processor.js                                             
+public/worklets/video-processor.worker.js                                            
+backend/.venv/Lib/site-packages/win32com/test/testPyScriptlet.js                     
+backend/.venv/Lib/site-packages/win32com/test/testxslt.js                            
+backend/.venv/Lib/site-packages/urllib3/contrib/emscripten/emscripten_fetch_worker.js
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-4MSGFQCD.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-7MR4QDTO.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-A6XEKK5I.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-AK5ESGDJ.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-BWFUMX67.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-BX7YU7E6.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-CHLIPOEM.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-GLGRLUIJ.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-HAQR6HJ6.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-HYLIZOX5.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-IXLBQLFI.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-M3M3P5CP.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-RLBEOMT4.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-RUWE7IJV.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-UATSMTT5.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-VPVAD56Y.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-W7GRJBO5.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/chunk-XB75PFJS.js             
+backend/.venv/Lib/site-packages/google/adk/cli/browser/main-QQBY56NS.js              
+backend/.venv/Lib/site-packages/google/adk/cli/browser/polyfills-5CFQRCPP.js         
+backend/.venv/Lib/site-packages/google/adk/cli/browser/styles-SI5RXIFC.css           
+backend/.venv/Lib/site-packages/google/adk/cli/browser/assets/audio-processor.js     
+[93m[4mUnused dependencies[24m[39m (14)
+@genkit-ai/googleai            package.json:19:6
+@radix-ui/react-checkbox       package.json:22:6
+@radix-ui/react-dialog         package.json:23:6
+@radix-ui/react-dropdown-menu  package.json:24:6
+@radix-ui/react-label          package.json:25:6
+@radix-ui/react-select         package.json:27:6
+@radix-ui/react-slider         package.json:28:6
+@radix-ui/react-switch         package.json:30:6
+@radix-ui/react-tabs           package.json:31:6
+@radix-ui/react-tooltip        package.json:32:6
+@types/http-proxy              package.json:35:6
+dotenv                         package.json:39:6
+genkit                         package.json:43:6
+http-proxy                     package.json:44:6
+[93m[4mUnused devDependencies[24m[39m (3)
+@testing-library/user-event  package.json:59:6
+eslint                       package.json:65:6
+eslint-config-next           package.json:66:6
+[93m[4mUnlisted dependencies[24m[39m (2)
+postcss              postcss.config.mjs                              
+@tsparticles/engine  components/premium-particles-background.tsx:3:38
+[93m[4mUnlisted binaries[24m[39m (1)
+uv  package.json
+[93m[4mUnused exports[24m[39m (54)
+badgeVariants                                components/ui/badge.tsx:46:17         
+CardFooter                                   components/ui/card.tsx:75:28          
+CardAction                                   components/ui/card.tsx:75:51          
+startSession                       function  lib/firestore/sessionService.ts:24:23 
+appendDetection                    function  lib/firestore/sessionService.ts:36:23 
+endSession                         function  lib/firestore/sessionService.ts:50:23 
+mapDetection                       function  lib/firestore/sessionService.ts:86:17 
+buildGeminiWsUrl                   function  lib/api/gemini_websocket.ts:24:17     
+sendSetupMessage                   function  lib/api/gemini_websocket.ts:37:17     
+extractCoordinateTuples            function  lib/api/gemini_websocket.ts:70:17     
+isCoordinateTupleValid             function  lib/api/gemini_websocket.ts:89:17     
+tupleToHighlight                   function  lib/api/gemini_websocket.ts:93:17     
+extractTextsFromLiveServerMessage  function  lib/api/gemini_websocket.ts:134:17    
+extractAudioFromLiveServerMessage  function  lib/api/gemini_websocket.ts:160:17    
+isInterrupted                      function  lib/api/gemini_websocket.ts:171:17    
+unpadCoordinates                   function  lib/utils/coordinates.ts:11:17        
+highlightToCircle                  function  lib/utils/coordinates.ts:56:17        
+calculateObjectFitCover            function  lib/utils/coordinates.ts:124:17       
+Tooltip                                      components/ui/tooltip.tsx:53:10       
+TooltipTrigger                               components/ui/tooltip.tsx:53:19       
+TooltipContent                               components/ui/tooltip.tsx:53:35       
+UI_LAYERS                                    lib/constants.ts:20:14                
+DropdownMenuPortal                           components/ui/dropdown-menu.tsx:214:3 
+DropdownMenuGroup                            components/ui/dropdown-menu.tsx:217:3 
+DropdownMenuCheckboxItem                     components/ui/dropdown-menu.tsx:220:3 
+DropdownMenuRadioGroup                       components/ui/dropdown-menu.tsx:221:3 
+DropdownMenuRadioItem                        components/ui/dropdown-menu.tsx:222:3 
+DropdownMenuShortcut                         components/ui/dropdown-menu.tsx:224:3 
+DropdownMenuSub                              components/ui/dropdown-menu.tsx:225:3 
+DropdownMenuSubTrigger                       components/ui/dropdown-menu.tsx:226:3 
+DropdownMenuSubContent                       components/ui/dropdown-menu.tsx:227:3 
+DropdownMenuCheckboxItem                     components/atoms/Dropdown.tsx:5:3     
+DropdownMenuGroup                            components/atoms/Dropdown.tsx:7:3     
+DropdownMenuPortal                           components/atoms/Dropdown.tsx:10:3    
+DropdownMenuRadioGroup                       components/atoms/Dropdown.tsx:11:3    
+DropdownMenuRadioItem                        components/atoms/Dropdown.tsx:12:3    
+DropdownMenuShortcut                         components/atoms/Dropdown.tsx:14:3    
+DropdownMenuSub                              components/atoms/Dropdown.tsx:15:3    
+DropdownMenuSubContent                       components/atoms/Dropdown.tsx:16:3    
+DropdownMenuSubTrigger                       components/atoms/Dropdown.tsx:17:3    
+encode                             function  lib/utils/audio.ts:17:17              
+SelectGroup                                  components/ui/select.tsx:167:3        
+SelectLabel                                  components/ui/select.tsx:169:3        
+SelectScrollDownButton                       components/ui/select.tsx:170:3        
+SelectScrollUpButton                         components/ui/select.tsx:171:3        
+SelectSeparator                              components/ui/select.tsx:172:3        
+VIDEO_SYNTHESIS_DISABLED                     lib/gemini/models.ts:39:14            
+getFirebaseApp                     function  lib/firebase/config.ts:16:17          
+highlightTool                                lib/gemini/tools/definitions.ts:9:14  
+clearHighlightsTool                          lib/gemini/tools/definitions.ts:30:14 
+renderVisualTool                             lib/gemini/tools/definitions.ts:49:14 
+ambientAudioTool                             lib/gemini/tools/definitions.ts:77:14 
+defineWorldRuleTool                          lib/gemini/tools/definitions.ts:98:14 
+segmentStoryTool                             lib/gemini/tools/definitions.ts:122:14
+[93m[4mUnused exported types[24m[39m (13)
+UIState                   interface  lib/types.ts:30:18                               
+StoryWorldRule            interface  lib/types.ts:36:18                               
+AppMode                   type       lib/store/studio-context.tsx:22:13               
+UseGeminiCoreProps        interface  lib/hooks/useGeminiCore.ts:53:18                 
+CoordinatesTuple          type       lib/api/gemini_websocket.ts:4:13                 
+GeminiMode                type       lib/hooks/useGeminiLive.ts:25:13                 
+UseGeminiLiveProps        interface  lib/hooks/useGeminiLive.ts:27:18                 
+PixelBox                  interface  lib/utils/coordinates.ts:4:18                    
+ArchitectureNodeData      type       components/atoms/ArchitectureNode.tsx:27:13      
+ArchitectureNodeObject    type       components/atoms/ArchitectureNode.tsx:33:13      
+AITranscriptOverlayProps  interface  components/organisms/AITranscriptOverlay.tsx:9:18
+ControlBarProps           interface  components/organisms/ControlBar.tsx:14:18        
+ModelMetadata             interface  lib/gemini/registry.ts:18:18                     
+[33m[4mConfiguration hints[24m (1)[39m

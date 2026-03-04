@@ -1,6 +1,6 @@
 "use client";
 
-import { type GoogleGenAI, type LiveServerMessage, Modality, type Tool } from "@google/genai";
+import { type GoogleGenAI, type LiveServerMessage, Modality } from "@google/genai";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DEFAULT_GEMINI_LIVE_MODEL } from "@/lib/api/gemini_websocket";
@@ -52,7 +52,6 @@ const logInfo = (msg: string, ...args: unknown[]) => {
 
 export interface UseGeminiCoreProps {
   systemInstruction: string;
-  tools?: Tool[];
   mode?: "spatial" | "director" | "it-architecture" | string;
   onToolCall?: (
     toolCall: LiveServerMessage["toolCall"],
@@ -69,7 +68,6 @@ export interface UseGeminiCoreProps {
 
 export function useGeminiCore({
   systemInstruction,
-  tools,
   mode,
   onToolCall,
   onTranscript,
