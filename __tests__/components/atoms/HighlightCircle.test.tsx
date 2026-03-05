@@ -17,12 +17,7 @@ describe("HighlightCircle Component", () => {
     const { getByTestId } = render(
       <svg>
         <title>Highlight Test</title>
-        <HighlightCircle
-          id="test-1"
-          label="test label"
-          type="circle"
-          geometry={mockGeometry}
-        />
+        <HighlightCircle id="test-1" label="test label" type="circle" geometry={mockGeometry} />
       </svg>,
     );
     expect(getByTestId("highlight-circle-test-1")).toBeDefined();
@@ -32,12 +27,7 @@ describe("HighlightCircle Component", () => {
     const { container } = render(
       <svg>
         <title>Highlight Test</title>
-        <HighlightCircle
-          id="test-1"
-          label="test label"
-          type="circle"
-          geometry={mockGeometry}
-        />
+        <HighlightCircle id="test-1" label="test label" type="circle" geometry={mockGeometry} />
       </svg>,
     );
 

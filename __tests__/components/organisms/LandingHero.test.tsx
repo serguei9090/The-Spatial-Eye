@@ -11,9 +11,7 @@ describe("LandingHero", () => {
     expect(screen.getByText(/Through a New Lens/i)).toBeInTheDocument();
 
     // Check for subtitle
-    expect(
-      screen.getByText(/The Spatial Eye is a multimodal AI companion/i),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/The Spatial Eye is a multimodal AI companion/i)).toBeInTheDocument();
   });
 
   it("renders call to action buttons with correct links", () => {
@@ -29,10 +27,7 @@ describe("LandingHero", () => {
     // Check for "View on Devpost" button
     const devpostLink = screen.getByRole("link", { name: /View on Devpost/i });
     expect(devpostLink).toBeInTheDocument();
-    expect(devpostLink).toHaveAttribute(
-      "href",
-      "https://devpost.com/software/the-spatial-eye",
-    );
+    expect(devpostLink).toHaveAttribute("href", "https://devpost.com/software/the-spatial-eye");
   });
 
   it("renders the feature badges", () => {

@@ -4,11 +4,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/atoms/Button";
 import { Label } from "@/components/atoms/Label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/atoms/Popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/Popover";
 import { Input } from "@/components/ui/input";
 import { useSettings } from "@/lib/store/settings-context";
 import { cn } from "@/lib/utils";
@@ -28,20 +24,11 @@ export function ConnectionMenu() {
             open && "bg-secondary text-foreground ring-2 ring-primary/20",
           )}
         >
-          <KeyRound
-            className={cn(
-              "h-5 w-5",
-              byokKey ? "text-emerald-500" : "text-amber-500",
-            )}
-          />
+          <KeyRound className={cn("h-5 w-5", byokKey ? "text-emerald-500" : "text-amber-500")} />
           <span className="sr-only">Connection Mode</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-[320px] p-0 overflow-hidden"
-        align="end"
-        side="top"
-      >
+      <PopoverContent className="w-[320px] p-0 overflow-hidden" align="end" side="top">
         <div className="p-4 border-b bg-muted/20">
           <h4 className="font-semibold leading-none flex items-center gap-2 text-sm">
             <Radio className="h-4 w-4 text-primary" />
@@ -59,14 +46,12 @@ export function ConnectionMenu() {
               type="password"
               placeholder="AIzaSy..."
               value={byokKey}
-              onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                setByokKey(e.target.value)
-              }
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setByokKey(e.target.value)}
               className="h-9 text-xs font-mono"
             />
             <p className="text-[10px] text-muted-foreground">
-              Provide a custom Gemini API Key, or leave empty to use the
-              server's default configuration.
+              Provide a custom Gemini API Key, or leave empty to use the server's default
+              configuration.
             </p>
           </div>
         </div>

@@ -17,25 +17,17 @@ interface AudioDeviceContextType {
   setSelectedVideoId: (deviceId: string) => void;
 }
 
-const AudioDeviceContext = createContext<AudioDeviceContextType | undefined>(
-  undefined,
-);
+const AudioDeviceContext = createContext<AudioDeviceContextType | undefined>(undefined);
 
 export function AudioDeviceProvider({ children }: { children: ReactNode }) {
   const devices = useAudioDevices();
-  return (
-    <AudioDeviceContext.Provider value={devices}>
-      {children}
-    </AudioDeviceContext.Provider>
-  );
+  return <AudioDeviceContext.Provider value={devices}>{children}</AudioDeviceContext.Provider>;
 }
 
 export function useAudioDeviceContext() {
   const context = useContext(AudioDeviceContext);
   if (context === undefined) {
-    throw new Error(
-      "useAudioDeviceContext must be used within an AudioDeviceProvider",
-    );
+    throw new Error("useAudioDeviceContext must be used within an AudioDeviceProvider");
   }
   return context;
 }

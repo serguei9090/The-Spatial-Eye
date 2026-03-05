@@ -48,15 +48,10 @@ export function AudioCapture({
       audioContextRef.current = audioContext;
 
       // Load the AudioWorklet and connect the pipeline
-      await audioContext.audioWorklet.addModule(
-        "/worklets/pcm-capture-processor.js",
-      );
+      await audioContext.audioWorklet.addModule("/worklets/pcm-capture-processor.js");
 
       const source = audioContext.createMediaStreamSource(stream);
-      const workletNode = new AudioWorkletNode(
-        audioContext,
-        "pcm-capture-processor",
-      );
+      const workletNode = new AudioWorkletNode(audioContext, "pcm-capture-processor");
       workletNodeRef.current = workletNode;
 
       // Receive processed audio frames from the worklet thread

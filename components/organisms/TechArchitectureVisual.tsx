@@ -1,15 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  BrainCircuit,
-  Cloud,
-  Eye,
-  Mic,
-  Server,
-  Sparkles,
-  Wrench,
-} from "lucide-react";
+import { BrainCircuit, Cloud, Eye, Mic, Server, Sparkles, Wrench } from "lucide-react";
 
 export function TechArchitectureVisual() {
   return (

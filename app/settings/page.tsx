@@ -44,9 +44,7 @@ export default function SettingsPage() {
       setStatus("Gemini API key saved for your user.");
       setApiKey("");
     } catch (submitError) {
-      setError(
-        submitError instanceof Error ? submitError.message : "Save failed.",
-      );
+      setError(submitError instanceof Error ? submitError.message : "Save failed.");
     } finally {
       setIsSaving(false);
     }
@@ -64,17 +62,15 @@ export default function SettingsPage() {
               <p className="text-sm text-muted-foreground">
                 Sign in with Google to configure your personal Gemini API key.
               </p>
-              <Button onClick={() => void signInWithGoogle()}>
-                Continue with Google
-              </Button>
+              <Button onClick={() => void signInWithGoogle()}>Continue with Google</Button>
             </div>
           ) : null}
 
           {user ? (
             <form className="space-y-3" onSubmit={onSubmit}>
               <p className="text-sm text-muted-foreground">
-                Your Gemini key is stored on the server for this Firebase user
-                and used to mint short-lived Live API tokens.
+                Your Gemini key is stored on the server for this Firebase user and used to mint
+                short-lived Live API tokens.
               </p>
               <Input
                 type="password"

@@ -28,8 +28,7 @@ export function LandscapePrompt() {
       </div>
       <h2 className="text-2xl font-bold text-white">Rotate Your Device</h2>
       <p className="mt-2 px-8 text-center text-muted-foreground">
-        Spatial Live mode is best experienced in horizontal (landscape)
-        orientation.
+        Spatial Live mode is best experienced in horizontal (landscape) orientation.
       </p>
     </motion.div>
   );

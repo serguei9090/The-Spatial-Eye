@@ -53,9 +53,7 @@ export interface StoryItem {
   readonly id: string;
   readonly type: StoryItemType;
   readonly content: string; // URL for image, Text for text, Description for audio
-  readonly metadata?: Readonly<
-    Record<string, string | number | boolean | undefined>
-  >; // Extra data like rule details
+  readonly metadata?: Readonly<Record<string, string | number | boolean | undefined>>; // Extra data like rule details
   readonly isGenerating?: boolean; // For loading states
   readonly timestamp: number;
   readonly isStory?: boolean; // True if it's actual narrative content

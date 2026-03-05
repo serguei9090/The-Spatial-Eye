@@ -26,9 +26,7 @@ export function VideoFeed({
 
     const stopCamera = () => {
       if (videoRef.current?.srcObject) {
-        for (const track of (
-          videoRef.current.srcObject as MediaStream
-        ).getTracks()) {
+        for (const track of (videoRef.current.srcObject as MediaStream).getTracks()) {
           track.stop();
         }
         videoRef.current.srcObject = null;
@@ -99,19 +97,8 @@ export function VideoFeed({
   if (!enabled) return null;
 
   return (
-    <div
-      className={cn(
-        "relative h-full w-full overflow-hidden bg-black",
-        containerClassName,
-      )}
-    >
-      <video
-        ref={videoRef}
-        autoPlay
-        playsInline
-        muted
-        className={cn("h-full w-full", className)}
-      />
+    <div className={cn("relative h-full w-full overflow-hidden bg-black", containerClassName)}>
+      <video ref={videoRef} autoPlay playsInline muted className={cn("h-full w-full", className)} />
     </div>
   );
 }

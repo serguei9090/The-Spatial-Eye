@@ -6,10 +6,7 @@ interface AudioTriggerProps {
   readonly active?: boolean;
 }
 
-export function AudioTrigger({
-  description,
-  active = true,
-}: AudioTriggerProps) {
+export function AudioTrigger({ description, active = true }: AudioTriggerProps) {
   // Deprecated because we need a lyric model not available for use as the midi generated is bad sound.
   // The logic below is commented out but kept for future reference.
   return null;

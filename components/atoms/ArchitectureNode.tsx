@@ -32,10 +32,7 @@ export type ArchitectureNodeData = {
 
 export type ArchitectureNodeObject = Node<ArchitectureNodeData, "architecture">;
 
-export function ArchitectureNode({
-  data,
-  selected,
-}: NodeProps<ArchitectureNodeObject>) {
+export function ArchitectureNode({ data, selected }: NodeProps<ArchitectureNodeObject>) {
   const Icon = iconMap[data.type] || Server;
 
   return (
@@ -53,32 +50,14 @@ export function ArchitectureNode({
         </div>
         <div className="ml-2">
           <div className="text-lg font-bold text-foreground">{data.label}</div>
-          <div className="text-xs text-muted-foreground capitalize">
-            {data.type}
-          </div>
+          <div className="text-xs text-muted-foreground capitalize">{data.type}</div>
         </div>
       </div>
 
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="w-3 h-3 bg-muted-foreground"
-      />
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="w-3 h-3 bg-muted-foreground"
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="w-2 h-2 bg-muted-foreground/50"
-      />
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="w-2 h-2 bg-muted-foreground/50"
-      />
+      <Handle type="target" position={Position.Top} className="w-3 h-3 bg-muted-foreground" />
+      <Handle type="source" position={Position.Bottom} className="w-3 h-3 bg-muted-foreground" />
+      <Handle type="source" position={Position.Right} className="w-2 h-2 bg-muted-foreground/50" />
+      <Handle type="target" position={Position.Left} className="w-2 h-2 bg-muted-foreground/50" />
     </div>
   );
 }

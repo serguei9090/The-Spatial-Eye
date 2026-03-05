@@ -117,9 +117,7 @@ describe("useGeminiLive", () => {
     const { result } = renderHook(() => useGeminiLive());
     expect(result.current.mode).toBe("spatial");
     expect(result.current.activeHighlights).toEqual([]);
-    expect(useGeminiCore).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: "spatial" }),
-    );
+    expect(useGeminiCore).toHaveBeenCalledWith(expect.objectContaining({ mode: "spatial" }));
   });
 
   it("handles transcripts and filters out tool calls in non-storyteller modes", () => {
@@ -145,10 +143,7 @@ describe("useGeminiLive", () => {
       coreArgs.onToolCall(mockToolCall, { invocationId: "123" });
     });
 
-    expect(mockSpatial.handleSpatialToolCall).toHaveBeenCalledWith(
-      mockToolCall,
-      "123",
-    );
+    expect(mockSpatial.handleSpatialToolCall).toHaveBeenCalledWith(mockToolCall, "123");
   });
 
   it("processes storyteller transcripts with [NARRATIVE] and [DIRECTOR] tags", () => {
@@ -175,9 +170,7 @@ describe("useGeminiLive", () => {
 
     // We should see a placeholder segment generated and a text element
     expect(result.current.storyStream.length).toBeGreaterThan(0);
-    const storyText = result.current.storyStream.find(
-      (i) => i.type === "text" && i.isStory,
-    );
+    const storyText = result.current.storyStream.find((i) => i.type === "text" && i.isStory);
     expect(storyText).toBeDefined();
     expect(storyText?.content).toBe("Once upon a time...");
 
@@ -186,16 +179,12 @@ describe("useGeminiLive", () => {
       coreArgs.onTurnComplete("inv-1");
     });
 
-    const directorPrompt = result.current.storyStream.find(
-      (i) => i.type === "director_prompt",
-    );
+    const directorPrompt = result.current.storyStream.find((i) => i.type === "director_prompt");
     expect(directorPrompt).toBeDefined();
   });
 
   it("filters out tool calls from transcripts in it-architecture mode", () => {
-    const { result } = renderHook(() =>
-      useGeminiLive({ mode: "it-architecture" }),
-    );
+    const { result } = renderHook(() => useGeminiLive({ mode: "it-architecture" }));
     const coreArgs = (useGeminiCore as jest.Mock).mock.calls[0][0];
 
     act(() => {

@@ -123,18 +123,14 @@ function AccordionItem({
                     <div className="w-2 h-2 rounded-full bg-red-500" />
                     The Issue
                   </h4>
-                  <p className="text-white/80 leading-relaxed text-sm">
-                    {item.issue}
-                  </p>
+                  <p className="text-white/80 leading-relaxed text-sm">{item.issue}</p>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-green-500" />
                     Our Solution
                   </h4>
-                  <p className="text-white/80 leading-relaxed text-sm">
-                    {item.solution}
-                  </p>
+                  <p className="text-white/80 leading-relaxed text-sm">{item.solution}</p>
                 </div>
               </div>
             </div>
@@ -183,10 +179,7 @@ export function LandingTemplate() {
             </span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground mr-10">
-            <a
-              href="#features"
-              className="hover:text-primary transition-colors"
-            >
+            <a href="#features" className="hover:text-primary transition-colors">
               Project Modules
             </a>
             <a href="#tech" className="hover:text-white transition-colors">
@@ -216,13 +209,10 @@ export function LandingTemplate() {
         {/* Features Grid */}
         <section id="features" className="py-24">
           <div className="mb-16 text-center">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">
-              Unified Intelligence
-            </h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">Unified Intelligence</h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Experience the future of real-time environmental awareness. The
-              Spatial Eye leverages Gemini&apos;s multimodal power to bridge the
-              gap between AI and physical reality.
+              Experience the future of real-time environmental awareness. The Spatial Eye leverages
+              Gemini&apos;s multimodal power to bridge the gap between AI and physical reality.
             </p>
           </div>
 
@@ -240,9 +230,8 @@ export function LandingTemplate() {
               Challenges & Architecture Decisions
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Building a real-time multimodal agent requires solving complex
-              synchronization and state management challenges. Here&apos;s how
-              we tackled them.
+              Building a real-time multimodal agent requires solving complex synchronization and
+              state management challenges. Here&apos;s how we tackled them.
             </p>
           </div>
 
@@ -262,11 +251,9 @@ export function LandingTemplate() {
               </h2>
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
                 Built for the{" "}
-                <span className="text-white font-semibold">
-                  Gemini Live Agent Challenge
-                </span>
-                , our infrastructure leverages high-performance Google Cloud
-                services to ensure sub-second latency and global scalability.
+                <span className="text-white font-semibold">Gemini Live Agent Challenge</span>, our
+                infrastructure leverages high-performance Google Cloud services to ensure sub-second
+                latency and global scalability.
               </p>
 
               <ul className="space-y-4">
@@ -302,9 +289,7 @@ export function LandingTemplate() {
                     className="flex items-center gap-3 text-sm"
                   >
                     <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                    <span className="font-bold text-white/90">
-                      {item.label}:
-                    </span>
+                    <span className="font-bold text-white/90">{item.label}:</span>
                     <span className="text-muted-foreground">{item.detail}</span>
                   </motion.li>
                 ))}
@@ -377,13 +362,7 @@ function Link({
   title?: string;
 }) {
   return (
-    <a
-      href={href}
-      target="_blank"
-      className={className}
-      rel="noreferrer"
-      title={title}
-    >
+    <a href={href} target="_blank" className={className} rel="noreferrer" title={title}>
       {children}
     </a>
   );

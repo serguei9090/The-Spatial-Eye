@@ -139,9 +139,7 @@ export function InterleavedPost({ group }: InterleavedPostProps) {
         </div>
       )}
 
-      {item.type === "audio_event" && (
-        <AudioTrigger description={item.content} />
-      )}
+      {item.type === "audio_event" && <AudioTrigger description={item.content} />}
 
       {item.type === "rule_event" && (
         <div className="my-10 mx-auto max-w-md text-center">

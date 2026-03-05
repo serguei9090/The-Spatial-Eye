@@ -22,16 +22,12 @@ if (key.includes("\\n")) {
   if (realKey.includes("-----BEGIN PRIVATE KEY-----")) {
     console.log("✅ Key parses correctly into PEM format.");
   } else {
-    console.error(
-      "❌ Key does not look like a PEM private key after unescaping.",
-    );
+    console.error("❌ Key does not look like a PEM private key after unescaping.");
   }
 } else if (key.includes("\n")) {
   console.log("ℹ️  Key contains actual newline characters.");
 } else {
-  console.error(
-    "❌ Key has no newlines and no escaped newlines. It might be corrupted.",
-  );
+  console.error("❌ Key has no newlines and no escaped newlines. It might be corrupted.");
 }
 
 if (!process.env.GOOGLE_API_KEY && !process.env.NEXT_PUBLIC_GOOGLE_API_KEY) {

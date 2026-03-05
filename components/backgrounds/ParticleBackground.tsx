@@ -31,9 +31,7 @@ export function ParticleBackground() {
 
     const createParticles = () => {
       particles = [];
-      const count = Math.floor(
-        (window.innerWidth * window.innerHeight) / 10000,
-      );
+      const count = Math.floor((window.innerWidth * window.innerHeight) / 10000);
       const colors = ["#8b5cf6", "#d946ef", "#3b82f6", "#06b6d4"];
 
       for (let i = 0; i < count; i++) {

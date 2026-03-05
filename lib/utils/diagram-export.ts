@@ -1,11 +1,7 @@
 import type { Edge, Node } from "@xyflow/react";
 
 export function downloadDiagram(nodes: Node[], edges: Edge[]) {
-  const data = JSON.stringify(
-    { nodes, edges, version: "1.0", timestamp: Date.now() },
-    null,
-    2,
-  );
+  const data = JSON.stringify({ nodes, edges, version: "1.0", timestamp: Date.now() }, null, 2);
   const blob = new Blob([data], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
@@ -17,9 +13,7 @@ export function downloadDiagram(nodes: Node[], edges: Edge[]) {
   URL.revokeObjectURL(url);
 }
 
-export async function uploadDiagram(
-  file: File,
-): Promise<{ nodes: Node[]; edges: Edge[] }> {
+export async function uploadDiagram(file: File): Promise<{ nodes: Node[]; edges: Edge[] }> {
   try {
     const text = await file.text();
     const content = JSON.parse(text);

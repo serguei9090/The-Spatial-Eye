@@ -10,7 +10,8 @@
       "ExampleCode",
       ".vscode",
       ".venv",
-      "docs"
+      "docs",
+      ".trunk"
     ]
   },
   "formatter": {

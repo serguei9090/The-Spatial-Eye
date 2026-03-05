@@ -53,11 +53,7 @@ export function normalizedToPixels(
   };
 }
 
-export function highlightToCircle(
-  highlight: Highlight,
-  videoWidth: number,
-  videoHeight: number,
-) {
+export function highlightToCircle(highlight: Highlight, videoWidth: number, videoHeight: number) {
   const box = normalizedToPixels(
     [highlight.ymin, highlight.xmin, highlight.ymax, highlight.xmax],
     videoWidth,
@@ -131,13 +127,7 @@ export function calculateObjectFitCover(
   containerW: number,
   containerH: number,
 ) {
-  return calculateObjectFit(
-    contentW,
-    contentH,
-    containerW,
-    containerH,
-    "cover",
-  );
+  return calculateObjectFit(contentW, contentH, containerW, containerH, "cover");
 }
 
 /**

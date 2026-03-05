@@ -22,9 +22,8 @@ function supportsSinkIdSelection(): boolean {
   }
 
   return (
-    typeof (
-      HTMLMediaElement.prototype as HTMLMediaElement & { setSinkId?: unknown }
-    ).setSinkId === "function"
+    typeof (HTMLMediaElement.prototype as HTMLMediaElement & { setSinkId?: unknown }).setSinkId ===
+    "function"
   );
 }
 
@@ -50,31 +49,24 @@ export function useAudioDevices(): AudioDevicesState {
     }
     return "";
   });
-  const [outputSelectionSupported, setOutputSelectionSupported] =
-    useState(false);
+  const [outputSelectionSupported, setOutputSelectionSupported] = useState(false);
 
   // Persistence effects
   useEffect(() => {
-    if (selectedInputId)
-      localStorage.setItem("spatial-eye-input-id", selectedInputId);
+    if (selectedInputId) localStorage.setItem("spatial-eye-input-id", selectedInputId);
   }, [selectedInputId]);
 
   useEffect(() => {
-    if (selectedOutputId)
-      localStorage.setItem("spatial-eye-output-id", selectedOutputId);
+    if (selectedOutputId) localStorage.setItem("spatial-eye-output-id", selectedOutputId);
   }, [selectedOutputId]);
 
   useEffect(() => {
-    if (selectedVideoId)
-      localStorage.setItem("spatial-eye-video-id", selectedVideoId);
+    if (selectedVideoId) localStorage.setItem("spatial-eye-video-id", selectedVideoId);
   }, [selectedVideoId]);
 
   const refreshDevices = useCallback(
     async (requestPermission = false) => {
-      if (
-        globalThis.window === undefined ||
-        !navigator.mediaDevices?.enumerateDevices
-      ) {
+      if (globalThis.window === undefined || !navigator.mediaDevices?.enumerateDevices) {
         setInputDevices([]);
         setOutputDevices([]);
         setVideoDevices([]);
@@ -93,10 +85,7 @@ export function useAudioDevices(): AudioDevicesState {
             track.stop();
           }
         } catch (error) {
-          console.warn(
-            "[useAudioDevices] Permission denied or no devices found:",
-            error,
-          );
+          console.warn("[useAudioDevices] Permission denied or no devices found:", error);
         }
       }
 
@@ -118,9 +107,7 @@ export function useAudioDevices(): AudioDevicesState {
       }
 
       if (outputs.length > 0) {
-        const stillExists = outputs.some(
-          (d) => d.deviceId === selectedOutputId,
-        );
+        const stillExists = outputs.some((d) => d.deviceId === selectedOutputId);
         if (!selectedOutputId || !stillExists) {
           setSelectedOutputId(outputs[0].deviceId);
         }
@@ -153,8 +140,7 @@ export function useAudioDevices(): AudioDevicesState {
     };
 
     mediaDevices.addEventListener("devicechange", onDeviceChange);
-    return () =>
-      mediaDevices.removeEventListener("devicechange", onDeviceChange);
+    return () => mediaDevices.removeEventListener("devicechange", onDeviceChange);
   }, [refreshDevices]);
 
   useEffect(() => {

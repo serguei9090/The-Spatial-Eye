@@ -60,9 +60,7 @@ export function triggerStoryVisual(
 
   // 2. Trigger Generation (Real Gemini API)
   const modelId = GEMINI_MODELS.imageSynthesis.replace(/^models\//, "");
-  console.log(
-    `[Director] render_visual triggered for: "${subject}" using model: ${modelId}`,
-  );
+  console.log(`[Director] render_visual triggered for: "${subject}" using model: ${modelId}`);
 
   (async () => {
     try {
@@ -106,9 +104,7 @@ export function triggerStoryVisual(
 
         setStoryStream((prev) =>
           prev.map((item) =>
-            item.id === id
-              ? { ...item, isGenerating: false, content: base64Image }
-              : item,
+            item.id === id ? { ...item, isGenerating: false, content: base64Image } : item,
           ),
         );
       } else {
@@ -153,12 +149,7 @@ export function handleDirectorToolCall(
 
     if (fc.name === "render_visual") {
       const { subject, visual_context } = args;
-      triggerStoryVisual(
-        subject || "Scene",
-        visual_context || "",
-        invocationId,
-        setStoryStream,
-      );
+      triggerStoryVisual(subject || "Scene", visual_context || "", invocationId, setStoryStream);
     } else if (fc.name === "ambient_audio") {
       const { preset, vibe_description } = args;
       setStoryStream((prev) => [

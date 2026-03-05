@@ -39,9 +39,8 @@ export function LandingHero() {
         transition={{ duration: 0.8, delay: 0.2 }}
         className="max-w-2xl text-lg md:text-xl text-muted-foreground mb-10"
       >
-        The Spatial Eye is a multimodal AI companion that sees what you see,
-        hears what you hear, and acts on your digital intent in real-time using
-        Gemini 2.5 Live.
+        The Spatial Eye is a multimodal AI companion that sees what you see, hears what you hear,
+        and acts on your digital intent in real-time using Gemini 2.5 Live.
       </motion.p>
 
       {/* Call to Action */}
@@ -59,10 +58,7 @@ export function LandingHero() {
             Enter the Studio
           </Button>
         </Link>
-        <Link
-          href="https://devpost.com/software/the-spatial-eye"
-          target="_blank"
-        >
+        <Link href="https://devpost.com/software/the-spatial-eye" target="_blank">
           <Button
             size="lg"
             variant="outline"

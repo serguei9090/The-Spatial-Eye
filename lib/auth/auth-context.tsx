@@ -7,14 +7,7 @@ import {
   signInWithPopup,
   signOut,
 } from "firebase/auth";
-import {
-  type ReactNode,
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { type ReactNode, createContext, useContext, useEffect, useMemo, useState } from "react";
 
 import { getFirebaseServices, hasFirebaseConfig } from "@/lib/firebase/config";
 

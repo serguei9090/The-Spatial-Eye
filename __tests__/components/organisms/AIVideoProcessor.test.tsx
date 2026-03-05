@@ -46,9 +46,7 @@ describe("AIVideoProcessor", () => {
       terminate: jest.fn(),
       onmessage: null,
     };
-    (globalThis as unknown as { Worker: unknown }).Worker = jest.fn(
-      () => mockWorker,
-    );
+    (globalThis as unknown as { Worker: unknown }).Worker = jest.fn(() => mockWorker);
 
     // Mock HTML Video and Canvas APIs
     mockVideo = {
@@ -68,9 +66,7 @@ describe("AIVideoProcessor", () => {
     const mockCanvas = {
       width: 1024,
       height: 576,
-      getContext: jest.fn(
-        () => mockCtx,
-      ) as unknown as () => CanvasRenderingContext2D,
+      getContext: jest.fn(() => mockCtx) as unknown as () => CanvasRenderingContext2D,
     };
 
     const originalCreateElement = document.createElement.bind(document);
@@ -115,9 +111,7 @@ describe("AIVideoProcessor", () => {
 
   it("initializes and terminates the Web Worker", () => {
     const { unmount } = render(<AIVideoProcessor />);
-    expect(globalThis.Worker).toHaveBeenCalledWith(
-      "/worklets/video-processor.worker.js",
-    );
+    expect(globalThis.Worker).toHaveBeenCalledWith("/worklets/video-processor.worker.js");
     unmount();
     expect(mockWorker.terminate).toHaveBeenCalled();
   });
@@ -146,12 +140,7 @@ describe("AIVideoProcessor", () => {
       }
     });
 
-    expect(mockContext.sendVideoFrame).toHaveBeenCalledWith(
-      "testBase64",
-      "image/jpeg",
-      1024,
-      576,
-    );
+    expect(mockContext.sendVideoFrame).toHaveBeenCalledWith("testBase64", "image/jpeg", 1024, 576);
   });
 
   it("does not start processing loop if not connected or listening", () => {

@@ -55,9 +55,7 @@ describe("ControlBar", () => {
   });
 
   it("shows live listening state", () => {
-    render(
-      <ControlBar {...defaultProps} isConnected={true} isListening={true} />,
-    );
+    render(<ControlBar {...defaultProps} isConnected={true} isListening={true} />);
 
     const stopElements = screen.getAllByText("Stop");
     expect(stopElements.length).toBeGreaterThan(0);

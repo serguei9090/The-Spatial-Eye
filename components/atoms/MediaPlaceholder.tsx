@@ -7,11 +7,7 @@ interface MediaPlaceholderProps {
   readonly className?: string;
 }
 
-export function MediaPlaceholder({
-  label,
-  isLoading,
-  className,
-}: MediaPlaceholderProps) {
+export function MediaPlaceholder({ label, isLoading, className }: MediaPlaceholderProps) {
   return (
     <div
       className={cn(

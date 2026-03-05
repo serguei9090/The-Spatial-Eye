@@ -5,14 +5,8 @@ import { ITArchitectureStudioWrapper as ITArchitectureStudio } from "@/component
 import { useStudioContext } from "@/lib/store/studio-context";
 
 export function ArchitectureView() {
-  const {
-    nodes,
-    edges,
-    onNodesChange,
-    onEdgesChange,
-    onConnect,
-    fitViewCounter,
-  } = useStudioContext();
+  const { nodes, edges, onNodesChange, onEdgesChange, onConnect, fitViewCounter } =
+    useStudioContext();
 
   return (
     <AIErrorBoundary key="it-architecture" label="IT Architecture Studio">

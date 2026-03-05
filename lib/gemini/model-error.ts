@@ -106,11 +106,7 @@ const KIND_DESCRIPTIONS: Record<ModelErrorKind, string> = {
  * }
  * ```
  */
-export function notifyModelError(
-  modelId: string,
-  error: unknown,
-  extra?: string,
-): void {
+export function notifyModelError(modelId: string, error: unknown, extra?: string): void {
   const { kind, raw } = classifyError(error);
   const displayName = resolveDisplayName(modelId);
   const description = extra ?? KIND_DESCRIPTIONS[kind];

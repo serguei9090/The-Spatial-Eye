@@ -15,11 +15,7 @@ import { useState } from "react";
 
 import { Button } from "@/components/atoms/Button";
 import { Label } from "@/components/atoms/Label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/atoms/Popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/atoms/Popover";
 import {
   Select,
   SelectContent,
@@ -41,11 +37,7 @@ interface SettingsMenuProps {
   readonly onUpload?: (file: File) => void;
 }
 
-export function SettingsMenu({
-  mode,
-  onDownload,
-  onUpload,
-}: SettingsMenuProps) {
+export function SettingsMenu({ mode, onDownload, onUpload }: SettingsMenuProps) {
   const {
     t,
     language,
@@ -91,11 +83,7 @@ export function SettingsMenu({
           <span className="sr-only">Open settings</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className="w-[380px] p-0 overflow-hidden"
-        align="end"
-        side="top"
-      >
+      <PopoverContent className="w-[380px] p-0 overflow-hidden" align="end" side="top">
         <div className="p-4 border-b bg-muted/20">
           <h4 className="font-semibold leading-none flex items-center gap-2 text-sm">
             <SettingsIcon className="h-4 w-4 text-primary" />
@@ -113,26 +101,15 @@ export function SettingsMenu({
                   <Camera className="h-3 w-3" />
                   {t.devices.camera}
                 </Label>
-                <Select
-                  value={selectedVideoId}
-                  onValueChange={setSelectedVideoId}
-                >
+                <Select value={selectedVideoId} onValueChange={setSelectedVideoId}>
                   <SelectTrigger className="h-9 text-xs bg-muted/30 border-muted/50 w-full overflow-hidden">
-                    <SelectValue
-                      placeholder="Select Camera"
-                      className="truncate"
-                    />
+                    <SelectValue placeholder="Select Camera" className="truncate" />
                   </SelectTrigger>
                   <SelectContent className="max-w-[350px]">
                     {videoDevices.map((device) => (
-                      <SelectItem
-                        key={device.deviceId}
-                        value={device.deviceId}
-                        className="text-xs"
-                      >
+                      <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs">
                         <span className="truncate">
-                          {device.label ||
-                            `Camera ${videoDevices.indexOf(device) + 1}`}
+                          {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
                         </span>
                       </SelectItem>
                     ))}
@@ -147,26 +124,15 @@ export function SettingsMenu({
                 <Mic className="h-3 w-3" />
                 {t.devices.microphone}
               </Label>
-              <Select
-                value={selectedInputId}
-                onValueChange={setSelectedInputId}
-              >
+              <Select value={selectedInputId} onValueChange={setSelectedInputId}>
                 <SelectTrigger className="h-9 text-xs bg-muted/30 border-muted/50 w-full overflow-hidden">
-                  <SelectValue
-                    placeholder="Select Microphone"
-                    className="truncate"
-                  />
+                  <SelectValue placeholder="Select Microphone" className="truncate" />
                 </SelectTrigger>
                 <SelectContent className="max-w-[350px]">
                   {inputDevices.map((device) => (
-                    <SelectItem
-                      key={device.deviceId}
-                      value={device.deviceId}
-                      className="text-xs"
-                    >
+                    <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs">
                       <span className="truncate">
-                        {device.label ||
-                          `Microphone ${inputDevices.indexOf(device) + 1}`}
+                        {device.label || `Microphone ${inputDevices.indexOf(device) + 1}`}
                       </span>
                     </SelectItem>
                   ))}
@@ -181,26 +147,15 @@ export function SettingsMenu({
                   <Speaker className="h-3 w-3" />
                   {t.devices.speaker}
                 </Label>
-                <Select
-                  value={selectedOutputId}
-                  onValueChange={setSelectedOutputId}
-                >
+                <Select value={selectedOutputId} onValueChange={setSelectedOutputId}>
                   <SelectTrigger className="h-9 text-xs bg-muted/30 border-muted/50 w-full overflow-hidden">
-                    <SelectValue
-                      placeholder="Select Speaker"
-                      className="truncate"
-                    />
+                    <SelectValue placeholder="Select Speaker" className="truncate" />
                   </SelectTrigger>
                   <SelectContent className="max-w-[350px]">
                     {outputDevices.map((device) => (
-                      <SelectItem
-                        key={device.deviceId}
-                        value={device.deviceId}
-                        className="text-xs"
-                      >
+                      <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs">
                         <span className="truncate">
-                          {device.label ||
-                            `Speaker ${outputDevices.indexOf(device) + 1}`}
+                          {device.label || `Speaker ${outputDevices.indexOf(device) + 1}`}
                         </span>
                       </SelectItem>
                     ))}
@@ -268,8 +223,7 @@ export function SettingsMenu({
                   onClick={() => setLanguage("en")}
                   className={cn(
                     "h-8 text-xs justify-start px-3",
-                    language === "en" &&
-                      "bg-primary/10 text-primary border-primary/20",
+                    language === "en" && "bg-primary/10 text-primary border-primary/20",
                   )}
                 >
                   <span className="flex-1 text-left">English</span>
@@ -281,8 +235,7 @@ export function SettingsMenu({
                   onClick={() => setLanguage("es")}
                   className={cn(
                     "h-8 text-xs justify-start px-3",
-                    language === "es" &&
-                      "bg-primary/10 text-primary border-primary/20",
+                    language === "es" && "bg-primary/10 text-primary border-primary/20",
                   )}
                 >
                   <span className="flex-1 text-left">Español</span>
@@ -304,14 +257,11 @@ export function SettingsMenu({
                   onClick={() => setShowTranscript(!showTranscript)}
                   className={cn(
                     "w-full h-8 text-xs justify-start px-3",
-                    showTranscript &&
-                      "bg-primary/10 text-primary border-primary/20",
+                    showTranscript && "bg-primary/10 text-primary border-primary/20",
                   )}
                 >
                   <span className="flex-1 text-left">
-                    {showTranscript
-                      ? "On: AI Transcript"
-                      : "Off: AI Transcript"}
+                    {showTranscript ? "On: AI Transcript" : "Off: AI Transcript"}
                   </span>
                   {showTranscript && <Check className="h-3 w-3 ml-2" />}
                 </Button>
@@ -343,13 +293,10 @@ export function SettingsMenu({
                           key={d}
                           variant={isActive ? "secondary" : "outline"}
                           size="sm"
-                          onClick={() =>
-                            setHighlightDuration(val as HighlightDuration)
-                          }
+                          onClick={() => setHighlightDuration(val as HighlightDuration)}
                           className={cn(
                             "h-7 text-xs p-0",
-                            isActive &&
-                              "bg-primary/10 text-primary border-primary/20",
+                            isActive && "bg-primary/10 text-primary border-primary/20",
                           )}
                         >
                           {label}
@@ -368,9 +315,7 @@ export function SettingsMenu({
                   </Label>
                   <Select
                     value={highlightType}
-                    onValueChange={(val) =>
-                      setHighlightType(val as HighlightType)
-                    }
+                    onValueChange={(val) => setHighlightType(val as HighlightType)}
                   >
                     <SelectTrigger className="h-9 text-xs bg-muted/30 border-muted/50 w-full overflow-hidden">
                       <SelectValue placeholder="Select Shape" />
@@ -405,14 +350,11 @@ export function SettingsMenu({
                       onClick={() => setShowDebugGrid(!showDebugGrid)}
                       className={cn(
                         "w-full h-8 text-xs justify-start px-3",
-                        showDebugGrid &&
-                          "bg-primary/10 text-primary border-primary/20",
+                        showDebugGrid && "bg-primary/10 text-primary border-primary/20",
                       )}
                     >
                       <span className="flex-1 text-left">
-                        {showDebugGrid
-                          ? "On: Spatial Grid"
-                          : "Off: Spatial Grid"}
+                        {showDebugGrid ? "On: Spatial Grid" : "Off: Spatial Grid"}
                       </span>
                       {showDebugGrid && <Check className="h-3 w-3 ml-2" />}
                     </Button>

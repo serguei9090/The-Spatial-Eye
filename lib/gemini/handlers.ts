@@ -61,12 +61,7 @@ export function handleSpatialToolCall(
       let rawObjects: unknown[] = [];
       if (Array.isArray(args.objects)) {
         rawObjects = args.objects;
-      } else if (
-        "center_x" in args ||
-        "center_y" in args ||
-        "box_2d" in args ||
-        "ymin" in args
-      ) {
+      } else if ("center_x" in args || "center_y" in args || "box_2d" in args || "ymin" in args) {
         // Direct tool call where args is the object itself
         rawObjects = [args];
       }

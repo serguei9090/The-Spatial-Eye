@@ -14,17 +14,9 @@ jest.mock("@/components/atoms/Popover", () => {
     Popover: ({ children }: { children: ReactNode }) =>
       React.createElement(React.Fragment, null, children),
     PopoverContent: ({ children }: { children: ReactNode }) =>
-      React.createElement(
-        "div",
-        { "data-testid": "popover-content" },
-        children,
-      ),
+      React.createElement("div", { "data-testid": "popover-content" }, children),
     PopoverTrigger: ({ children }: { children: ReactNode }) =>
-      React.createElement(
-        "div",
-        { "data-testid": "popover-trigger" },
-        children,
-      ),
+      React.createElement("div", { "data-testid": "popover-trigger" }, children),
   };
 });
 

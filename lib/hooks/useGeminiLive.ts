@@ -9,10 +9,7 @@ import {
 } from "@/lib/api/gemini_websocket";
 
 import { IT_ARCHITECTURE_SYSTEM_INSTRUCTION } from "@/lib/gemini/it-architecture-handlers";
-import {
-  handleDirectorToolCall,
-  triggerStoryVisual,
-} from "@/lib/gemini/storyteller-handlers";
+import { handleDirectorToolCall, triggerStoryVisual } from "@/lib/gemini/storyteller-handlers";
 import { useArchitectureMode } from "@/lib/hooks/useArchitectureMode";
 import { useGeminiCore } from "@/lib/hooks/useGeminiCore";
 import { useSpatialMode } from "@/lib/hooks/useSpatialMode";
@@ -33,11 +30,9 @@ export function useGeminiLive({
   onTurnComplete,
   getToken,
 }: UseGeminiLiveProps = {}) {
-  const { activeHighlights, setActiveHighlights, handleSpatialToolCall } =
-    useSpatialMode();
+  const { activeHighlights, setActiveHighlights, handleSpatialToolCall } = useSpatialMode();
 
-  const { nodes, edges, setNodes, setEdges, handleArchitectureToolCall } =
-    useArchitectureMode();
+  const { nodes, edges, setNodes, setEdges, handleArchitectureToolCall } = useArchitectureMode();
   const { t } = useSettings();
 
   const [storyStream, setStoryStream] = useState<StoryItem[]>([]);
@@ -47,10 +42,8 @@ export function useGeminiLive({
 
   // Determine configuration based on mode
   let systemInstruction = SPATIAL_SYSTEM_INSTRUCTION;
-  if (mode === "storyteller")
-    systemInstruction = STORYTELLER_SYSTEM_INSTRUCTION;
-  if (mode === "it-architecture")
-    systemInstruction = IT_ARCHITECTURE_SYSTEM_INSTRUCTION;
+  if (mode === "storyteller") systemInstruction = STORYTELLER_SYSTEM_INSTRUCTION;
+  if (mode === "it-architecture") systemInstruction = IT_ARCHITECTURE_SYSTEM_INSTRUCTION;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: Reset state when mode changes
   useEffect(() => {
@@ -89,9 +82,7 @@ export function useGeminiLive({
     // For IT Architecture mode, skip raw tool call strings from transcript
     const isToolCallText =
       mode === "it-architecture" &&
-      /call:\s*\w+|add_node|add_edge|clear_diagram|delete_node|remove_edge|update_node/.test(
-        text,
-      );
+      /call:\s*\w+|add_node|add_edge|clear_diagram|delete_node|remove_edge|update_node/.test(text);
     if (!isToolCallText) {
       // Strip out any partial tool call artifacts that may bleed through
       // and replace with localized descriptions from t.settings.tools
@@ -103,10 +94,7 @@ export function useGeminiLive({
         for (const [key, value] of Object.entries(t.settings.tools || {})) {
           if (cleanText.includes(key)) {
             const pattern = `call:\\s*${key}.*`;
-            cleanText = cleanText.replaceAll(
-              new RegExp(pattern, "g"),
-              `[${value}]`,
-            );
+            cleanText = cleanText.replaceAll(new RegExp(pattern, "g"), `[${value}]`);
           }
         }
       }
@@ -129,9 +117,7 @@ export function useGeminiLive({
     // We scan the cumulative full text. If we see a complete first sentence,
     // we extract it and backfill the placeholder segment immediately!
     // Added safety: The title can end with punctuation (.!?) OR a new line (\n)
-    const narrativeMatch = /\[NARRATIVE\]\s*([^\n.!?]+(?:[.!?]|\n))/i.exec(
-      fullText,
-    );
+    const narrativeMatch = /\[NARRATIVE\]\s*([^\n.!?]+(?:[.!?]|\n))/i.exec(fullText);
     if (narrativeMatch) {
       const extractedTitle = narrativeMatch[1]
         .replaceAll(/(?:^[*_]+|[*_]+$)/g, "") // strip markdown bold/italic
@@ -195,20 +181,14 @@ export function useGeminiLive({
       // the `[NARRATIVE]` text arrives. BUT due to async streaming, the text might arrive first.
       // We only inject a placeholder if we are starting narrative text AND we don't have a
       // fresh `story_segment` waiting for us.
-      const lastSegmentIdx = prev.findLastIndex(
-        (i) => i.type === "story_segment",
-      );
-      const lastNarrativeTextIdx = prev.findLastIndex(
-        (i) => i.type === "text" && i.isStory,
-      );
+      const lastSegmentIdx = prev.findLastIndex((i) => i.type === "story_segment");
+      const lastNarrativeTextIdx = prev.findLastIndex((i) => i.type === "text" && i.isStory);
       const hasNarrativeTag = text.includes("[NARRATIVE]");
 
       // A segment is "stale/used" if we've already written narrative text after it.
       // If we have no segment (-1) or the last one is stale, we need a new one.
-      const needsSegment =
-        lastSegmentIdx === -1 || lastNarrativeTextIdx > lastSegmentIdx;
-      const isNewStoryTransition =
-        hasNarrativeTag && !currentIsNarrative && needsSegment;
+      const needsSegment = lastSegmentIdx === -1 || lastNarrativeTextIdx > lastSegmentIdx;
+      const isNewStoryTransition = hasNarrativeTag && !currentIsNarrative && needsSegment;
 
       let workingStream = prev;
       let effectiveSegmentIdx = lastSegmentIdx;
@@ -263,9 +243,7 @@ export function useGeminiLive({
             .toLowerCase()
             .startsWith(target.content.toLowerCase().trim());
           const needsSpace =
-            !alreadyHasStart &&
-            target.content.length > 0 &&
-            !target.content.endsWith(" ");
+            !alreadyHasStart && target.content.length > 0 && !target.content.endsWith(" ");
           const updatedContent = alreadyHasStart
             ? cleanSegment
             : target.content + (needsSpace ? " " : "") + cleanSegment;
@@ -302,9 +280,7 @@ export function useGeminiLive({
       .map((n: Node) => n.data.label)
       .join(", ");
     const moreNodes =
-      nodes.length > MAX_RESUME_NODES
-        ? ` (and ${nodes.length - MAX_RESUME_NODES} more)`
-        : "";
+      nodes.length > MAX_RESUME_NODES ? ` (and ${nodes.length - MAX_RESUME_NODES} more)` : "";
     const edgeCount = edges.length;
     resumePrompt += ` ${t.system.resumeArchitecture.replace(". ", "")} (${nodes.length} nodes: ${nodeNames}${moreNodes}, ${edgeCount} connections).`;
   } else if (mode === "storyteller") {
@@ -329,9 +305,7 @@ export function useGeminiLive({
           (i) => i.type === "story_segment" && i.isPlaceholder,
         );
         if (placeholderIdx !== -1) {
-          const firstNarrative = updated.find(
-            (i) => i.type === "text" && i.isStory,
-          );
+          const firstNarrative = updated.find((i) => i.type === "text" && i.isStory);
           const isEn = t.modes.storyteller === "Storyteller";
           let fallbackTitle = isEn ? "A Story" : "Una Historia";
           if (firstNarrative) {
@@ -348,9 +322,7 @@ export function useGeminiLive({
 
         // 2. Inject a director_prompt only if THIS turn told a story
         //    Check for narrative text AFTER the last director_prompt (not from a previous story)
-        const lastPromptIdx = updated.findLastIndex(
-          (i) => i.type === "director_prompt",
-        );
+        const lastPromptIdx = updated.findLastIndex((i) => i.type === "director_prompt");
         const narrativeAfterLastPrompt = updated.some(
           (i, idx) => i.type === "text" && i.isStory && idx > lastPromptIdx,
         );

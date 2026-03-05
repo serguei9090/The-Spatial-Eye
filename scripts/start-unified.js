@@ -11,20 +11,24 @@ const PUBLIC_PORT = process.env.PORT || 3000;
 
 const proxy = httpProxy.createProxyServer({
   ws: true,
-  changeOrigin: true
+  changeOrigin: true,
 });
 
 // Error handling to prevent proxy crashes
-proxy.on('error', (err, req, res) => {
+proxy.on("error", (err, req, res) => {
   if (res && !res.headersSent) {
-    res.writeHead(502, { 'Content-Type': 'text/plain' });
+    res.writeHead(502, { "Content-Type": "text/plain" });
   }
   if (res) res.end(`Bad Gateway: ${err.message}`);
 });
 
 const server = http.createServer((req, res) => {
   // Route /api and /ws and /diagnostics to the Python backend
-  if (req.url.startsWith("/api") || req.url.startsWith("/ws") || req.url.startsWith("/diagnostics")) {
+  if (
+    req.url.startsWith("/api") ||
+    req.url.startsWith("/ws") ||
+    req.url.startsWith("/diagnostics")
+  ) {
     proxy.web(req, res, { target: `http://127.0.0.1:${BACKEND_PORT}` });
   } else {
     // Route everything else to the Next.js frontend
@@ -65,7 +69,7 @@ const startFrontend = () => {
   console.log(`⚛️ Starting Next.js Frontend on 127.0.0.1:${FRONTEND_PORT}...`);
   const next = spawn("node", ["server.js"], {
     stdio: "inherit",
-    env: { ...process.env, PORT: `${FRONTEND_PORT}`, HOSTNAME: '127.0.0.1' },
+    env: { ...process.env, PORT: `${FRONTEND_PORT}`, HOSTNAME: "127.0.0.1" },
   });
 
   next.on("error", (err) => console.error("❌ Failed to start Next.js frontend:", err));

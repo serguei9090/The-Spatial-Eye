@@ -18,12 +18,7 @@ import { useAudioDeviceContext } from "@/lib/store/audio-context";
 import { useStudioContext } from "@/lib/store/studio-context";
 
 export function StudioLayout() {
-  const {
-    user,
-    isLoading: authLoading,
-    signInWithGoogle,
-    signOutUser,
-  } = useAuth();
+  const { user, isLoading: authLoading, signInWithGoogle, signOutUser } = useAuth();
   const { selectedInputId } = useAudioDeviceContext();
   const {
     mode,
@@ -64,12 +59,8 @@ export function StudioLayout() {
             <div className="h-10 w-10 rounded-full bg-primary shadow-[0_0_20px_rgba(var(--primary),0.5)]" />
           </div>
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-bold tracking-tight text-white">
-              The Spatial Eye
-            </h1>
-            <p className="text-muted-foreground">
-              Sign in to access the studio.
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-white">The Spatial Eye</h1>
+            <p className="text-muted-foreground">Sign in to access the studio.</p>
           </div>
           <Button
             size="lg"
@@ -102,9 +93,7 @@ export function StudioLayout() {
                 <div className="h-5 w-5 rounded-full bg-red-500 animate-pulse" />
               </div>
               <div className="flex-1 overflow-hidden">
-                <p className="text-sm font-bold text-red-100">
-                  Critical Session Error
-                </p>
+                <p className="text-sm font-bold text-red-100">Critical Session Error</p>
                 <p className="truncate text-xs text-red-200/70 font-mono">
                   {errorCode}: {errorMessage || error}
                 </p>
@@ -128,9 +117,7 @@ export function StudioLayout() {
       </div>
 
       {/* Global AI Assistant Overlay - Hide in Storyteller mode which has its own stream */}
-      {mode !== "storyteller" && (
-        <AITranscriptOverlay transcript={latestTranscript} />
-      )}
+      {mode !== "storyteller" && <AITranscriptOverlay transcript={latestTranscript} />}
 
       <div className="hidden">
         <AudioCapture

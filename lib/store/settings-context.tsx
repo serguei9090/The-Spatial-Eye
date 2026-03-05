@@ -34,18 +34,13 @@ interface SettingsContextType {
   setByokKey: (key: string) => void;
 }
 
-const SettingsContext = createContext<SettingsContextType | undefined>(
-  undefined,
-);
+const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 const IS_DIAGNOSTICS = AI_VISION.SPATIAL_DIAGNOSTICS;
 
-export function SettingsProvider({
-  children,
-}: Readonly<{ children: React.ReactNode }>) {
+export function SettingsProvider({ children }: Readonly<{ children: React.ReactNode }>) {
   const [language, setLanguage] = useState<Language>("en");
-  const [highlightDuration, setHighlightDuration] =
-    useState<HighlightDuration>(5000);
+  const [highlightDuration, setHighlightDuration] = useState<HighlightDuration>(5000);
   // Production default: clean "circle". Debug default: "fitted-circle" (shows tight bbox).
   const [highlightType, setHighlightType] = useState<HighlightType>(
     IS_DIAGNOSTICS ? "fitted-circle" : "circle",
@@ -76,26 +71,14 @@ export function SettingsProvider({
       byokKey,
       setByokKey,
     }),
-    [
-      language,
-      highlightDuration,
-      highlightType,
-      showDebugGrid,
-      showTranscript,
-      byokKey,
-    ],
+    [language, highlightDuration, highlightType, showDebugGrid, showTranscript, byokKey],
   );
 
-  return (
-    <SettingsContext.Provider value={value}>
-      {children}
-    </SettingsContext.Provider>
-  );
+  return <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>;
 }
 
 export function useSettings() {
   const context = useContext(SettingsContext);
-  if (!context)
-    throw new Error("useSettings must be used within SettingsProvider");
+  if (!context) throw new Error("useSettings must be used within SettingsProvider");
   return context;
 }

@@ -65,10 +65,7 @@ export function PremiumParticlesBackground() {
   }
 
   return (
-    <div
-      aria-hidden
-      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
-    >
+    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
       <Particles className="h-full w-full" options={options} />
       <motion.div
         className="absolute -left-24 top-[-7rem] h-[28rem] w-[28rem] rounded-full bg-cyan-300/24 blur-3xl"
@@ -136,8 +133,7 @@ export function PremiumParticlesBackground() {
           backgroundImage:
             "linear-gradient(rgba(148,163,184,0.11) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.11) 1px, transparent 1px)",
           backgroundSize: "56px 56px",
-          maskImage:
-            "radial-gradient(circle at center, black 42%, transparent 88%)",
+          maskImage: "radial-gradient(circle at center, black 42%, transparent 88%)",
         }}
       />
 

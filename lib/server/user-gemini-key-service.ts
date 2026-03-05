@@ -25,10 +25,7 @@ function assertGeminiApiKeyShape(apiKey: string) {
   }
 }
 
-export async function saveUserGeminiApiKey(
-  userId: string,
-  apiKey: string,
-): Promise<void> {
+export async function saveUserGeminiApiKey(userId: string, apiKey: string): Promise<void> {
   assertGeminiApiKeyShape(apiKey);
   const { db } = getFirebaseAdminServices();
 
@@ -46,14 +43,9 @@ export async function clearUserGeminiApiKey(userId: string): Promise<void> {
   await db.collection(USER_GEMINI_KEYS_COLLECTION).doc(userId).delete();
 }
 
-export async function getUserGeminiApiKey(
-  userId: string,
-): Promise<string | null> {
+export async function getUserGeminiApiKey(userId: string): Promise<string | null> {
   const { db } = getFirebaseAdminServices();
-  const doc = await db
-    .collection(USER_GEMINI_KEYS_COLLECTION)
-    .doc(userId)
-    .get();
+  const doc = await db.collection(USER_GEMINI_KEYS_COLLECTION).doc(userId).get();
 
   if (doc.exists) {
     const data = doc.data();

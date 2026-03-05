@@ -4,13 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth/auth-context";
 import { listSessions } from "@/lib/firestore/sessionService";
@@ -57,9 +51,7 @@ export default function SessionsPage() {
       } catch (err) {
         if (active) {
           const message =
-            err instanceof Error
-              ? err.message
-              : "Failed to load sessions from Firestore.";
+            err instanceof Error ? err.message : "Failed to load sessions from Firestore.";
           setError(message);
         }
       } finally {
@@ -82,14 +74,10 @@ export default function SessionsPage() {
         <Card>
           <CardHeader>
             <CardTitle>Session History</CardTitle>
-            <CardDescription>
-              Sign in to load your personal session history.
-            </CardDescription>
+            <CardDescription>Sign in to load your personal session history.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={() => void signInWithGoogle()}>
-              Continue with Google
-            </Button>
+            <Button onClick={() => void signInWithGoogle()}>Continue with Google</Button>
           </CardContent>
         </Card>
       </main>
@@ -101,9 +89,7 @@ export default function SessionsPage() {
       <Card>
         <CardHeader>
           <CardTitle>Session History</CardTitle>
-          <CardDescription>
-            Review and replay recent detection sessions.
-          </CardDescription>
+          <CardDescription>Review and replay recent detection sessions.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {loading ? (
@@ -121,9 +107,7 @@ export default function SessionsPage() {
           ) : null}
 
           {!loading && !error && sessions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No sessions found for this user yet.
-            </p>
+            <p className="text-sm text-muted-foreground">No sessions found for this user yet.</p>
           ) : null}
 
           {!loading && !error
@@ -141,12 +125,8 @@ export default function SessionsPage() {
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline">
-                      {session.objectsDetected} detections
-                    </Badge>
-                    <Badge
-                      variant={session.isRecording ? "secondary" : "outline"}
-                    >
+                    <Badge variant="outline">{session.objectsDetected} detections</Badge>
+                    <Badge variant={session.isRecording ? "secondary" : "outline"}>
                       {session.isRecording ? "Recording" : "Complete"}
                     </Badge>
                   </div>

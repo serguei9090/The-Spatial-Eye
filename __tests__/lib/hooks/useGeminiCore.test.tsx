@@ -73,16 +73,13 @@ class MockWebSocket {
   send = jest.fn();
   close = jest.fn(() => {
     this.readyState = WebSocket.CLOSED;
-    if (this.onclose)
-      this.onclose({ code: 1000, wasClean: true, reason: "" } as CloseEvent);
+    if (this.onclose) this.onclose({ code: 1000, wasClean: true, reason: "" } as CloseEvent);
   });
 
   constructor(url: string) {
     this.url = url;
     // Auto-store instance for test triggers
-    (MockWebSocket as unknown as { instances: MockWebSocket[] }).instances.push(
-      this,
-    );
+    (MockWebSocket as unknown as { instances: MockWebSocket[] }).instances.push(this);
   }
 }
 (MockWebSocket as unknown as { instances: MockWebSocket[] }).instances = [];
@@ -126,9 +123,7 @@ describe("useGeminiCore", () => {
   });
 
   it("connects and sets up WebSocket correctly", async () => {
-    const { result } = renderHook(() =>
-      useGeminiCore({ systemInstruction: "test" }),
-    );
+    const { result } = renderHook(() => useGeminiCore({ systemInstruction: "test" }));
 
     let connectPromise: Promise<boolean> = Promise.resolve(false);
     act(() => {
@@ -136,9 +131,7 @@ describe("useGeminiCore", () => {
     });
 
     // Simulate WebSocket open
-    const wsInstance = (
-      MockWebSocket as unknown as { instances: MockWebSocket[] }
-    ).instances[0];
+    const wsInstance = (MockWebSocket as unknown as { instances: MockWebSocket[] }).instances[0];
     act(() => {
       wsInstance.readyState = WebSocket.OPEN;
       if (wsInstance.onopen) wsInstance.onopen();
@@ -150,16 +143,12 @@ describe("useGeminiCore", () => {
   });
 
   it("handles incoming audio chunks and plays them", async () => {
-    const { result } = renderHook(() =>
-      useGeminiCore({ systemInstruction: "test" }),
-    );
+    const { result } = renderHook(() => useGeminiCore({ systemInstruction: "test" }));
 
     act(() => {
       result.current.connect();
     });
-    const wsInstance = (
-      MockWebSocket as unknown as { instances: MockWebSocket[] }
-    ).instances[0];
+    const wsInstance = (MockWebSocket as unknown as { instances: MockWebSocket[] }).instances[0];
     act(() => {
       if (wsInstance.onopen) wsInstance.onopen();
     });
@@ -193,9 +182,7 @@ describe("useGeminiCore", () => {
   });
 
   it("handles disconnection gracefully", async () => {
-    const { result } = renderHook(() =>
-      useGeminiCore({ systemInstruction: "test" }),
-    );
+    const { result } = renderHook(() => useGeminiCore({ systemInstruction: "test" }));
 
     act(() => {
       result.current.connect();
