@@ -1,7 +1,8 @@
+require("dotenv").config();
 const { GoogleGenAI } = require("@google/genai");
 
 async function testImageGen() {
-  const apiKey = "REMOVED_SECRET";
+  const apiKey = process.env.GOOGLE_API_KEY;
   const genAI = new GoogleGenAI({ apiKey });
   const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-image" });
 
