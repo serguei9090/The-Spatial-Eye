@@ -10,6 +10,16 @@ const customJestConfig = {
     "^@/(.*)$": "<rootDir>/$1",
   },
   testEnvironment: "jsdom",
+  collectCoverageFrom: [
+    "app/**/*.{ts,tsx}",
+    "components/**/*.{ts,tsx}",
+    "lib/**/*.{ts,tsx}",
+    "!**/*.d.ts",
+    "!**/node_modules/**"
+  ],
+  transformIgnorePatterns: [
+    "/node_modules/(?!@google/genai)/"
+  ],
 };
 
 export default createJestConfig(customJestConfig);
