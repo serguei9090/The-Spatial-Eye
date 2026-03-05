@@ -14,3 +14,9 @@ variable "service_name" {
   type        = string
   default     = "spatial-eye"
 }
+
+variable "gha_deployer_email" {
+  description = "The email of the GitHub Actions deployer service account"
+  type        = string
+  default     = "github-actions-deployer@gemini-live-agent-487720.iam.gserviceaccount.com"
+}
