@@ -1,14 +1,37 @@
 # lefthook.yml
-
 pre-commit:
   parallel: true
   commands:
-    # 1. Biome: Format and Lint staged files
+    # 1. WEB: Biome (JS/TS/JSON) - Instant formatting and linting
     biome:
       glob: "*.{js,ts,jsx,tsx,json}"
-      run: npx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files} && git update-index --again
+      run: npx biome check --write --no-errors-on-unmatched {staged_files} && git add {staged_files}
 
-    # 2. TypeScript: Type check the entire project (tsc does not support staged only)
+    # 2. WEB: Type Check - Catch logic errors Biome misses
     type-check:
       glob: "*.{ts,tsx}"
       run: npx tsc --noEmit
+
+    # 3. PYTHON: Ruff - The fastest Python linter/formatter
+    ruff:
+      glob: "*.py"
+      run: npx ruff check --fix {staged_files} && npx ruff format {staged_files} && git add {staged_files}
+
+    # 4. INFRASTRUCTURE: Terraform - Auto-format and basic lint
+    terraform:
+      glob: "*.tf"
+      run: terraform fmt {staged_files} && tflint {staged_files} && git add {staged_files}
+
+    # 5. SECURITY: Trivy - Replaces Trunk for Docker & Terraform security
+    trivy:
+      glob: (*.tf|Dockerfile*)
+      run: trivy config --severity HIGH,CRITICAL --exit-code 1 {staged_files}
+
+    # 6. QUALITY: Prettier - Handles YAML (Workflows) and Markdown
+    quality-gate:
+      glob: "*.{yml,yaml,md}"
+      run: npx prettier --write {staged_files} && git add {staged_files}
+
+    # 7. SECRETS: ggshield - Prevent GCP API key leaks
+    secrets:
+      run: gitleaks protect --staged --verbose

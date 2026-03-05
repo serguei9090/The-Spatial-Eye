@@ -37,9 +37,9 @@ lint:
     - yamllint@1.38.0
 actions:
   disabled:
+    - trunk-check-pre-commit
+    - trunk-fmt-pre-commit
     - trunk-check-pre-push
   enabled:
-    - trunk-check-pre-commit
     - trunk-announce
-    - trunk-fmt-pre-commit
     - trunk-upgrade-available
