@@ -6,19 +6,20 @@ on:
       - main
     paths-ignore:
       - "**.md"
-      - docs/**
-      - __tests__/**
+      - "docs/**"
+      - "__tests__/**"
       - "**/*.test.ts"
       - "**/*.test.tsx"
-      - jest.config.mjs
-      - jest.setup.ts
-      - .github/workflows/tests.yml
-      - .github/workflows/accessibility.yml
-      - .agent/**
-      - IaC/**
-      - lefthook.yml
-      - biome.json
-      - .vscode/**
+      - "jest.config.mjs"
+      - "jest.setup.ts"
+      - ".github/workflows/tests.yml"
+      - ".github/workflows/accessibility.yml"
+      - ".agent/**"
+      - "IaC/**"
+      - "lefthook.yml"
+      - "biome.json"
+      - ".vscode/**"
+  workflow_dispatch: {}
 
 env:
   PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
