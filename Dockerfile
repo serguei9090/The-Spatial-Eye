@@ -28,7 +28,7 @@ RUN bun run build
 FROM python:3.13-slim AS backend-builder
 WORKDIR /app
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
-RUN pip install uv
+RUN pip install --no-cache-dir uv==0.10.8
 COPY backend/pyproject.toml backend/uv.lock ./
 RUN uv sync --frozen --no-dev
 
@@ -37,8 +37,8 @@ FROM node:20-slim AS runner
 WORKDIR /app
 
 # Install Python and uv in the final image
-RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip && \
-    pip3 install uv --break-system-packages && \
+RUN apt-get update && apt-get install -y --no-install-recommends python3=3.11.2-1+b1 python3-pip=23.0.1+dfsg-1 && \
+    pip3 install --no-cache-dir uv==0.10.8 --break-system-packages && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
@@ -66,4 +66,7 @@ USER nextjs
 ENV UV_CACHE_DIR=/home/nextjs/.cache/uv
 
 EXPOSE 3000
+# Health check to ensure the unified service is responding
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3000', (res) => res.statusCode === 200 ? process.exit(0) : process.exit(1)).on('error', () => process.exit(1))"
 CMD ["node", "start-unified.js"]

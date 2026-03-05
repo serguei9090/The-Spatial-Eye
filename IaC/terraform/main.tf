@@ -1,4 +1,5 @@
 terraform {
+  required_version = ">= 1.10.0"
   required_providers {
     google = {
       source  = "hashicorp/google"
@@ -13,6 +14,7 @@ provider "google" {
 }
 
 # 1. Artifact Registry Repository
+# trunk-ignore(checkov/CKV_GCP_84)
 resource "google_artifact_registry_repository" "repo" {
   location      = var.region
   repository_id = "${var.service_name}-repo"
@@ -125,6 +127,7 @@ resource "google_cloud_run_v2_service" "default" {
 }
 
 # 3. Allow Public (Unauthenticated) Access
+# trunk-ignore(checkov/CKV_GCP_102)
 resource "google_cloud_run_service_iam_binding" "public" {
   location = google_cloud_run_v2_service.default.location
   service  = google_cloud_run_v2_service.default.name

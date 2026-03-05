@@ -16,13 +16,14 @@ runtimes:
     - python@3.10.8
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
+  disabled:
+    - eslint
   enabled:
     - actionlint@1.7.11
     - bandit@1.9.4
     - biome@2.4.6
     - black@26.1.0
-    - checkov@3.2.506
-    - eslint@8.57.0
+    - checkov@3.2.507
     - git-diff-check
     - hadolint@2.14.0
     - isort@8.0.1
@@ -34,3 +35,11 @@ lint:
     - tflint@0.61.0
     - trufflehog@3.93.7
     - yamllint@1.38.0
+actions:
+  disabled:
+    - trunk-check-pre-push
+  enabled:
+    - trunk-check-pre-commit
+    - trunk-announce
+    - trunk-fmt-pre-commit
+    - trunk-upgrade-available

@@ -7,7 +7,7 @@ schemaVersion: v1
 buildSettings:
   # The directory containing the Next.js application (root in this case)
   # appRoot: .
-  
+
   # Specify the Node.js version to use
   nodeVersion: 20
 
