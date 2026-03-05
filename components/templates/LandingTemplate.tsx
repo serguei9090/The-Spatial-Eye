@@ -181,6 +181,7 @@ export function LandingTemplate() {
               target="_blank"
               className="p-2 rounded-full hover:bg-white/5 transition-colors"
               rel="noreferrer"
+              aria-label="View Project on GitHub"
             >
               <Github className="h-5 w-5" />
             </a>
@@ -288,16 +289,22 @@ export function LandingTemplate() {
             <Link
               href="https://devpost.com"
               className="hover:text-primary transition-colors italic"
+              aria-label="Visit Devpost"
             >
               Devpost
             </Link>
             <Link
               href="https://cloud.google.com"
               className="hover:text-primary transition-colors italic"
+              aria-label="Visit Google Cloud Platform"
             >
               GCP
             </Link>
-            <Link href="https://ai.google" className="hover:text-primary transition-colors italic">
+            <Link
+              href="https://ai.google"
+              className="hover:text-primary transition-colors italic"
+              aria-label="Visit Google AI"
+            >
               Google AI
             </Link>
             <Link

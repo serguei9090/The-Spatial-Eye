@@ -1,4 +1,4 @@
-name: Accessibility Check
+name: Unit Tests & Quality
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main, master ]
 
 jobs:
-  a11y:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,5 +20,8 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Run Accessibility Tests
-        run: bun run test:a11y
+      - name: Run Linting
+        run: bun run lint
+
+      - name: Run Unit Tests
+        run: bun run test:ci
