@@ -5,7 +5,13 @@ import { useGeminiLive } from "@/lib/hooks/useGeminiLive";
 import { useSettings } from "@/lib/store/settings-context";
 import type { Highlight, StoryItem } from "@/lib/types";
 import { downloadDiagram, uploadDiagram } from "@/lib/utils/diagram-export";
-import type { Connection, Edge, Node, OnEdgesChange, OnNodesChange } from "@xyflow/react";
+import type {
+  Connection,
+  Edge,
+  Node,
+  OnEdgesChange,
+  OnNodesChange,
+} from "@xyflow/react";
 import { addEdge, applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
 import { useSearchParams } from "next/navigation";
 import {
@@ -54,7 +60,12 @@ interface StudioContextType {
   connect: () => Promise<boolean>;
   disconnect: () => void;
   onToggleListening: () => void;
-  sendVideoFrame: (base64: string, mimeType: string, width?: number, height?: number) => void;
+  sendVideoFrame: (
+    base64: string,
+    mimeType: string,
+    width?: number,
+    height?: number,
+  ) => void;
   sendAudioChunk: (data: Blob | Int16Array) => void;
   setIsUserTalking: (isTalking: boolean) => void;
 
@@ -71,7 +82,9 @@ interface StudioContextType {
 
 const StudioContext = createContext<StudioContextType | undefined>(undefined);
 
-export function StudioProvider({ children }: Readonly<{ children: ReactNode }>) {
+export function StudioProvider({
+  children,
+}: Readonly<{ children: ReactNode }>) {
   const searchParams = useSearchParams();
   const initialMode = searchParams.get("mode") as AppMode;
 
@@ -157,7 +170,14 @@ export function StudioProvider({ children }: Readonly<{ children: ReactNode }>) 
         setIsListening(false);
       }
     }
-  }, [coreConnect, coreDisconnect, isListening, getIdToken, t, checkModelAvailability]);
+  }, [
+    coreConnect,
+    coreDisconnect,
+    isListening,
+    getIdToken,
+    t,
+    checkModelAvailability,
+  ]);
 
   // Sync: if the underlying WS drops (error, missing key, etc.), reset isListening.
   useEffect(() => {
@@ -204,7 +224,8 @@ export function StudioProvider({ children }: Readonly<{ children: ReactNode }>) 
   const handleUpload = useCallback(
     async (file: File) => {
       try {
-        const { nodes: uploadedNodes, edges: uploadedEdges } = await uploadDiagram(file);
+        const { nodes: uploadedNodes, edges: uploadedEdges } =
+          await uploadDiagram(file);
         setNodes(uploadedNodes);
         setEdges(uploadedEdges);
       } catch (err) {
@@ -251,7 +272,9 @@ export function StudioProvider({ children }: Readonly<{ children: ReactNode }>) 
     fitViewCounter,
   };
 
-  return <StudioContext.Provider value={value}>{children}</StudioContext.Provider>;
+  return (
+    <StudioContext.Provider value={value}>{children}</StudioContext.Provider>
+  );
 }
 
 export function useStudioContext() {

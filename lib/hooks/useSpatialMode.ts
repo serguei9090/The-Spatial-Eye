@@ -20,7 +20,9 @@ export function useSpatialMode() {
         const now = Date.now();
         // Use a small buffer (100ms) to ensure we don't prune highlights
         // that were just created in the same tick.
-        const filtered = prev.filter((h) => now - h.timestamp < durationCount + 100);
+        const filtered = prev.filter(
+          (h) => now - h.timestamp < durationCount + 100,
+        );
         return filtered;
       });
     }, 100);
@@ -28,7 +30,10 @@ export function useSpatialMode() {
     return () => clearInterval(interval);
   }, [highlightDuration]);
 
-  const handleToolCall = (toolCall: LiveServerMessage["toolCall"], turnId?: string) => {
+  const handleToolCall = (
+    toolCall: LiveServerMessage["toolCall"],
+    turnId?: string,
+  ) => {
     handleSpatialToolCall(toolCall, setActiveHighlights, turnId);
   };
 

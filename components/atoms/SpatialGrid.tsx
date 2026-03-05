@@ -57,18 +57,20 @@ export function SpatialGrid({
             stroke="#15ff81"
             strokeWidth="1.5"
           />
-          {line.coord % 100 === 0 && line.yScreen > 0 && line.yScreen < containerHeight && (
-            <text
-              x={10}
-              y={line.yScreen - 5}
-              fill="#15ff81"
-              fontSize="12"
-              className="font-mono font-bold"
-              style={{ textShadow: "0 1px 3px black" }}
-            >
-              Y: {line.coord}
-            </text>
-          )}
+          {line.coord % 100 === 0 &&
+            line.yScreen > 0 &&
+            line.yScreen < containerHeight && (
+              <text
+                x={10}
+                y={line.yScreen - 5}
+                fill="#15ff81"
+                fontSize="12"
+                className="font-mono font-bold"
+                style={{ textShadow: "0 1px 3px black" }}
+              >
+                Y: {line.coord}
+              </text>
+            )}
         </g>
       ))}
 
@@ -83,23 +85,31 @@ export function SpatialGrid({
             stroke="#15ff81"
             strokeWidth="1.5"
           />
-          {line.coord % 100 === 0 && line.xScreen > 0 && line.xScreen < containerWidth && (
-            <text
-              x={line.xScreen + 5}
-              y={20}
-              fill="#15ff81"
-              fontSize="12"
-              className="font-mono font-bold"
-              style={{ textShadow: "0 1px 3px black" }}
-            >
-              X: {line.coord}
-            </text>
-          )}
+          {line.coord % 100 === 0 &&
+            line.xScreen > 0 &&
+            line.xScreen < containerWidth && (
+              <text
+                x={line.xScreen + 5}
+                y={20}
+                fill="#15ff81"
+                fontSize="12"
+                className="font-mono font-bold"
+                style={{ textShadow: "0 1px 3px black" }}
+              >
+                X: {line.coord}
+              </text>
+            )}
         </g>
       ))}
 
       {/* Center crosshair */}
-      <circle cx={containerWidth / 2} cy={containerHeight / 2} r="6" fill="red" opacity="1" />
+      <circle
+        cx={containerWidth / 2}
+        cy={containerHeight / 2}
+        r="6"
+        fill="red"
+        opacity="1"
+      />
     </g>
   );
 }

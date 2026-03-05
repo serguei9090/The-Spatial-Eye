@@ -18,18 +18,21 @@ After consulting the **official Google Gemini Live API documentation** ([ai.goog
 ## Three Bugs Fixed
 
 ### Bug 1: Wrong Audio Input Sample Rate (CRITICAL)
+
 - **File**: `components/molecules/AudioCapture.tsx`
 - **Before**: `new AudioContext({ sampleRate: 24000 })`
 - **After**: `new AudioContext({ sampleRate: 16000 })`
 - **Reason**: The Gemini Live API strictly requires 16kHz PCM input. 24kHz would be rejected immediately after setup complete.
 
 ### Bug 2: Wrong Audio MIME Type Rate
+
 - **File**: `lib/hooks/useGeminiLive.ts` → `sendAudioChunk`
 - **Before**: `mime_type: "audio/pcm;rate=24000"`
 - **After**: `mime_type: "audio/pcm;rate=16000"`
 - **Reason**: Must match the AudioContext sample rate exactly.
 
 ### Bug 3: Setup Payload Field Casing (snake_case vs camelCase)
+
 - **File**: `lib/api/gemini_websocket.ts` → `sendSetupMessage`
 - **Before**: `generation_config`, `response_modalities`, `speech_config` (snake_case)
 - **After**: `generationConfig`, `responseModalities`, `speechConfig` (camelCase)
@@ -53,10 +56,10 @@ Gemini Response → [Base64 decode] → [Int16 PCM at 24kHz]
 
 ## Important: Input vs Output Sample Rates
 
-| Direction | Sample Rate | Format |
-|---|---|---|
-| **Input** (mic → API) | **16kHz** | 16-bit PCM, mono |
-| **Output** (API → speakers) | **24kHz** | 16-bit PCM, mono |
+| Direction                   | Sample Rate | Format           |
+| --------------------------- | ----------- | ---------------- |
+| **Input** (mic → API)       | **16kHz**   | 16-bit PCM, mono |
+| **Output** (API → speakers) | **24kHz**   | 16-bit PCM, mono |
 
 This asymmetry is intentional and documented. The output AudioContext (for playback) must remain at 24kHz.
 

@@ -7,7 +7,9 @@ jest.mock("@/components/backgrounds/ParticleBackground", () => ({
   ParticleBackground: () => <div data-testid="mock-particle-background" />,
 }));
 jest.mock("@/components/organisms/TechArchitectureVisual", () => ({
-  TechArchitectureVisual: () => <div data-testid="mock-tech-architecture-visual" />,
+  TechArchitectureVisual: () => (
+    <div data-testid="mock-tech-architecture-visual" />
+  ),
 }));
 
 describe("LandingTemplate", () => {
@@ -22,7 +24,9 @@ describe("LandingTemplate", () => {
 
     // Check Sections
     expect(screen.getByText("Unified Intelligence")).toBeInTheDocument();
-    expect(screen.getByText("Challenges & Architecture Decisions")).toBeInTheDocument();
+    expect(
+      screen.getByText("Challenges & Architecture Decisions"),
+    ).toBeInTheDocument();
 
     // Check Footer
     expect(screen.getByText(/The Spatial Eye Team/i)).toBeInTheDocument();

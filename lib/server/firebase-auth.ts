@@ -1,6 +1,8 @@
 import { getFirebaseAdminServices } from "@/lib/firebase/admin";
 
-export async function requireFirebaseUserId(authorizationHeader: string | null): Promise<string> {
+export async function requireFirebaseUserId(
+  authorizationHeader: string | null,
+): Promise<string> {
   if (!authorizationHeader?.startsWith("Bearer ")) {
     throw new Error("Missing Bearer token.");
   }

@@ -38,10 +38,22 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
       >
         <AlertTriangle style={{ width: 48, height: 48, color: "#f87171" }} />
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, margin: "0 0 0.5rem" }}>
+          <h1
+            style={{
+              fontSize: "1.5rem",
+              fontWeight: 700,
+              margin: "0 0 0.5rem",
+            }}
+          >
             Critical Error
           </h1>
-          <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.5)", margin: 0 }}>
+          <p
+            style={{
+              fontSize: "0.875rem",
+              color: "rgba(255,255,255,0.5)",
+              margin: 0,
+            }}
+          >
             The application encountered a fatal error and could not recover.
           </p>
           {error.digest && (

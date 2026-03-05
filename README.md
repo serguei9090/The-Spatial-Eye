@@ -4,13 +4,15 @@
 > A real-time multimodal AI assistant that sees, listens, and acts — built entirely with the **Gemini 2.5 Live API**.
 
 ### ⚠️ Legal & Educational Disclaimer
-* **Purpose:** This repository is an academic and competitive submission for the **Gemini Live Agent Challenge (Hakentoch)**. It is intended to showcase architectural patterns using the Gemini Live API.
-* **Non-Commercial:** This is a non-commercial prototype. No services are being sold, and no unauthorized employment is being conducted through this project.
-* **License:** Open-sourced under the **MIT License** for community educational purposes.
+
+- **Purpose:** This repository is an academic and competitive submission for the **Gemini Live Agent Challenge (Hakentoch)**. It is intended to showcase architectural patterns using the Gemini Live API.
+- **Non-Commercial:** This is a non-commercial prototype. No services are being sold, and no unauthorized employment is being conducted through this project.
+- **License:** Open-sourced under the **MIT License** for community educational purposes.
 
 ## 👥 The Team
-- **[Cinthya Rodriguez](https://github.com/crhdez)** — *Team Leader & Representative* (Primary hackathon competitor and sole prize-eligible applicant). [GDG Profile](https://developers.google.com/profile/u/crhdez)
-- **[Serguei Castillo](https://github.com/serguei9090)** — *Developer Collaborator* (Participating strictly for educational/learning purposes. Explicitly listed as ineligible to receive any cash prizes or hackathon compensation). [GDG Profile](https://developers.google.com/profile/u/serguei9090)
+
+- **[Cinthya Rodriguez](https://github.com/crhdez)** — _Team Leader & Representative_ (Primary hackathon competitor and sole prize-eligible applicant). [GDG Profile](https://developers.google.com/profile/u/crhdez)
+- **[Serguei Castillo](https://github.com/serguei9090)** — _Developer Collaborator_ (Participating strictly for educational/learning purposes. Explicitly listed as ineligible to receive any cash prizes or hackathon compensation). [GDG Profile](https://developers.google.com/profile/u/serguei9090)
 
 [![Built with Antigravity](https://img.shields.io/badge/Built%20with-Antigravity%20IDE-6366f1?style=flat-square&logo=googlegemini&logoColor=white)](https://antigravity.dev)
 [![Powered by Gemini](https://img.shields.io/badge/Powered%20by-Gemini%202.5%20Live-4285F4?style=flat-square&logo=googlegemini&logoColor=white)](https://ai.google.dev)
@@ -31,8 +33,8 @@ Users face significant barriers when interacting with complex physical environme
 
 **The Spatial Eye** creates a high-fidelity cognitive link between the user's physical reality and AI intelligence. Using the **Gemini 2.5 Live API**, it provides **Spatial Live** assistance:
 
-| Feature | Description |
-|---------|-------------|
+| Feature             | Description                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------- |
 | 🔵 **Spatial Live** | AI circles and highlights real objects directly on the live camera feed with surgical precision in real-time. |
 
 ---
@@ -58,10 +60,10 @@ Google Cloud Platform
 
 ## 🤖 AI Models Used
 
-| Role | Model | Display Name |
-|------|-------|-------------|
-| Live audio + video session | `gemini-2.5-flash-native-audio-preview-12-2025` | Gemini 2.5 Flash Native Audio |
-| *Out of Scope / Disabled* | `gemini-2.5-flash-image`, `veo-3.1...` | *(Image and Video models are disabled for this presentation)* |
+| Role                       | Model                                           | Display Name                                                  |
+| -------------------------- | ----------------------------------------------- | ------------------------------------------------------------- |
+| Live audio + video session | `gemini-2.5-flash-native-audio-preview-12-2025` | Gemini 2.5 Flash Native Audio                                 |
+| _Out of Scope / Disabled_  | `gemini-2.5-flash-image`, `veo-3.1...`          | _(Image and Video models are disabled for this presentation)_ |
 
 > Model registry with rate limits: [`lib/gemini/registry.ts`](./lib/gemini/registry.ts)
 
@@ -70,6 +72,7 @@ Google Cloud Platform
 ## ⚡ Quick Start
 
 ### Prerequisites
+
 - **Bun** (package manager) — `npm install -g bun`
 - A **Google Gemini API Key** — [Get one here](https://aistudio.google.com/apikey)
 - A **Firebase Project** — [Create one here](https://console.firebase.google.com/)
@@ -164,11 +167,11 @@ __tests__/              Jest + React Testing Library
 
 While the core presentation focus is **Spatial Live**, the platform is architected for a broader vision:
 
-| Module | Status | Description |
-|--------|--------|-------------|
+| Module                      | Status       | Description                                                                                  |
+| --------------------------- | ------------ | -------------------------------------------------------------------------------------------- |
 | 📖 **Creative Storyteller** | Research Lab | Transforms physical objects into vivid interleaved narratives with AI-generated storyboards. |
-| 🖧 **IT Architecture** | Beta | Generates real-time, interactive IT architecture diagrams from verbal project brainstorming. |
-| ⚡ **Action Execution** | Concept | Connecting spatial detection to home automation and industrial control loops. |
+| 🖧 **IT Architecture**       | Beta         | Generates real-time, interactive IT architecture diagrams from verbal project brainstorming. |
+| ⚡ **Action Execution**     | Concept      | Connecting spatial detection to home automation and industrial control loops.                |
 
 ---
 
@@ -176,7 +179,7 @@ While the core presentation focus is **Spatial Live**, the platform is architect
 
 The app stays functional even when models are unavailable (billing, quota limits):
 
-- **Named model toasts** — when any Gemini model fails, a floating notification names the specific model (e.g. *"Nano Banana is not available — Billing issue or quota exceeded"*) rather than a generic error.
+- **Named model toasts** — when any Gemini model fails, a floating notification names the specific model (e.g. _"Nano Banana is not available — Billing issue or quota exceeded"_) rather than a generic error.
 - **Image placeholders** — if Nano Banana can't generate a storyboard image, a clean inline SVG placeholder replaces it so the story card layout stays intact.
 - **Global error coverage** — the `useGlobalErrorHandler` intercepts any unhandled promise rejection in the app, classifies it, and routes model errors through the same named-toast system.
 
@@ -198,16 +201,16 @@ CI/CD via GitHub Actions (`.github/workflows/deploy.yml`) — pushes to `main` a
 
 ## 🏆 Hackathon Challenge Compliance
 
-| Requirement | Status |
-|-------------|--------|
-| Uses Gemini Live API | ✅ |
-| Hosted on Google Cloud | ✅ Firebase + Cloud Run |
-| Public repo | ✅ `.env` gitignored |
-| Architecture diagram | ✅ [`docs/submission/architecture.md`](./docs/submission/architecture.md) |
+| Requirement             | Status                                                                                                      |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Uses Gemini Live API    | ✅                                                                                                          |
+| Hosted on Google Cloud  | ✅ Firebase + Cloud Run                                                                                     |
+| Public repo             | ✅ `.env` gitignored                                                                                        |
+| Architecture diagram    | ✅ [`docs/submission/architecture.md`](./docs/submission/architecture.md)                                   |
 | Proof of GCP deployment | ✅ [`IaC/terraform/`](./IaC/terraform) & [`docs/submission/DEPLOYMENT.md`](./docs/submission/DEPLOYMENT.md) |
-| Automated CI/CD | ✅ GitHub Actions |
-| Landing page | ✅ Particle-animated hero at `/` |
-| Demo video | ⚠️ Record `< 4 min` walkthrough |
+| Automated CI/CD         | ✅ GitHub Actions                                                                                           |
+| Landing page            | ✅ Particle-animated hero at `/`                                                                            |
+| Demo video              | ⚠️ Record `< 4 min` walkthrough                                                                             |
 
 **Category**: Live Agents
 
@@ -233,7 +236,7 @@ This project was developed end-to-end using **[Antigravity IDE](https://antigrav
 - Generating the full error handling and model notification system
 - Writing all architecture diagrams and documentation
 
-> *"Pair programming with an AI agent that understands your full codebase end-to-end."*
+> _"Pair programming with an AI agent that understands your full codebase end-to-end."_
 
 ---
 

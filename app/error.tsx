@@ -25,12 +25,17 @@ export default function RouteError({ error, reset }: ErrorPageProps) {
       </div>
 
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight text-white">Something went wrong</h1>
+        <h1 className="text-2xl font-bold tracking-tight text-white">
+          Something went wrong
+        </h1>
         <p className="max-w-md text-sm text-white/50">
-          The Spatial Eye encountered an unexpected error. Your session data has not been lost.
+          The Spatial Eye encountered an unexpected error. Your session data has
+          not been lost.
         </p>
         {error.digest && (
-          <p className="font-mono text-xs text-white/20">Error ID: {error.digest}</p>
+          <p className="font-mono text-xs text-white/20">
+            Error ID: {error.digest}
+          </p>
         )}
       </div>
 

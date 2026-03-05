@@ -3,7 +3,10 @@ import { SpatialGrid } from "@/components/atoms/SpatialGrid";
 import { AI_VISION } from "@/lib/constants";
 import { useSettings } from "@/lib/store/settings-context";
 import type { Highlight } from "@/lib/types";
-import { calculateObjectFit, projectHighlightToScreen } from "@/lib/utils/coordinates";
+import {
+  calculateObjectFit,
+  projectHighlightToScreen,
+} from "@/lib/utils/coordinates";
 import { useEffect, useRef, useState } from "react";
 
 interface SpatialOverlayProps {
@@ -78,12 +81,18 @@ export function SpatialOverlay({
 
   if (containerSize.width === 0 || containerSize.height === 0) {
     return (
-      <div ref={containerRef} className="pointer-events-none absolute inset-0 h-full w-full" />
+      <div
+        ref={containerRef}
+        className="pointer-events-none absolute inset-0 h-full w-full"
+      />
     );
   }
 
   return (
-    <div ref={containerRef} className="pointer-events-none absolute inset-0 h-full w-full">
+    <div
+      ref={containerRef}
+      className="pointer-events-none absolute inset-0 h-full w-full"
+    >
       <svg
         className="h-full w-full"
         // We don't use viewBox scaling anymore; we project to pixel coordinates directly

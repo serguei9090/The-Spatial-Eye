@@ -1,7 +1,8 @@
 const dotenv = require("dotenv");
 dotenv.config({ path: ".env.local" });
 
-const API_KEY = process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+const API_KEY =
+  process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
 
 if (!API_KEY) {
   console.error("API Key missing");

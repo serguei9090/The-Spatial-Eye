@@ -10,20 +10,20 @@
 ```mermaid
 graph TD
     User((User))
-    
+
     subgraph "Frontend (Next.js 15)"
         UI[React UI Components]
         AudioVideo["Audio/Video Capture\n(Canvas+Microphone)"]
         State[React Hooks & State]
     end
-    
+
     subgraph "Backend (Python FastAPI on Cloud Run)"
         WSRelay["WebSocket Route: /ws/live"]
         TokenValidator["Firebase Admin\nJWT Validator"]
         GeminiClient["Google GenAI\nLive Client"]
         ToolRegistry["Python Tool Orchestration\n(Track & Highlight)"]
     end
-    
+
     subgraph "Google Cloud & AI Platform"
         GeminiLive[Gemini 2.5 Multimodal Live API]
         FirebaseAuth[Firebase Authentication]
@@ -33,18 +33,18 @@ graph TD
     User <--> UI
     UI <--> AudioVideo
     UI <--> State
-    
+
     %% Auth Flow
     UI -->|1. Sign-in / Auth| FirebaseAuth
     State -->|2. Connect w/ Ephemeral JWT| WSRelay
     WSRelay -->|3. Validate Token| TokenValidator
     TokenValidator -.->|Verify Signature| FirebaseAuth
-    
+
     %% Streaming Flow
     AudioVideo <-->|4. Real-time Video Frames / PCM Audio via WSS| WSRelay
     WSRelay <-->|5. Forward Modalities| GeminiClient
     GeminiClient <-->|6. Bidirectional Google Stream| GeminiLive
-    
+
     %% Tool Orchestration
     GeminiLive -->|7. Agentic Function Calls| ToolRegistry
     ToolRegistry -->|8. Parsed Tool Execution to Client| WSRelay
@@ -146,21 +146,21 @@ flowchart TD
 
 ### Error Classification Reference
 
-| `kind` | Triggers | Toast Duration |
-|--------|----------|----------------|
-| `rate_limit` | `RESOURCE_EXHAUSTED`, `quota`, `rate`, `429`, `too many requests` | 6 s |
-| `billing` | `billing`, `403`, `permission`, `forbidden`, `access denied` | 10 s |
-| `not_found` | `not found`, `404`, `does not exist` | 10 s |
-| `generic` | Everything else | 10 s |
+| `kind`       | Triggers                                                          | Toast Duration |
+| ------------ | ----------------------------------------------------------------- | -------------- |
+| `rate_limit` | `RESOURCE_EXHAUSTED`, `quota`, `rate`, `429`, `too many requests` | 6 s            |
+| `billing`    | `billing`, `403`, `permission`, `forbidden`, `access denied`      | 10 s           |
+| `not_found`  | `not found`, `404`, `does not exist`                              | 10 s           |
+| `generic`    | Everything else                                                   | 10 s           |
 
 ### Coverage Points in `useGeminiCore.ts`
 
-| Hook Path | Error Source | Action |
-|-----------|-------------|--------|
-| `checkModelAvailability` | HTTP 403 / invalid key | `notifyModelError` + `modelAvailability = "unavailable"` |
-| `onerror` callback | SDK error during session | `notifyModelError` + `modelAvailability = "unavailable"` |
-| `onclose` (code 1008) | WS policy violation (billing) | `notifyModelError` + `modelAvailability = "unavailable"` |
-| `.catch` on connect | Network/auth failure | `notifyModelError` + `modelAvailability = "unavailable"` |
+| Hook Path                | Error Source                  | Action                                                   |
+| ------------------------ | ----------------------------- | -------------------------------------------------------- |
+| `checkModelAvailability` | HTTP 403 / invalid key        | `notifyModelError` + `modelAvailability = "unavailable"` |
+| `onerror` callback       | SDK error during session      | `notifyModelError` + `modelAvailability = "unavailable"` |
+| `onclose` (code 1008)    | WS policy violation (billing) | `notifyModelError` + `modelAvailability = "unavailable"` |
+| `.catch` on connect      | Network/auth failure          | `notifyModelError` + `modelAvailability = "unavailable"` |
 
 ---
 
@@ -211,13 +211,13 @@ graph LR
 
 ## Key File Map
 
-| File | Role |
-|------|------|
-| `lib/gemini/model-error.ts` | Centralized error classification + toast |
-| `lib/gemini/registry.ts` | Model metadata / display names |
-| `lib/gemini/models.ts` | Resolved model ID constants |
-| `lib/hooks/useGeminiCore.ts` | Live WebSocket session management |
+| File                                 | Role                                           |
+| ------------------------------------ | ---------------------------------------------- |
+| `lib/gemini/model-error.ts`          | Centralized error classification + toast       |
+| `lib/gemini/registry.ts`             | Model metadata / display names                 |
+| `lib/gemini/models.ts`               | Resolved model ID constants                    |
+| `lib/hooks/useGeminiCore.ts`         | Live WebSocket session management              |
 | `lib/hooks/useGlobalErrorHandler.ts` | Window-level unhandled error/rejection handler |
-| `lib/gemini/handlers.ts` | Spatial mode tool call handler |
-| `components/providers.tsx` | Context tree + GlobalErrorListener mount |
-| `components/ui/sonner.tsx` | Toast renderer (Sonner, top-right, richColors) |
+| `lib/gemini/handlers.ts`             | Spatial mode tool call handler                 |
+| `components/providers.tsx`           | Context tree + GlobalErrorListener mount       |
+| `components/ui/sonner.tsx`           | Toast renderer (Sonner, top-right, richColors) |

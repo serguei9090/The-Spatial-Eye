@@ -3,7 +3,11 @@
 import { useEffect } from "react";
 import { toast } from "sonner";
 
-import { extractModelId, isModelApiError, notifyModelError } from "@/lib/gemini/model-error";
+import {
+  extractModelId,
+  isModelApiError,
+  notifyModelError,
+} from "@/lib/gemini/model-error";
 
 /**
  * Mounts window-level error listeners to catch:
@@ -33,7 +37,9 @@ export function useGlobalErrorHandler(): void {
       }
 
       toast.error(event.error?.message ?? "An unexpected error occurred", {
-        description: event.filename ? `${event.filename}:${event.lineno}` : undefined,
+        description: event.filename
+          ? `${event.filename}:${event.lineno}`
+          : undefined,
         duration: 6000,
       });
     };
@@ -87,7 +93,10 @@ export function useGlobalErrorHandler(): void {
 
     return () => {
       globalThis.removeEventListener("error", handleError);
-      globalThis.removeEventListener("unhandledrejection", handleUnhandledRejection);
+      globalThis.removeEventListener(
+        "unhandledrejection",
+        handleUnhandledRejection,
+      );
     };
   }, []);
 }

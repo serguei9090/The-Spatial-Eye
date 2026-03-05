@@ -25,7 +25,10 @@ interface AIErrorBoundaryState {
  * Use the `key` prop on the parent to reset the boundary when context changes:
  * <AIErrorBoundary key={mode}>...</AIErrorBoundary>
  */
-export class AIErrorBoundary extends Component<AIErrorBoundaryProps, AIErrorBoundaryState> {
+export class AIErrorBoundary extends Component<
+  AIErrorBoundaryProps,
+  AIErrorBoundaryState
+> {
   constructor(props: AIErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -36,7 +39,11 @@ export class AIErrorBoundary extends Component<AIErrorBoundaryProps, AIErrorBoun
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error("[AIErrorBoundary] Caught render error:", error, info.componentStack);
+    console.error(
+      "[AIErrorBoundary] Caught render error:",
+      error,
+      info.componentStack,
+    );
     this.props.onError?.(error, info);
   }
 
@@ -57,7 +64,9 @@ export class AIErrorBoundary extends Component<AIErrorBoundaryProps, AIErrorBoun
           </div>
           <div className="space-y-1">
             <p className="font-semibold text-red-100">
-              {this.props.label ? `${this.props.label} crashed` : "Something went wrong"}
+              {this.props.label
+                ? `${this.props.label} crashed`
+                : "Something went wrong"}
             </p>
             <p className="max-w-xs text-xs text-red-300/60 font-mono">
               {this.state.error?.message ?? "An unexpected error occurred"}

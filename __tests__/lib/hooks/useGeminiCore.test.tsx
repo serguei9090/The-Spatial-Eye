@@ -11,7 +11,9 @@ jest.mock("@/lib/utils/audio", () => ({
   decode: jest.fn().mockReturnValue(new ArrayBuffer(8)),
   decodeAudioData: jest.fn().mockReturnValue({ duration: 1 }),
 }));
-jest.mock("sonner", () => ({ toast: { error: jest.fn(), warning: jest.fn() } }));
+jest.mock("sonner", () => ({
+  toast: { error: jest.fn(), warning: jest.fn() },
+}));
 
 // Mock AudioContext
 class MockGainNode {
@@ -49,10 +51,14 @@ class MockAudioContext {
   createGain = jest.fn(() => new MockGainNode());
 }
 (
-  globalThis as unknown as { window: { AudioContext: unknown; webkitAudioContext: unknown } }
+  globalThis as unknown as {
+    window: { AudioContext: unknown; webkitAudioContext: unknown };
+  }
 ).window.AudioContext = MockAudioContext;
 (
-  globalThis as unknown as { window: { AudioContext: unknown; webkitAudioContext: unknown } }
+  globalThis as unknown as {
+    window: { AudioContext: unknown; webkitAudioContext: unknown };
+  }
 ).window.webkitAudioContext = MockAudioContext;
 
 // Mock WebSocket
@@ -67,13 +73,16 @@ class MockWebSocket {
   send = jest.fn();
   close = jest.fn(() => {
     this.readyState = WebSocket.CLOSED;
-    if (this.onclose) this.onclose({ code: 1000, wasClean: true, reason: "" } as CloseEvent);
+    if (this.onclose)
+      this.onclose({ code: 1000, wasClean: true, reason: "" } as CloseEvent);
   });
 
   constructor(url: string) {
     this.url = url;
     // Auto-store instance for test triggers
-    (MockWebSocket as unknown as { instances: MockWebSocket[] }).instances.push(this);
+    (MockWebSocket as unknown as { instances: MockWebSocket[] }).instances.push(
+      this,
+    );
   }
 }
 (MockWebSocket as unknown as { instances: MockWebSocket[] }).instances = [];
@@ -117,7 +126,9 @@ describe("useGeminiCore", () => {
   });
 
   it("connects and sets up WebSocket correctly", async () => {
-    const { result } = renderHook(() => useGeminiCore({ systemInstruction: "test" }));
+    const { result } = renderHook(() =>
+      useGeminiCore({ systemInstruction: "test" }),
+    );
 
     let connectPromise: Promise<boolean> = Promise.resolve(false);
     act(() => {
@@ -125,7 +136,9 @@ describe("useGeminiCore", () => {
     });
 
     // Simulate WebSocket open
-    const wsInstance = (MockWebSocket as unknown as { instances: MockWebSocket[] }).instances[0];
+    const wsInstance = (
+      MockWebSocket as unknown as { instances: MockWebSocket[] }
+    ).instances[0];
     act(() => {
       wsInstance.readyState = WebSocket.OPEN;
       if (wsInstance.onopen) wsInstance.onopen();
@@ -137,12 +150,16 @@ describe("useGeminiCore", () => {
   });
 
   it("handles incoming audio chunks and plays them", async () => {
-    const { result } = renderHook(() => useGeminiCore({ systemInstruction: "test" }));
+    const { result } = renderHook(() =>
+      useGeminiCore({ systemInstruction: "test" }),
+    );
 
     act(() => {
       result.current.connect();
     });
-    const wsInstance = (MockWebSocket as unknown as { instances: MockWebSocket[] }).instances[0];
+    const wsInstance = (
+      MockWebSocket as unknown as { instances: MockWebSocket[] }
+    ).instances[0];
     act(() => {
       if (wsInstance.onopen) wsInstance.onopen();
     });
@@ -165,7 +182,9 @@ describe("useGeminiCore", () => {
     const completeMsg = { turnComplete: true };
     act(() => {
       if (wsInstance.onmessage) {
-        wsInstance.onmessage({ data: JSON.stringify(completeMsg) } as MessageEvent);
+        wsInstance.onmessage({
+          data: JSON.stringify(completeMsg),
+        } as MessageEvent);
       }
     });
 
@@ -174,7 +193,9 @@ describe("useGeminiCore", () => {
   });
 
   it("handles disconnection gracefully", async () => {
-    const { result } = renderHook(() => useGeminiCore({ systemInstruction: "test" }));
+    const { result } = renderHook(() =>
+      useGeminiCore({ systemInstruction: "test" }),
+    );
 
     act(() => {
       result.current.connect();

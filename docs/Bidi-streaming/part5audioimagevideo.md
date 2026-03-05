@@ -31,7 +31,6 @@ live_request_queue.send_realtime(audio_blob)
 #### Best Practices for Sending Audio Input
 
 1. **Chunked Streaming**: Send audio in small chunks for low latency. Choose chunk size based on your latency requirements:
-
    - **Ultra-low latency** (real-time conversation): 10-20ms chunks (~320-640 bytes @ 16kHz)
    - **Balanced** (recommended): 50-100ms chunks (~1600-3200 bytes @ 16kHz)
    - **Lower overhead**: 100-200ms chunks (~3200-6400 bytes @ 16kHz)
@@ -60,53 +59,53 @@ Demo implementation: [audio-recorder.js:7-58](https://github.com/google/adk-samp
 ```javascript
 // Start audio recorder worklet
 export async function startAudioRecorderWorklet(audioRecorderHandler) {
-    // Create an AudioContext with 16kHz sample rate
-    // This matches the Live API's required input format (16-bit PCM @ 16kHz)
-    const audioRecorderContext = new AudioContext({ sampleRate: 16000 });
+  // Create an AudioContext with 16kHz sample rate
+  // This matches the Live API's required input format (16-bit PCM @ 16kHz)
+  const audioRecorderContext = new AudioContext({ sampleRate: 16000 });
 
-    // Load the AudioWorklet module that will process audio in real-time
-    // AudioWorklet runs on a separate thread for low-latency, glitch-free audio processing
-    const workletURL = new URL("./pcm-recorder-processor.js", import.meta.url);
-    await audioRecorderContext.audioWorklet.addModule(workletURL);
+  // Load the AudioWorklet module that will process audio in real-time
+  // AudioWorklet runs on a separate thread for low-latency, glitch-free audio processing
+  const workletURL = new URL("./pcm-recorder-processor.js", import.meta.url);
+  await audioRecorderContext.audioWorklet.addModule(workletURL);
 
-    // Request access to the user's microphone
-    // channelCount: 1 requests mono audio (single channel) as required by Live API
-    micStream = await navigator.mediaDevices.getUserMedia({
-        audio: { channelCount: 1 }
-    });
-    const source = audioRecorderContext.createMediaStreamSource(micStream);
+  // Request access to the user's microphone
+  // channelCount: 1 requests mono audio (single channel) as required by Live API
+  micStream = await navigator.mediaDevices.getUserMedia({
+    audio: { channelCount: 1 },
+  });
+  const source = audioRecorderContext.createMediaStreamSource(micStream);
 
-    // Create an AudioWorkletNode that uses our custom PCM recorder processor
-    // This node will capture audio frames and send them to our handler
-    const audioRecorderNode = new AudioWorkletNode(
-        audioRecorderContext,
-        "pcm-recorder-processor"
-    );
+  // Create an AudioWorkletNode that uses our custom PCM recorder processor
+  // This node will capture audio frames and send them to our handler
+  const audioRecorderNode = new AudioWorkletNode(
+    audioRecorderContext,
+    "pcm-recorder-processor",
+  );
 
-    // Connect the microphone source to the worklet processor
-    // The processor will receive audio frames and post them via port.postMessage
-    source.connect(audioRecorderNode);
-    audioRecorderNode.port.onmessage = (event) => {
-        // Convert Float32Array to 16-bit PCM format required by Live API
-        const pcmData = convertFloat32ToPCM(event.data);
+  // Connect the microphone source to the worklet processor
+  // The processor will receive audio frames and post them via port.postMessage
+  source.connect(audioRecorderNode);
+  audioRecorderNode.port.onmessage = (event) => {
+    // Convert Float32Array to 16-bit PCM format required by Live API
+    const pcmData = convertFloat32ToPCM(event.data);
 
-        // Send the PCM data to the handler (which will forward to WebSocket)
-        audioRecorderHandler(pcmData);
-    };
-    return [audioRecorderNode, audioRecorderContext, micStream];
+    // Send the PCM data to the handler (which will forward to WebSocket)
+    audioRecorderHandler(pcmData);
+  };
+  return [audioRecorderNode, audioRecorderContext, micStream];
 }
 
 // Convert Float32 samples to 16-bit PCM
 function convertFloat32ToPCM(inputData) {
-    // Create an Int16Array of the same length
-    const pcm16 = new Int16Array(inputData.length);
-    for (let i = 0; i < inputData.length; i++) {
-        // Web Audio API provides Float32 samples in range [-1.0, 1.0]
-        // Multiply by 0x7fff (32767) to convert to 16-bit signed integer range [-32768, 32767]
-        pcm16[i] = inputData[i] * 0x7fff;
-    }
-    // Return the underlying ArrayBuffer (binary data) for efficient transmission
-    return pcm16.buffer;
+  // Create an Int16Array of the same length
+  const pcm16 = new Int16Array(inputData.length);
+  for (let i = 0; i < inputData.length; i++) {
+    // Web Audio API provides Float32 samples in range [-1.0, 1.0]
+    // Multiply by 0x7fff (32767) to convert to 16-bit signed integer range [-32768, 32767]
+    pcm16[i] = inputData[i] * 0x7fff;
+  }
+  // Return the underlying ArrayBuffer (binary data) for efficient transmission
+  return pcm16.buffer;
 }
 ```
 
@@ -115,20 +114,20 @@ Demo implementation: [pcm-recorder-processor.js:1-18](https://github.com/google/
 ```javascript
 // pcm-recorder-processor.js - AudioWorklet processor for capturing audio
 class PCMProcessor extends AudioWorkletProcessor {
-    constructor() {
-        super();
-    }
+  constructor() {
+    super();
+  }
 
-    process(inputs, outputs, parameters) {
-        if (inputs.length > 0 && inputs[0].length > 0) {
-            // Use the first channel (mono)
-            const inputChannel = inputs[0][0];
-            // Copy the buffer to avoid issues with recycled memory
-            const inputCopy = new Float32Array(inputChannel);
-            this.port.postMessage(inputCopy);
-        }
-        return true;
+  process(inputs, outputs, parameters) {
+    if (inputs.length > 0 && inputs[0].length > 0) {
+      // Use the first channel (mono)
+      const inputChannel = inputs[0][0];
+      // Copy the buffer to avoid issues with recycled memory
+      const inputCopy = new Float32Array(inputChannel);
+      this.port.postMessage(inputCopy);
     }
+    return true;
+  }
 }
 
 registerProcessor("pcm-recorder-processor", PCMProcessor);
@@ -139,11 +138,14 @@ Demo implementation: [app.js:977-986](https://github.com/google/adk-samples/blob
 ```javascript
 // Audio recorder handler - called for each audio chunk
 function audioRecorderHandler(pcmData) {
-    if (websocket && websocket.readyState === WebSocket.OPEN && is_audio) {
-        // Send audio as binary WebSocket frame (more efficient than base64 JSON)
-        websocket.send(pcmData);
-        console.log("[CLIENT TO AGENT] Sent audio chunk: %s bytes", pcmData.byteLength);
-    }
+  if (websocket && websocket.readyState === WebSocket.OPEN && is_audio) {
+    // Send audio as binary WebSocket frame (more efficient than base64 JSON)
+    websocket.send(pcmData);
+    console.log(
+      "[CLIENT TO AGENT] Sent audio chunk: %s bytes",
+      pcmData.byteLength,
+    );
+  }
 }
 ```
 
@@ -239,45 +241,45 @@ Demo implementation: [app.js:638-688](https://github.com/google/adk-samples/blob
 // 1. WebSocket Message Handler
 // Handle content events (text or audio)
 if (adkEvent.content && adkEvent.content.parts) {
-    const parts = adkEvent.content.parts;
+  const parts = adkEvent.content.parts;
 
-    for (const part of parts) {
-        // Handle inline data (audio)
-        if (part.inlineData) {
-            const mimeType = part.inlineData.mimeType;
-            const data = part.inlineData.data;
+  for (const part of parts) {
+    // Handle inline data (audio)
+    if (part.inlineData) {
+      const mimeType = part.inlineData.mimeType;
+      const data = part.inlineData.data;
 
-            // Check if this is audio PCM data and the audio player is ready
-            if (mimeType && mimeType.startsWith("audio/pcm") && audioPlayerNode) {
-                // Decode base64 to ArrayBuffer and send to AudioWorklet for playback
-                audioPlayerNode.port.postMessage(base64ToArray(data));
-            }
-        }
+      // Check if this is audio PCM data and the audio player is ready
+      if (mimeType && mimeType.startsWith("audio/pcm") && audioPlayerNode) {
+        // Decode base64 to ArrayBuffer and send to AudioWorklet for playback
+        audioPlayerNode.port.postMessage(base64ToArray(data));
+      }
     }
+  }
 }
 
 // Decode base64 audio data to ArrayBuffer
 function base64ToArray(base64) {
-    // Convert base64url to standard base64 (RFC 4648 compliance)
-    // base64url uses '-' and '_' instead of '+' and '/', which are URL-safe
-    let standardBase64 = base64.replace(/-/g, '+').replace(/_/g, '/');
+  // Convert base64url to standard base64 (RFC 4648 compliance)
+  // base64url uses '-' and '_' instead of '+' and '/', which are URL-safe
+  let standardBase64 = base64.replace(/-/g, "+").replace(/_/g, "/");
 
-    // Add padding '=' characters if needed
-    // Base64 strings must be multiples of 4 characters
-    while (standardBase64.length % 4) {
-        standardBase64 += '=';
-    }
+  // Add padding '=' characters if needed
+  // Base64 strings must be multiples of 4 characters
+  while (standardBase64.length % 4) {
+    standardBase64 += "=";
+  }
 
-    // Decode base64 string to binary string using browser API
-    const binaryString = window.atob(standardBase64);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    // Convert each character code (0-255) to a byte
-    for (let i = 0; i < len; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-    }
-    // Return the underlying ArrayBuffer (binary data)
-    return bytes.buffer;
+  // Decode base64 string to binary string using browser API
+  const binaryString = window.atob(standardBase64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  // Convert each character code (0-255) to a byte
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  // Return the underlying ArrayBuffer (binary data)
+  return bytes.buffer;
 }
 ```
 
@@ -287,27 +289,30 @@ Demo implementation: [audio-player.js:5-24](https://github.com/google/adk-sample
 // 2. Audio Player Setup
 // Start audio player worklet
 export async function startAudioPlayerWorklet() {
-    // Create an AudioContext with 24kHz sample rate
-    // This matches the Live API's output audio format (16-bit PCM @ 24kHz)
-    // Note: Different from input rate (16kHz) - Live API outputs at higher quality
-    const audioContext = new AudioContext({
-        sampleRate: 24000
-    });
+  // Create an AudioContext with 24kHz sample rate
+  // This matches the Live API's output audio format (16-bit PCM @ 24kHz)
+  // Note: Different from input rate (16kHz) - Live API outputs at higher quality
+  const audioContext = new AudioContext({
+    sampleRate: 24000,
+  });
 
-    // Load the AudioWorklet module that will handle audio playback
-    // AudioWorklet runs on audio rendering thread for smooth, low-latency playback
-    const workletURL = new URL('./pcm-player-processor.js', import.meta.url);
-    await audioContext.audioWorklet.addModule(workletURL);
+  // Load the AudioWorklet module that will handle audio playback
+  // AudioWorklet runs on audio rendering thread for smooth, low-latency playback
+  const workletURL = new URL("./pcm-player-processor.js", import.meta.url);
+  await audioContext.audioWorklet.addModule(workletURL);
 
-    // Create an AudioWorkletNode using our custom PCM player processor
-    // This node will receive audio data via postMessage and play it through speakers
-    const audioPlayerNode = new AudioWorkletNode(audioContext, 'pcm-player-processor');
+  // Create an AudioWorkletNode using our custom PCM player processor
+  // This node will receive audio data via postMessage and play it through speakers
+  const audioPlayerNode = new AudioWorkletNode(
+    audioContext,
+    "pcm-player-processor",
+  );
 
-    // Connect the player node to the audio destination (speakers/headphones)
-    // This establishes the audio graph: AudioWorklet → AudioContext.destination
-    audioPlayerNode.connect(audioContext.destination);
+  // Connect the player node to the audio destination (speakers/headphones)
+  // This establishes the audio graph: AudioWorklet → AudioContext.destination
+  audioPlayerNode.connect(audioContext.destination);
 
-    return [audioPlayerNode, audioContext];
+  return [audioPlayerNode, audioContext];
 }
 ```
 
@@ -317,78 +322,78 @@ Demo implementation: [pcm-player-processor.js:5-76](https://github.com/google/ad
 // 3. AudioWorklet Processor (Ring Buffer)
 // AudioWorklet processor that buffers and plays PCM audio
 class PCMPlayerProcessor extends AudioWorkletProcessor {
-    constructor() {
-        super();
+  constructor() {
+    super();
 
-        // Initialize ring buffer (24kHz x 180 seconds = ~4.3 million samples)
-        // Ring buffer absorbs network jitter and ensures smooth playback
-        this.bufferSize = 24000 * 180;
-        this.buffer = new Float32Array(this.bufferSize);
-        this.writeIndex = 0;  // Where we write new audio data
-        this.readIndex = 0;   // Where we read for playback
+    // Initialize ring buffer (24kHz x 180 seconds = ~4.3 million samples)
+    // Ring buffer absorbs network jitter and ensures smooth playback
+    this.bufferSize = 24000 * 180;
+    this.buffer = new Float32Array(this.bufferSize);
+    this.writeIndex = 0; // Where we write new audio data
+    this.readIndex = 0; // Where we read for playback
 
-        // Handle incoming messages from main thread
-        this.port.onmessage = (event) => {
-            // Reset buffer on interruption (e.g., user interrupts model response)
-            if (event.data.command === 'endOfAudio') {
-                this.readIndex = this.writeIndex; // Clear the buffer by jumping read to write position
-                return;
-            }
+    // Handle incoming messages from main thread
+    this.port.onmessage = (event) => {
+      // Reset buffer on interruption (e.g., user interrupts model response)
+      if (event.data.command === "endOfAudio") {
+        this.readIndex = this.writeIndex; // Clear the buffer by jumping read to write position
+        return;
+      }
 
-            // Decode Int16 array from incoming ArrayBuffer
-            // The Live API sends 16-bit PCM audio data
-            const int16Samples = new Int16Array(event.data);
+      // Decode Int16 array from incoming ArrayBuffer
+      // The Live API sends 16-bit PCM audio data
+      const int16Samples = new Int16Array(event.data);
 
-            // Add audio data to ring buffer for playback
-            this._enqueue(int16Samples);
-        };
+      // Add audio data to ring buffer for playback
+      this._enqueue(int16Samples);
+    };
+  }
+
+  // Push incoming Int16 data into ring buffer
+  _enqueue(int16Samples) {
+    for (let i = 0; i < int16Samples.length; i++) {
+      // Convert 16-bit integer to float in [-1.0, 1.0] required by Web Audio API
+      // Divide by 32768 (max positive value for signed 16-bit int)
+      const floatVal = int16Samples[i] / 32768;
+
+      // Store in ring buffer at current write position
+      this.buffer[this.writeIndex] = floatVal;
+      // Move write index forward, wrapping around at buffer end (circular buffer)
+      this.writeIndex = (this.writeIndex + 1) % this.bufferSize;
+
+      // Overflow handling: if write catches up to read, move read forward
+      // This overwrites oldest unplayed samples (rare, only under extreme network delay)
+      if (this.writeIndex === this.readIndex) {
+        this.readIndex = (this.readIndex + 1) % this.bufferSize;
+      }
+    }
+  }
+
+  // Called by Web Audio system automatically ~128 samples at a time
+  // This runs on the audio rendering thread for precise timing
+  process(inputs, outputs, parameters) {
+    const output = outputs[0];
+    const framesPerBlock = output[0].length;
+
+    for (let frame = 0; frame < framesPerBlock; frame++) {
+      // Write samples to output buffer (mono to stereo)
+      output[0][frame] = this.buffer[this.readIndex]; // left channel
+      if (output.length > 1) {
+        output[1][frame] = this.buffer[this.readIndex]; // right channel (duplicate for stereo)
+      }
+
+      // Move read index forward unless buffer is empty (underflow protection)
+      if (this.readIndex != this.writeIndex) {
+        this.readIndex = (this.readIndex + 1) % this.bufferSize;
+      }
+      // If readIndex == writeIndex, we're out of data - output silence (0.0)
     }
 
-    // Push incoming Int16 data into ring buffer
-    _enqueue(int16Samples) {
-        for (let i = 0; i < int16Samples.length; i++) {
-            // Convert 16-bit integer to float in [-1.0, 1.0] required by Web Audio API
-            // Divide by 32768 (max positive value for signed 16-bit int)
-            const floatVal = int16Samples[i] / 32768;
-
-            // Store in ring buffer at current write position
-            this.buffer[this.writeIndex] = floatVal;
-            // Move write index forward, wrapping around at buffer end (circular buffer)
-            this.writeIndex = (this.writeIndex + 1) % this.bufferSize;
-
-            // Overflow handling: if write catches up to read, move read forward
-            // This overwrites oldest unplayed samples (rare, only under extreme network delay)
-            if (this.writeIndex === this.readIndex) {
-                this.readIndex = (this.readIndex + 1) % this.bufferSize;
-            }
-        }
-    }
-
-    // Called by Web Audio system automatically ~128 samples at a time
-    // This runs on the audio rendering thread for precise timing
-    process(inputs, outputs, parameters) {
-        const output = outputs[0];
-        const framesPerBlock = output[0].length;
-
-        for (let frame = 0; frame < framesPerBlock; frame++) {
-            // Write samples to output buffer (mono to stereo)
-            output[0][frame] = this.buffer[this.readIndex]; // left channel
-            if (output.length > 1) {
-                output[1][frame] = this.buffer[this.readIndex]; // right channel (duplicate for stereo)
-            }
-
-            // Move read index forward unless buffer is empty (underflow protection)
-            if (this.readIndex != this.writeIndex) {
-                this.readIndex = (this.readIndex + 1) % this.bufferSize;
-            }
-            // If readIndex == writeIndex, we're out of data - output silence (0.0)
-        }
-
-        return true; // Keep processor alive (return false to terminate)
-    }
+    return true; // Keep processor alive (return false to terminate)
+  }
 }
 
-registerProcessor('pcm-player-processor', PCMPlayerProcessor);
+registerProcessor("pcm-player-processor", PCMPlayerProcessor);
 ```
 
 **Key Implementation Patterns:**
@@ -454,41 +459,40 @@ Demo implementation: [app.js:801-843](https://github.com/google/adk-samples/blob
 // 1. Opening Camera Preview
 // Open camera modal and start preview
 async function openCameraPreview() {
-    try {
-        // Request access to the user's webcam with 768x768 resolution
-        cameraStream = await navigator.mediaDevices.getUserMedia({
-            video: {
-                width: { ideal: 768 },
-                height: { ideal: 768 },
-                facingMode: 'user'
-            }
-        });
+  try {
+    // Request access to the user's webcam with 768x768 resolution
+    cameraStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        width: { ideal: 768 },
+        height: { ideal: 768 },
+        facingMode: "user",
+      },
+    });
 
-        // Set the stream to the video element
-        cameraPreview.srcObject = cameraStream;
+    // Set the stream to the video element
+    cameraPreview.srcObject = cameraStream;
 
-        // Show the modal
-        cameraModal.classList.add('show');
-
-    } catch (error) {
-        console.error('Error accessing camera:', error);
-        addSystemMessage(`Failed to access camera: ${error.message}`);
-    }
+    // Show the modal
+    cameraModal.classList.add("show");
+  } catch (error) {
+    console.error("Error accessing camera:", error);
+    addSystemMessage(`Failed to access camera: ${error.message}`);
+  }
 }
 
 // Close camera modal and stop preview
 function closeCameraPreview() {
-    // Stop the camera stream
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        cameraStream = null;
-    }
+  // Stop the camera stream
+  if (cameraStream) {
+    cameraStream.getTracks().forEach((track) => track.stop());
+    cameraStream = null;
+  }
 
-    // Clear the video source
-    cameraPreview.srcObject = null;
+  // Clear the video source
+  cameraPreview.srcObject = null;
 
-    // Hide the modal
-    cameraModal.classList.remove('show');
+  // Hide the modal
+  cameraModal.classList.remove("show");
 }
 ```
 
@@ -498,60 +502,63 @@ Demo implementation: [app.js:846-914](https://github.com/google/adk-samples/blob
 // 2. Capturing and Sending Image
 // Capture image from the live preview
 function captureImageFromPreview() {
-    if (!cameraStream) {
-        addSystemMessage('No camera stream available');
-        return;
-    }
+  if (!cameraStream) {
+    addSystemMessage("No camera stream available");
+    return;
+  }
 
-    try {
-        // Create canvas to capture the frame
-        const canvas = document.createElement('canvas');
-        canvas.width = cameraPreview.videoWidth;
-        canvas.height = cameraPreview.videoHeight;
-        const context = canvas.getContext('2d');
+  try {
+    // Create canvas to capture the frame
+    const canvas = document.createElement("canvas");
+    canvas.width = cameraPreview.videoWidth;
+    canvas.height = cameraPreview.videoHeight;
+    const context = canvas.getContext("2d");
 
-        // Draw current video frame to canvas
-        context.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
+    // Draw current video frame to canvas
+    context.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
 
-        // Convert canvas to data URL for display
-        const imageDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    // Convert canvas to data URL for display
+    const imageDataUrl = canvas.toDataURL("image/jpeg", 0.85);
 
-        // Display the captured image in the chat
-        const imageBubble = createImageBubble(imageDataUrl, true);
-        messagesDiv.appendChild(imageBubble);
+    // Display the captured image in the chat
+    const imageBubble = createImageBubble(imageDataUrl, true);
+    messagesDiv.appendChild(imageBubble);
 
-        // Convert canvas to blob for sending to server
-        canvas.toBlob((blob) => {
-            // Convert blob to base64 for sending to server
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                // Remove data:image/jpeg;base64, prefix
-                const base64data = reader.result.split(',')[1];
-                sendImage(base64data);
-            };
-            reader.readAsDataURL(blob);
-        }, 'image/jpeg', 0.85);
+    // Convert canvas to blob for sending to server
+    canvas.toBlob(
+      (blob) => {
+        // Convert blob to base64 for sending to server
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          // Remove data:image/jpeg;base64, prefix
+          const base64data = reader.result.split(",")[1];
+          sendImage(base64data);
+        };
+        reader.readAsDataURL(blob);
+      },
+      "image/jpeg",
+      0.85,
+    );
 
-        // Close the camera modal
-        closeCameraPreview();
-
-    } catch (error) {
-        console.error('Error capturing image:', error);
-        addSystemMessage(`Failed to capture image: ${error.message}`);
-    }
+    // Close the camera modal
+    closeCameraPreview();
+  } catch (error) {
+    console.error("Error capturing image:", error);
+    addSystemMessage(`Failed to capture image: ${error.message}`);
+  }
 }
 
 // Send image to server
 function sendImage(base64Image) {
-    if (websocket && websocket.readyState === WebSocket.OPEN) {
-        const jsonMessage = JSON.stringify({
-            type: "image",
-            data: base64Image,
-            mimeType: "image/jpeg"
-        });
-        websocket.send(jsonMessage);
-        console.log("[CLIENT TO AGENT] Sent image");
-    }
+  if (websocket && websocket.readyState === WebSocket.OPEN) {
+    const jsonMessage = JSON.stringify({
+      type: "image",
+      data: base64Image,
+      mimeType: "image/jpeg",
+    });
+    websocket.send(jsonMessage);
+    console.log("[CLIENT TO AGENT] Sent image");
+  }
 }
 ```
 
@@ -847,92 +854,99 @@ Demo implementation: [app.js:530-653](https://github.com/google/adk-samples/blob
 ```javascript
 // Handle input transcription (user's spoken words)
 if (adkEvent.inputTranscription && adkEvent.inputTranscription.text) {
-    const transcriptionText = adkEvent.inputTranscription.text;
-    const isFinished = adkEvent.inputTranscription.finished;
+  const transcriptionText = adkEvent.inputTranscription.text;
+  const isFinished = adkEvent.inputTranscription.finished;
 
-    if (transcriptionText) {
-        if (currentInputTranscriptionId == null) {
-            // Create new transcription bubble
-            currentInputTranscriptionId = Math.random().toString(36).substring(7);
-            currentInputTranscriptionElement = createMessageBubble(
-                transcriptionText,
-                true,  // isUser
-                !isFinished  // isPartial
-            );
-            currentInputTranscriptionElement.id = currentInputTranscriptionId;
-            currentInputTranscriptionElement.classList.add("transcription");
-            messagesDiv.appendChild(currentInputTranscriptionElement);
-        } else {
-            // Update existing transcription bubble
-            if (currentOutputTranscriptionId == null && currentMessageId == null) {
-                // Accumulate input transcription text (Live API sends incremental pieces)
-                const existingText = currentInputTranscriptionElement
-                    .querySelector(".bubble-text").textContent;
-                const cleanText = existingText.replace(/\.\.\.$/, '');
-                const accumulatedText = cleanText + transcriptionText;
-                updateMessageBubble(
-                    currentInputTranscriptionElement,
-                    accumulatedText,
-                    !isFinished
-                );
-            }
-        }
-
-        // If transcription is finished, reset the state
-        if (isFinished) {
-            currentInputTranscriptionId = null;
-            currentInputTranscriptionElement = null;
-        }
+  if (transcriptionText) {
+    if (currentInputTranscriptionId == null) {
+      // Create new transcription bubble
+      currentInputTranscriptionId = Math.random().toString(36).substring(7);
+      currentInputTranscriptionElement = createMessageBubble(
+        transcriptionText,
+        true, // isUser
+        !isFinished, // isPartial
+      );
+      currentInputTranscriptionElement.id = currentInputTranscriptionId;
+      currentInputTranscriptionElement.classList.add("transcription");
+      messagesDiv.appendChild(currentInputTranscriptionElement);
+    } else {
+      // Update existing transcription bubble
+      if (currentOutputTranscriptionId == null && currentMessageId == null) {
+        // Accumulate input transcription text (Live API sends incremental pieces)
+        const existingText =
+          currentInputTranscriptionElement.querySelector(
+            ".bubble-text",
+          ).textContent;
+        const cleanText = existingText.replace(/\.\.\.$/, "");
+        const accumulatedText = cleanText + transcriptionText;
+        updateMessageBubble(
+          currentInputTranscriptionElement,
+          accumulatedText,
+          !isFinished,
+        );
+      }
     }
+
+    // If transcription is finished, reset the state
+    if (isFinished) {
+      currentInputTranscriptionId = null;
+      currentInputTranscriptionElement = null;
+    }
+  }
 }
 
 // Handle output transcription (model's spoken words)
 if (adkEvent.outputTranscription && adkEvent.outputTranscription.text) {
-    const transcriptionText = adkEvent.outputTranscription.text;
-    const isFinished = adkEvent.outputTranscription.finished;
+  const transcriptionText = adkEvent.outputTranscription.text;
+  const isFinished = adkEvent.outputTranscription.finished;
 
-    if (transcriptionText) {
-        // Finalize any active input transcription when model starts responding
-        if (currentInputTranscriptionId != null && currentOutputTranscriptionId == null) {
-            const textElement = currentInputTranscriptionElement
-                .querySelector(".bubble-text");
-            const typingIndicator = textElement.querySelector(".typing-indicator");
-            if (typingIndicator) {
-                typingIndicator.remove();
-            }
-            currentInputTranscriptionId = null;
-            currentInputTranscriptionElement = null;
-        }
-
-        if (currentOutputTranscriptionId == null) {
-            // Create new transcription bubble for model
-            currentOutputTranscriptionId = Math.random().toString(36).substring(7);
-            currentOutputTranscriptionElement = createMessageBubble(
-                transcriptionText,
-                false,  // isUser
-                !isFinished  // isPartial
-            );
-            currentOutputTranscriptionElement.id = currentOutputTranscriptionId;
-            currentOutputTranscriptionElement.classList.add("transcription");
-            messagesDiv.appendChild(currentOutputTranscriptionElement);
-        } else {
-            // Update existing transcription bubble
-            const existingText = currentOutputTranscriptionElement
-                .querySelector(".bubble-text").textContent;
-            const cleanText = existingText.replace(/\.\.\.$/, '');
-            updateMessageBubble(
-                currentOutputTranscriptionElement,
-                cleanText + transcriptionText,
-                !isFinished
-            );
-        }
-
-        // If transcription is finished, reset the state
-        if (isFinished) {
-            currentOutputTranscriptionId = null;
-            currentOutputTranscriptionElement = null;
-        }
+  if (transcriptionText) {
+    // Finalize any active input transcription when model starts responding
+    if (
+      currentInputTranscriptionId != null &&
+      currentOutputTranscriptionId == null
+    ) {
+      const textElement =
+        currentInputTranscriptionElement.querySelector(".bubble-text");
+      const typingIndicator = textElement.querySelector(".typing-indicator");
+      if (typingIndicator) {
+        typingIndicator.remove();
+      }
+      currentInputTranscriptionId = null;
+      currentInputTranscriptionElement = null;
     }
+
+    if (currentOutputTranscriptionId == null) {
+      // Create new transcription bubble for model
+      currentOutputTranscriptionId = Math.random().toString(36).substring(7);
+      currentOutputTranscriptionElement = createMessageBubble(
+        transcriptionText,
+        false, // isUser
+        !isFinished, // isPartial
+      );
+      currentOutputTranscriptionElement.id = currentOutputTranscriptionId;
+      currentOutputTranscriptionElement.classList.add("transcription");
+      messagesDiv.appendChild(currentOutputTranscriptionElement);
+    } else {
+      // Update existing transcription bubble
+      const existingText =
+        currentOutputTranscriptionElement.querySelector(
+          ".bubble-text",
+        ).textContent;
+      const cleanText = existingText.replace(/\.\.\.$/, "");
+      updateMessageBubble(
+        currentOutputTranscriptionElement,
+        cleanText + transcriptionText,
+        !isFinished,
+      );
+    }
+
+    // If transcription is finished, reset the state
+    if (isFinished) {
+      currentOutputTranscriptionId = null;
+      currentOutputTranscriptionElement = null;
+    }
+  }
 }
 ```
 
@@ -954,9 +968,9 @@ if (adkEvent.outputTranscription && adkEvent.outputTranscription.text) {
 
    ```javascript
    if (currentInputTranscriptionId == null) {
-       // Create new bubble
+     // Create new bubble
    } else {
-       // Update existing bubble
+     // Update existing bubble
    }
    ```
 
@@ -1372,33 +1386,33 @@ async def upstream_task(websocket: WebSocket, live_request_queue: LiveRequestQue
 ```javascript
 // vad-processor.js - AudioWorklet processor for voice detection
 class VADProcessor extends AudioWorkletProcessor {
-    constructor() {
-        super();
-        this.threshold = 0.05;  // Adjust based on environment
+  constructor() {
+    super();
+    this.threshold = 0.05; // Adjust based on environment
+  }
+
+  process(inputs, outputs, parameters) {
+    const input = inputs[0];
+    if (input && input.length > 0) {
+      const channelData = input[0];
+      let sum = 0;
+
+      // Calculate RMS (Root Mean Square)
+      for (let i = 0; i < channelData.length; i++) {
+        sum += channelData[i] ** 2;
+      }
+      const rms = Math.sqrt(sum / channelData.length);
+
+      // Signal voice detection status
+      this.port.postMessage({
+        voice: rms > this.threshold,
+        rms: rms,
+      });
     }
-
-    process(inputs, outputs, parameters) {
-        const input = inputs[0];
-        if (input && input.length > 0) {
-            const channelData = input[0];
-            let sum = 0;
-
-            // Calculate RMS (Root Mean Square)
-            for (let i = 0; i < channelData.length; i++) {
-                sum += channelData[i] ** 2;
-            }
-            const rms = Math.sqrt(sum / channelData.length);
-
-            // Signal voice detection status
-            this.port.postMessage({
-                voice: rms > this.threshold,
-                rms: rms
-            });
-        }
-        return true;
-    }
+    return true;
+  }
 }
-registerProcessor('vad-processor', VADProcessor);
+registerProcessor("vad-processor", VADProcessor);
 ```
 
 #### Client-Side Coordination
@@ -1409,47 +1423,49 @@ registerProcessor('vad-processor', VADProcessor);
 // Main application logic
 let isSilence = true;
 let lastVoiceTime = 0;
-const SILENCE_TIMEOUT = 2000;  // 2 seconds of silence before sending activity_end
+const SILENCE_TIMEOUT = 2000; // 2 seconds of silence before sending activity_end
 
 // Set up VAD processor
-const vadNode = new AudioWorkletNode(audioContext, 'vad-processor');
+const vadNode = new AudioWorkletNode(audioContext, "vad-processor");
 vadNode.port.onmessage = (event) => {
-    const { voice, rms } = event.data;
+  const { voice, rms } = event.data;
 
-    if (voice) {
-        // Voice detected
-        if (isSilence) {
-            // Transition from silence to speech - send activity_start
-            websocket.send(JSON.stringify({ type: "activity_start" }));
-            isSilence = false;
-        }
-        lastVoiceTime = Date.now();
-    } else {
-        // No voice detected - check if silence timeout exceeded
-        if (!isSilence && Date.now() - lastVoiceTime > SILENCE_TIMEOUT) {
-            // Sustained silence - send activity_end
-            websocket.send(JSON.stringify({ type: "activity_end" }));
-            isSilence = true;
-        }
+  if (voice) {
+    // Voice detected
+    if (isSilence) {
+      // Transition from silence to speech - send activity_start
+      websocket.send(JSON.stringify({ type: "activity_start" }));
+      isSilence = false;
     }
+    lastVoiceTime = Date.now();
+  } else {
+    // No voice detected - check if silence timeout exceeded
+    if (!isSilence && Date.now() - lastVoiceTime > SILENCE_TIMEOUT) {
+      // Sustained silence - send activity_end
+      websocket.send(JSON.stringify({ type: "activity_end" }));
+      isSilence = true;
+    }
+  }
 };
 
 // Set up audio recorder to stream chunks
 audioRecorderNode.port.onmessage = (event) => {
-    const audioData = event.data;  // Float32Array
+  const audioData = event.data; // Float32Array
 
-    // Only send audio when voice is detected
-    if (!isSilence) {
-        // Convert to PCM16 and send to server
-        const pcm16 = convertFloat32ToPCM(audioData);
-        const base64Audio = arrayBufferToBase64(pcm16);
+  // Only send audio when voice is detected
+  if (!isSilence) {
+    // Convert to PCM16 and send to server
+    const pcm16 = convertFloat32ToPCM(audioData);
+    const base64Audio = arrayBufferToBase64(pcm16);
 
-        websocket.send(JSON.stringify({
-            type: "audio",
-            mime_type: "audio/pcm;rate=16000",
-            data: base64Audio
-        }));
-    }
+    websocket.send(
+      JSON.stringify({
+        type: "audio",
+        mime_type: "audio/pcm;rate=16000",
+        data: base64Audio,
+      }),
+    );
+  }
 };
 ```
 
@@ -1588,7 +1604,6 @@ To verify proactive behavior is working:
    ```
 
 1. **Monitor for unprompted responses**:
-
    - Model should occasionally offer relevant information
    - Should ignore truly irrelevant input
    - Should anticipate user needs based on context

@@ -17,13 +17,17 @@ export async function POST(request: Request) {
     ];
 
     // Pick a random image to vary the experience
-    const randomImage = MOCK_IMAGES[Math.floor(Math.random() * MOCK_IMAGES.length)];
+    const randomImage =
+      MOCK_IMAGES[Math.floor(Math.random() * MOCK_IMAGES.length)];
 
     return NextResponse.json({
       url: randomImage,
       prompt: prompt,
     });
   } catch {
-    return NextResponse.json({ error: "Failed to generate mock image" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to generate mock image" },
+      { status: 500 },
+    );
   }
 }

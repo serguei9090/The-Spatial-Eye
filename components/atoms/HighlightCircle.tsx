@@ -20,7 +20,12 @@ interface HighlightCircleProps {
   };
 }
 
-export function HighlightCircle({ id, label, type, geometry }: HighlightCircleProps) {
+export function HighlightCircle({
+  id,
+  label,
+  type,
+  geometry,
+}: HighlightCircleProps) {
   // Defensive fallbacks — prevent "undefined" SVG attribute errors
   const cx = geometry.cx ?? 0;
   const cy = geometry.cy ?? 0;
@@ -33,7 +38,11 @@ export function HighlightCircle({ id, label, type, geometry }: HighlightCirclePr
 
   const commonProps = {
     transition: {
-      opacity: { duration: 1.2, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" as const },
+      opacity: {
+        duration: 1.2,
+        repeat: Number.POSITIVE_INFINITY,
+        ease: "easeInOut" as const,
+      },
       // Smooth sliding/resizing transitions
       cx: { type: "spring", stiffness: 300, damping: 30 } as const,
       cy: { type: "spring", stiffness: 300, damping: 30 } as const,
@@ -80,8 +89,22 @@ export function HighlightCircle({ id, label, type, geometry }: HighlightCirclePr
         fill="transparent"
       />
       {/* Exact Center Crosshair */}
-      <line x1={cx - 20} y1={cy} x2={cx + 20} y2={cy} stroke="red" strokeWidth="3" />
-      <line x1={cx} y1={cy - 20} x2={cx} y2={cy + 20} stroke="red" strokeWidth="3" />
+      <line
+        x1={cx - 20}
+        y1={cy}
+        x2={cx + 20}
+        y2={cy}
+        stroke="red"
+        strokeWidth="3"
+      />
+      <line
+        x1={cx}
+        y1={cy - 20}
+        x2={cx}
+        y2={cy + 20}
+        stroke="red"
+        strokeWidth="3"
+      />
     </g>
   ) : null;
 

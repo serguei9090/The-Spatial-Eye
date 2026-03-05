@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { DEFAULT_GEMINI_LIVE_MODEL, SPATIAL_SYSTEM_INSTRUCTION } from "@/lib/api/gemini_websocket";
+import {
+  DEFAULT_GEMINI_LIVE_MODEL,
+  SPATIAL_SYSTEM_INSTRUCTION,
+} from "@/lib/api/gemini_websocket";
 
 interface GeminiEphemeralTokenResponse {
   name?: string;
@@ -11,15 +14,18 @@ export async function POST(request: Request) {
   console.log("--> POST /api/gemini/ephemeral-token hit");
   try {
     // Dynamic imports to prevent top-level crashes if Firebase env is bad
-    const { requireFirebaseUserId } = await import("@/lib/server/firebase-auth");
-    const { getUserGeminiApiKey } = await import("@/lib/server/user-gemini-key-service");
+    const { requireFirebaseUserId } =
+      await import("@/lib/server/firebase-auth");
+    const { getUserGeminiApiKey } =
+      await import("@/lib/server/user-gemini-key-service");
 
-    const userId = await requireFirebaseUserId(request.headers.get("authorization"));
-    const body = (await request.json()) as { model?: string };
-    const configuredModel = (body.model?.trim() || DEFAULT_GEMINI_LIVE_MODEL).replace(
-      /^models\//,
-      "",
+    const userId = await requireFirebaseUserId(
+      request.headers.get("authorization"),
     );
+    const body = (await request.json()) as { model?: string };
+    const configuredModel = (
+      body.model?.trim() || DEFAULT_GEMINI_LIVE_MODEL
+    ).replace(/^models\//, "");
     const apiKey = await getUserGeminiApiKey(userId);
 
     if (!apiKey) {
@@ -73,7 +79,10 @@ export async function POST(request: Request) {
     };
 
     console.log("--> Minting Token URL:", url.replace(apiKey, "HIDDEN_KEY"));
-    console.log("--> Minting Token Body:", JSON.stringify(requestBody, null, 2));
+    console.log(
+      "--> Minting Token Body:",
+      JSON.stringify(requestBody, null, 2),
+    );
 
     const response = await fetch(url, {
       method: "POST",
@@ -105,9 +114,14 @@ export async function POST(request: Request) {
       model: configuredModel,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to mint ephemeral token.";
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to mint ephemeral token.";
     const status =
-      message.includes("Bearer token") || message.includes("Firebase token") ? 401 : 500;
+      message.includes("Bearer token") || message.includes("Firebase token")
+        ? 401
+        : 500;
     return NextResponse.json({ error: message }, { status });
   }
 }

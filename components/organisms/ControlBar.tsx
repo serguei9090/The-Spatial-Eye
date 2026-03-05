@@ -19,9 +19,15 @@ export interface ControlBarProps {
   readonly isUserTalking?: boolean;
   readonly activeHighlight?: Highlight;
   readonly mode: "spatial" | "storyteller" | "it-architecture";
-  readonly modelAvailability?: "unknown" | "checking" | "available" | "unavailable";
+  readonly modelAvailability?:
+    | "unknown"
+    | "checking"
+    | "available"
+    | "unavailable";
   readonly onToggleListening: () => void;
-  readonly onModeChange: (mode: "spatial" | "storyteller" | "it-architecture") => void;
+  readonly onModeChange: (
+    mode: "spatial" | "storyteller" | "it-architecture",
+  ) => void;
   readonly onDownload?: () => void;
   readonly onUpload?: (file: File) => void;
 }
@@ -105,8 +111,11 @@ export function ControlBar({
             variant={isListening ? "destructive" : "default"}
             className={cn(
               "h-12 w-auto min-w-[3rem] px-3 rounded-xl shadow-md transition-all sm:px-6",
-              isListening && !isConnecting && "animate-pulse ring-4 ring-destructive/20",
-              isConnecting && "opacity-80 cursor-wait bg-muted text-muted-foreground",
+              isListening &&
+                !isConnecting &&
+                "animate-pulse ring-4 ring-destructive/20",
+              isConnecting &&
+                "opacity-80 cursor-wait bg-muted text-muted-foreground",
               isKeyUnavailable && "opacity-50 cursor-not-allowed",
             )}
             onClick={() => {
@@ -114,7 +123,9 @@ export function ControlBar({
             }}
             disabled={isStartDisabled}
             title={
-              isKeyUnavailable ? "No API key configured — use the 🔑 icon to set one" : undefined
+              isKeyUnavailable
+                ? "No API key configured — use the 🔑 icon to set one"
+                : undefined
             }
           >
             {renderMicIcon()}
@@ -164,7 +175,11 @@ export function ControlBar({
         <div className="flex items-center gap-0.5">
           {/* Settings Menu (Popover) now handles device selection (Camera, Mic, Speaker) */}
           <ConnectionMenu />
-          <SettingsMenu mode={mode} onDownload={onDownload} onUpload={onUpload} />
+          <SettingsMenu
+            mode={mode}
+            onDownload={onDownload}
+            onUpload={onUpload}
+          />
         </div>
       </div>
 

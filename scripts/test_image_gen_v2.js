@@ -12,7 +12,11 @@ async function testImageGen() {
       contents: [
         {
           role: "user",
-          parts: [{ text: "Generate a photorealistic image of a futuristic neon city." }],
+          parts: [
+            {
+              text: "Generate a photorealistic image of a futuristic neon city.",
+            },
+          ],
         },
       ],
     });

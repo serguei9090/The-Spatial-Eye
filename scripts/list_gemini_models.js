@@ -2,7 +2,8 @@ require("dotenv").config({ path: ".env.local" });
 const { GoogleGenAI } = require("@google/genai");
 
 async function listModels() {
-  const apiKey = process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+  const apiKey =
+    process.env.GOOGLE_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
   if (!apiKey) {
     console.error("No API key provided");
     return;

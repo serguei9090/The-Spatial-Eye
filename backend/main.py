@@ -74,6 +74,7 @@ from pydantic import Field
 
 class GeminiBeta(Gemini):
     """Gemini model wrapper that forces api_version='v1beta'."""
+
     custom_api_key: str | None = Field(default=None, exclude=True)
 
     @property
@@ -83,16 +84,15 @@ class GeminiBeta(Gemini):
                 api_version="v1beta",
                 headers=self._tracking_headers(),
             )
-            
+
             if self.custom_api_key:
                 # User provided a Bring-Your-Own-Key via the frontend
                 self._beta_client = Client(
-                    api_key=self.custom_api_key,
-                    http_options=http_options
+                    api_key=self.custom_api_key, http_options=http_options
                 )
             else:
                 self._beta_client = Client(http_options=http_options)
-                
+
         return self._beta_client
 
     @property
@@ -106,12 +106,12 @@ class GeminiBeta(Gemini):
             )
             if self.custom_api_key:
                 self._beta_live_client = Client(
-                    api_key=self.custom_api_key,
-                    http_options=http_options
+                    api_key=self.custom_api_key, http_options=http_options
                 )
             else:
                 self._beta_live_client = Client(http_options=http_options)
         return self._beta_live_client
+
 
 @app.get("/")
 def read_root() -> dict[str, str]:
@@ -122,7 +122,7 @@ def read_root() -> dict[str, str]:
 @app.get("/api/status")
 def api_status() -> dict:
     """Reports whether the backend has a server-side API key configured.
-    
+
     The frontend calls this before opening a WebSocket when no BYOK key is set,
     so it can bail out early and show a user-friendly error instead of a failed connection.
     """
@@ -132,10 +132,7 @@ def api_status() -> dict:
 
 @app.websocket("/ws/live")
 async def websocket_endpoint(
-    websocket: WebSocket, 
-    mode: str = "spatial", 
-    token: str = None,
-    api_key: str = None
+    websocket: WebSocket, mode: str = "spatial", token: str = None, api_key: str = None
 ) -> None:
     """
     Main WebSocket endpoint for real-time interaction with Gemini.
@@ -144,9 +141,15 @@ async def websocket_endpoint(
     await websocket.accept()
 
     # Verify API Key availability First
-    if not api_key and not os.getenv("GEMINI_API_KEY") and not os.getenv("GOOGLE_API_KEY"):
+    if (
+        not api_key
+        and not os.getenv("GEMINI_API_KEY")
+        and not os.getenv("GOOGLE_API_KEY")
+    ):
         logger.warning("WebSocket Connection Attempt without API key.")
-        error_msg = "No API key available. Please use the key (🔑) icon to set your key."
+        error_msg = (
+            "No API key available. Please use the key (🔑) icon to set your key."
+        )
         await websocket.send_text(
             json.dumps({"error": "MISSING_API_KEY", "message": error_msg})
         )
@@ -166,7 +169,9 @@ async def websocket_endpoint(
     if not decoded:
         logger.warning("WebSocket Connection Attempt with invalid token.")
         await websocket.send_text(
-            json.dumps({"error": "AUTH_INVALID", "message": "Failed to verify Firebase token."})
+            json.dumps(
+                {"error": "AUTH_INVALID", "message": "Failed to verify Firebase token."}
+            )
         )
         await websocket.close(code=1008, reason="Token Invalid")
         return
@@ -183,12 +188,18 @@ async def websocket_endpoint(
 
     # Resolve Mode Configuration
     config_map = {
-        "storyteller": (tools_config.STORYTELLER_SYSTEM_INSTRUCTION, tools_config.DIRECTOR_TOOLS),
+        "storyteller": (
+            tools_config.STORYTELLER_SYSTEM_INSTRUCTION,
+            tools_config.DIRECTOR_TOOLS,
+        ),
         "it-architecture": (
             tools_config.IT_ARCHITECTURE_SYSTEM_INSTRUCTION,
             tools_config.IT_ARCHITECTURE_TOOLS,
         ),
-        "spatial": (tools_config.SPATIAL_SYSTEM_INSTRUCTION, tools_config.SPATIAL_TOOLS),
+        "spatial": (
+            tools_config.SPATIAL_SYSTEM_INSTRUCTION,
+            tools_config.SPATIAL_TOOLS,
+        ),
     }
     system_instruction, active_tools = config_map.get(mode, config_map["spatial"])
 
@@ -200,7 +211,9 @@ async def websocket_endpoint(
     )
 
     runner = Runner(
-        app_name=f"SpatialEyeApp_{mode_clean}", agent=agent, session_service=session_service
+        app_name=f"SpatialEyeApp_{mode_clean}",
+        agent=agent,
+        session_service=session_service,
     )
 
     run_config = RunConfig(
@@ -237,14 +250,18 @@ async def websocket_endpoint(
 
                 # Handle ASGI disconnect message
                 if msg["type"] == "websocket.disconnect":
-                    logger.info(f"[{session_id}] Upstream: Disconnect message received.")
+                    logger.info(
+                        f"[{session_id}] Upstream: Disconnect message received."
+                    )
                     break
 
                 # 1. Handle Binary Audio (Direct bytes from FE)
                 if "bytes" in msg:
                     counts["audio"] += 1
                     if counts["audio"] % 100 == 0:
-                        logger.debug(f"[{session_id}] Upstream: {counts['audio']} Binary Blocks")
+                        logger.debug(
+                            f"[{session_id}] Upstream: {counts['audio']} Binary Blocks"
+                        )
                     live_request_queue.send_realtime(
                         types.Blob(mime_type="audio/pcm;rate=16000", data=msg["bytes"])
                     )
@@ -270,7 +287,9 @@ async def websocket_endpoint(
                                 raw_media = base64.b64decode(media["data"])
                                 live_request_queue.send_realtime(
                                     types.Blob(
-                                        mime_type=media.get("mimeType", "audio/pcm;rate=16000"),
+                                        mime_type=media.get(
+                                            "mimeType", "audio/pcm;rate=16000"
+                                        ),
                                         data=raw_media,
                                     )
                                 )
@@ -302,8 +321,13 @@ async def websocket_endpoint(
                         input_text = parsed.get("text", "").lower()
                         if input_text:
                             # 3. Handle Manual Context Reset
-                            if "reset context" in input_text or "clear memory" in input_text:
-                                logger.info(f"[{session_id}] Injecting MANDATORY SPATIAL RESET")
+                            if (
+                                "reset context" in input_text
+                                or "clear memory" in input_text
+                            ):
+                                logger.info(
+                                    f"[{session_id}] Injecting MANDATORY SPATIAL RESET"
+                                )
                                 live_request_queue.send_content(
                                     types.Content(
                                         role="user",
@@ -318,14 +342,20 @@ async def websocket_endpoint(
                                     turn_complete=True,
                                 )
                             else:
-                                logger.info(f"[{session_id}] Upstream: Text -> {input_text[:50]}")
+                                logger.info(
+                                    f"[{session_id}] Upstream: Text -> {input_text[:50]}"
+                                )
                                 live_request_queue.send_content(
-                                    types.Content(parts=[types.Part.from_text(text=input_text)])
+                                    types.Content(
+                                        parts=[types.Part.from_text(text=input_text)]
+                                    )
                                 )
 
                     except json.JSONDecodeError:
                         # Fallback for raw non-JSON text
-                        logger.info(f"[{session_id}] Upstream: Raw Text -> {text_data[:50]}")
+                        logger.info(
+                            f"[{session_id}] Upstream: Raw Text -> {text_data[:50]}"
+                        )
                         live_request_queue.send_content(
                             types.Content(parts=[types.Part.from_text(text=text_data)])
                         )
@@ -379,7 +409,10 @@ async def websocket_endpoint(
                             continue
 
                     # 2. Progress Logging
-                    if "serverContent" in p_dict and "modelTurn" in p_dict["serverContent"]:
+                    if (
+                        "serverContent" in p_dict
+                        and "modelTurn" in p_dict["serverContent"]
+                    ):
                         parts = p_dict["serverContent"]["modelTurn"].get("parts", [])
                         for part in parts:
                             if "inlineData" in part:
@@ -401,7 +434,9 @@ async def websocket_endpoint(
             if "Missing key inputs" in str(e) or "api_key" in str(e):
                 error_msg = "No API key available. Please use the key (🔑) icon to set your key."
                 try:
-                    await websocket.send_text(json.dumps({"error": "MISSING_API_KEY", "message": error_msg}))
+                    await websocket.send_text(
+                        json.dumps({"error": "MISSING_API_KEY", "message": error_msg})
+                    )
                     await websocket.close(code=1008, reason="Missing API Key")
                 except Exception:
                     pass
@@ -420,7 +455,9 @@ async def websocket_endpoint(
         live_request_queue.close()
         try:
             await session_service.delete_session(
-                app_name=f"SpatialEyeApp_{mode_clean}", user_id=user_id, session_id=session_id
+                app_name=f"SpatialEyeApp_{mode_clean}",
+                user_id=user_id,
+                session_id=session_id,
             )
         except Exception:
             pass

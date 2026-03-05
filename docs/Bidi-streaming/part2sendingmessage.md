@@ -269,6 +269,6 @@ queue = LiveRequestQueue()  # Works but ADK auto-creates new loop
 
 In this part, you learned how `LiveRequestQueue` provides a unified interface for sending messages to ADK streaming agents within an async event loop. We covered the `LiveRequest` message model and explored how to send different message types: text content via `send_content()`, audio/video blobs via `send_realtime()`, activity signals for manual turn control, and control signals for graceful termination via `close()`. You also learned best practices for async queue management, creating queues in async context, resource cleanup, and message ordering. You now understand how to use `LiveRequestQueue` as the upstream communication channel in your Bidi-streaming applications, enabling users to send messages concurrently while receiving agent responses. Next, you'll learn how to handle the downstream flow—processing the events that agents generate in response to these messages.
 
-______________________________________________________________________
+---
 
 ← [Previous: Part 1: Introduction to ADK Bidi-streaming](https://google.github.io/adk-docs/streaming/dev-guide/part1/index.md) | [Next: Part 3: Event Handling with run_live()](https://google.github.io/adk-docs/streaming/dev-guide/part3/index.md) →

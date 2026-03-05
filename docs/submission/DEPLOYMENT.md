@@ -7,7 +7,9 @@ This document outlines the automated deployment process for **The Spatial Eye** 
 We have fully automated the cloud deployment process using Infrastructure-as-Code (Terraform) and Continuous Integration/Continuous Deployment (GitHub Actions).
 
 ### Infrastructure as Code (Terraform)
+
 We use Terraform to define and provision our GCP infrastructure, which ensures consistency and reproducibility.
+
 - **Location:** [`IaC/terraform/`](./IaC/terraform/)
 - **Core Configuration:** [`IaC/terraform/main.tf`](./IaC/terraform/main.tf) defines the primary resources, including:
   - Google Artifact Registry repository for storing Docker images.
@@ -16,7 +18,9 @@ We use Terraform to define and provision our GCP infrastructure, which ensures c
 - **Variables:** [`IaC/terraform/variables.tf`](./IaC/terraform/variables.tf) contains the required configuration variables.
 
 ### CI/CD Pipeline (GitHub Actions)
+
 Our deployment pipeline is fully automated via GitHub Actions, triggering on every push to the `main` branch.
+
 - **Location:** [`deploy.yml`](./.github/workflows/deploy.yml)
 - **Process:** The workflow authenticates with Google Cloud using Workload Identity Federation, builds a unified Docker container for the Next.js and FastAPI stack, pushes the image to Artifact Registry, and deploys the new revision to Cloud Run.
 
@@ -27,6 +31,7 @@ Our deployment pipeline is fully automated via GitHub Actions, triggering on eve
 If you wish to independently deploy and reproduce this project on your own GCP environment, please follow these steps:
 
 ### Prerequisites
+
 1. A **Google Cloud Platform (GCP)** Account with a created Project.
 2. Formatted **Google Cloud CLI (`gcloud`)** installed and authenticated.
 3. **Terraform** installed.
@@ -49,14 +54,14 @@ If you wish to independently deploy and reproduce this project on your own GCP e
    export TF_VAR_project_id="YOUR_GCP_PROJECT_ID"
    terraform plan
    ```
-4. **Crucial Initial Setup:** Because GitHub Actions hasn't built the real Docker image yet, Terraform must deploy a placeholder image to successfully create the Cloud Run service. Open `IaC/terraform/main.tf` and ensure the `image` inside the `containers` block is set to a public dummy image (e.g., `us-docker.pkg.dev/cloudrun/container/hello`). 
+4. **Crucial Initial Setup:** Because GitHub Actions hasn't built the real Docker image yet, Terraform must deploy a placeholder image to successfully create the Cloud Run service. Open `IaC/terraform/main.tf` and ensure the `image` inside the `containers` block is set to a public dummy image (e.g., `us-docker.pkg.dev/cloudrun/container/hello`).
 
 5. Apply the configuration to create the Artifact Registry and the initial Cloud Run service placeholder.
    ```bash
    terraform apply
    ```
 
-*(Note: Once GitHub Actions runs successfully for the first time, it will push the real application container and update the Cloud Run revision. For future Terraform runs, you can update `main.tf` to point to the real Artifact Registry image if desired).*
+_(Note: Once GitHub Actions runs successfully for the first time, it will push the real application container and update the Cloud Run revision. For future Terraform runs, you can update `main.tf` to point to the real Artifact Registry image if desired)._
 
 ### Step 2: Configure Workload Identity Federation
 
@@ -82,7 +87,7 @@ Navigate to your GitHub repository's **Settings > Secrets and variables > Action
 - `FIREBASE_ADMIN_CLIENT_EMAIL`: Firebase Admin SDK Client Email.
 - `FIREBASE_ADMIN_PRIVATE_KEY`: Firebase Admin SDK Private Key (stored in Google Secret Manager or directly, depending on setup).
 
-*(Note: The deployment workflow assumes that `GOOGLE_API_KEY` and `FIREBASE_ADMIN_PRIVATE_KEY` are mounted via Google Cloud Secret Manager for the Cloud Run service instance, mapped to `latest`).*
+_(Note: The deployment workflow assumes that `GOOGLE_API_KEY` and `FIREBASE_ADMIN_PRIVATE_KEY` are mounted via Google Cloud Secret Manager for the Cloud Run service instance, mapped to `latest`)._
 
 ### Step 4: Trigger the Deployment
 

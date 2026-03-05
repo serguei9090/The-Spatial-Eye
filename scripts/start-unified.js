@@ -20,8 +20,12 @@ const startBackend = () => {
     },
   );
 
-  python.on("error", (err) => console.error("❌ Failed to start Python backend process:", err));
-  python.on("close", (code) => console.log(`🐍 Python backend exited with code ${code}`));
+  python.on("error", (err) =>
+    console.error("❌ Failed to start Python backend process:", err),
+  );
+  python.on("close", (code) =>
+    console.log(`🐍 Python backend exited with code ${code}`),
+  );
 };
 
 const startFrontend = () => {
@@ -32,8 +36,12 @@ const startFrontend = () => {
     env: { ...process.env, PORT: "3000" },
   });
 
-  next.on("error", (err) => console.error("❌ Failed to start Next.js frontend:", err));
-  next.on("close", (code) => console.log(`⚛️ Next.js frontend exited with code ${code}`));
+  next.on("error", (err) =>
+    console.error("❌ Failed to start Next.js frontend:", err),
+  );
+  next.on("close", (code) =>
+    console.log(`⚛️ Next.js frontend exited with code ${code}`),
+  );
 };
 
 // Start both!

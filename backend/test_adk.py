@@ -13,7 +13,9 @@ from google.genai import types
 
 from tools_config import SPATIAL_SYSTEM_INSTRUCTION, SPATIAL_TOOLS
 
-load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env.local"))
+load_dotenv(
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env.local")
+)
 
 
 async def test_run():
@@ -21,7 +23,9 @@ async def test_run():
     user_id = "test-user"
     session_id = "test-session"
 
-    await session_service.create_session(app_name="TestApp", user_id=user_id, session_id=session_id)
+    await session_service.create_session(
+        app_name="TestApp", user_id=user_id, session_id=session_id
+    )
 
     agent = Agent(
         name="TestAgent",
@@ -33,7 +37,9 @@ async def test_run():
     runner = Runner(app_name="TestApp", agent=agent, session_service=session_service)
 
     live_request_queue = LiveRequestQueue()
-    content = types.Content(parts=[types.Part.from_text(text="Track and highlight my head")])
+    content = types.Content(
+        parts=[types.Part.from_text(text="Track and highlight my head")]
+    )
     live_request_queue.send_content(content)
 
     run_config = RunConfig(

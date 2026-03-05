@@ -3,14 +3,16 @@ import { GEMINI_REGISTRY } from "./registry";
 /**
  * Helper to ensure model ID has the "models/" prefix
  */
-const withPrefix = (id: string) => (id.startsWith("models/") ? id : `models/${id}`);
+const withPrefix = (id: string) =>
+  id.startsWith("models/") ? id : `models/${id}`;
 
 export const GEMINI_MODELS = {
   /**
    * Used for general text / search tasks and brand copy generation.
    */
   brandCopyAndSearch: withPrefix(
-    process.env.NEXT_PUBLIC_GEMINI_MODEL_COPY_SEARCH || GEMINI_REGISTRY.reasoning.id,
+    process.env.NEXT_PUBLIC_GEMINI_MODEL_COPY_SEARCH ||
+      GEMINI_REGISTRY.reasoning.id,
   ),
 
   /**

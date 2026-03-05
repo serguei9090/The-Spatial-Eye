@@ -4,7 +4,7 @@ As you build more complex agentic systems, you will find that a single agent is 
 
 ## When to Use A2A vs. Local Sub-Agents
 
-- **Local Sub-Agents:** These are agents that run *within the same application process* as your main agent. They are like internal modules or libraries, used to organize your code into logical, reusable components. Communication between a main agent and its local sub-agents is very fast because it happens directly in memory, without network overhead.
+- **Local Sub-Agents:** These are agents that run _within the same application process_ as your main agent. They are like internal modules or libraries, used to organize your code into logical, reusable components. Communication between a main agent and its local sub-agents is very fast because it happens directly in memory, without network overhead.
 - **Remote Agents (A2A):** These are independent agents that run as separate services, communicating over a network. A2A defines the standard protocol for this communication.
 
 Consider using **A2A** when:

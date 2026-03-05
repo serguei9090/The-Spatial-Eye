@@ -3,7 +3,9 @@ import { useSettings } from "@/lib/store/settings-context";
 import { fireEvent, render, screen } from "@testing-library/react";
 
 // Mock the dependencies
-jest.mock("@/components/atoms/AIOrb", () => ({ AIOrb: () => <div data-testid="ai-orb" /> }));
+jest.mock("@/components/atoms/AIOrb", () => ({
+  AIOrb: () => <div data-testid="ai-orb" />,
+}));
 jest.mock("@/components/molecules/CoordinateDisplay", () => ({
   CoordinateDisplay: () => <div data-testid="coordinate-display" />,
 }));
@@ -53,7 +55,9 @@ describe("ControlBar", () => {
   });
 
   it("shows live listening state", () => {
-    render(<ControlBar {...defaultProps} isConnected={true} isListening={true} />);
+    render(
+      <ControlBar {...defaultProps} isConnected={true} isListening={true} />,
+    );
 
     const stopElements = screen.getAllByText("Stop");
     expect(stopElements.length).toBeGreaterThan(0);

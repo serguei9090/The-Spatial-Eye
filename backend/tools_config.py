@@ -46,7 +46,9 @@ SPATIAL_SYSTEM_INSTRUCTION = (
 
 
 # RECOMMENDED TOOL DEFINITION
-def track_and_highlight(label: str, internal_context_check: str, box_2d: list[int]) -> str:
+def track_and_highlight(
+    label: str, internal_context_check: str, box_2d: list[int]
+) -> str:
     """
     HIGHLIGHT A VISIBLE OBJECT IN THE CURRENT FRAME.
 
@@ -93,7 +95,6 @@ def track_and_highlight(label: str, internal_context_check: str, box_2d: list[in
         "The bounding box values just used are now expired — do NOT reuse them. "
         "Any future call MUST re-derive coordinates from the live frame."
     )
-
 
 
 # ---------------------------------------------------------

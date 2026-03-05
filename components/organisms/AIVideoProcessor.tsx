@@ -7,8 +7,15 @@ import { useEffect, useRef } from "react";
 let globalCaptureCanvas: HTMLCanvasElement | null = null;
 
 export function AIVideoProcessor() {
-  const { isListening, isConnected, mode, videoRef, isUserTalking, isAiTalking, sendVideoFrame } =
-    useStudioContext();
+  const {
+    isListening,
+    isConnected,
+    mode,
+    videoRef,
+    isUserTalking,
+    isAiTalking,
+    sendVideoFrame,
+  } = useStudioContext();
 
   const workerRef = useRef<Worker | null>(null);
 
@@ -19,7 +26,8 @@ export function AIVideoProcessor() {
     worker.onmessage = (e) => {
       if (e.data.type === "frame") {
         const base64 = e.data.data;
-        if (base64) sendVideoFrame(base64, "image/jpeg", e.data.width, e.data.height);
+        if (base64)
+          sendVideoFrame(base64, "image/jpeg", e.data.width, e.data.height);
       } else if (e.data.type === "error") {
         console.error("[AIVideoProcessor Worker Error]", e.data.error);
       }
@@ -44,7 +52,9 @@ export function AIVideoProcessor() {
 
     // Adaptive interval handling
     const currentInterval =
-      isUserTalking || isAiTalking ? ADAPTIVE_INTERVAL_ACTIVE : ADAPTIVE_INTERVAL_IDLE;
+      isUserTalking || isAiTalking
+        ? ADAPTIVE_INTERVAL_ACTIVE
+        : ADAPTIVE_INTERVAL_IDLE;
 
     const intervalId = globalThis.setInterval(async () => {
       if (isConnected && isListening && workerRef.current) {

@@ -16,7 +16,10 @@
       "severity": "error",
       "description": "Formatter would have printed the following content:",
       "message": [
-        { "elements": [], "content": "Formatter would have printed the following content:" }
+        {
+          "elements": [],
+          "content": "Formatter would have printed the following content:"
+        }
       ],
       "advices": {
         "advices": [

@@ -514,7 +514,7 @@ The above example shows the basic structure for checking `error_code` and `error
 
 **When to use `break` vs `continue`:**
 
-The key decision is: *Can the model's response continue meaningfully?*
+The key decision is: _Can the model's response continue meaningfully?_
 
 **Scenario 1: Content Policy Violation (Use `break`)**
 
@@ -534,7 +534,7 @@ if event.error_code in ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST"]:
 
 **Why `break`?** The model has terminated its response. No more events will come for this turn. Continuing would just waste resources waiting for events that won't arrive.
 
-______________________________________________________________________
+---
 
 **Scenario 2: Network Hiccup During Streaming (Use `continue`)**
 
@@ -556,7 +556,7 @@ User Notifications
 
 For brief transient errors (lasting \<1 second), don't notify the user—they won't notice the hiccup. But if the error persists or impacts the user experience (e.g., streaming pauses for >3 seconds), notify them gracefully: "Experiencing connection issues, retrying..."
 
-______________________________________________________________________
+---
 
 **Scenario 3: Token Limit Reached (Use `break`)**
 
@@ -577,7 +577,7 @@ if event.error_code == "MAX_TOKENS":
 
 **Why `break`?** The model has reached its output limit and stopped. Continuing won't yield more tokens.
 
-______________________________________________________________________
+---
 
 **Scenario 4: Rate Limit with Retry Logic (Use `continue` with backoff)**
 
@@ -606,7 +606,7 @@ async for event in runner.run_live(...):
 
 **Why `continue` (initially)?** Rate limits are often temporary. With exponential backoff, the stream may recover. But after multiple failures, `break` to avoid infinite waiting.
 
-______________________________________________________________________
+---
 
 **Decision Framework:**
 
@@ -924,74 +924,79 @@ Demo implementation: [app.js:339-688](https://github.com/google/adk-samples/blob
 ```javascript
 // Handle incoming messages
 websocket.onmessage = function (event) {
-    // Parse the incoming ADK Event
-    const adkEvent = JSON.parse(event.data);
+  // Parse the incoming ADK Event
+  const adkEvent = JSON.parse(event.data);
 
-    // Handle turn complete event
-    if (adkEvent.turnComplete === true) {
-        // Remove typing indicator from current message
-        if (currentBubbleElement) {
-            const textElement = currentBubbleElement.querySelector(".bubble-text");
-            const typingIndicator = textElement.querySelector(".typing-indicator");
-            if (typingIndicator) {
-                typingIndicator.remove();
-            }
-        }
-        currentMessageId = null;
-        currentBubbleElement = null;
-        return;
+  // Handle turn complete event
+  if (adkEvent.turnComplete === true) {
+    // Remove typing indicator from current message
+    if (currentBubbleElement) {
+      const textElement = currentBubbleElement.querySelector(".bubble-text");
+      const typingIndicator = textElement.querySelector(".typing-indicator");
+      if (typingIndicator) {
+        typingIndicator.remove();
+      }
+    }
+    currentMessageId = null;
+    currentBubbleElement = null;
+    return;
+  }
+
+  // Handle interrupted event
+  if (adkEvent.interrupted === true) {
+    // Stop audio playback if it's playing
+    if (audioPlayerNode) {
+      audioPlayerNode.port.postMessage({ command: "endOfAudio" });
     }
 
-    // Handle interrupted event
-    if (adkEvent.interrupted === true) {
-        // Stop audio playback if it's playing
-        if (audioPlayerNode) {
-            audioPlayerNode.port.postMessage({ command: "endOfAudio" });
-        }
+    // Keep the partial message but mark it as interrupted
+    if (currentBubbleElement) {
+      const textElement = currentBubbleElement.querySelector(".bubble-text");
 
-        // Keep the partial message but mark it as interrupted
-        if (currentBubbleElement) {
-            const textElement = currentBubbleElement.querySelector(".bubble-text");
+      // Remove typing indicator
+      const typingIndicator = textElement.querySelector(".typing-indicator");
+      if (typingIndicator) {
+        typingIndicator.remove();
+      }
 
-            // Remove typing indicator
-            const typingIndicator = textElement.querySelector(".typing-indicator");
-            if (typingIndicator) {
-                typingIndicator.remove();
-            }
-
-            // Add interrupted marker
-            currentBubbleElement.classList.add("interrupted");
-        }
-
-        currentMessageId = null;
-        currentBubbleElement = null;
-        return;
+      // Add interrupted marker
+      currentBubbleElement.classList.add("interrupted");
     }
 
-    // Handle content events (text or audio)
-    if (adkEvent.content && adkEvent.content.parts) {
-        const parts = adkEvent.content.parts;
+    currentMessageId = null;
+    currentBubbleElement = null;
+    return;
+  }
 
-        for (const part of parts) {
-            // Handle text
-            if (part.text) {
-                // Add a new message bubble for a new turn
-                if (currentMessageId == null) {
-                    currentMessageId = Math.random().toString(36).substring(7);
-                    currentBubbleElement = createMessageBubble(part.text, false, true);
-                    currentBubbleElement.id = currentMessageId;
-                    messagesDiv.appendChild(currentBubbleElement);
-                } else {
-                    // Update the existing message bubble with accumulated text
-                    const existingText = currentBubbleElement.querySelector(".bubble-text").textContent;
-                    const cleanText = existingText.replace(/\.\.\.$/, '');
-                    updateMessageBubble(currentBubbleElement, cleanText + part.text, true);
-                }
+  // Handle content events (text or audio)
+  if (adkEvent.content && adkEvent.content.parts) {
+    const parts = adkEvent.content.parts;
 
-                scrollToBottom();
-            }
+    for (const part of parts) {
+      // Handle text
+      if (part.text) {
+        // Add a new message bubble for a new turn
+        if (currentMessageId == null) {
+          currentMessageId = Math.random().toString(36).substring(7);
+          currentBubbleElement = createMessageBubble(part.text, false, true);
+          currentBubbleElement.id = currentMessageId;
+          messagesDiv.appendChild(currentBubbleElement);
+        } else {
+          // Update the existing message bubble with accumulated text
+          const existingText =
+            currentBubbleElement.querySelector(".bubble-text").textContent;
+          const cleanText = existingText.replace(/\.\.\.$/, "");
+          updateMessageBubble(
+            currentBubbleElement,
+            cleanText + part.text,
+            true,
+          );
         }
+
+        scrollToBottom();
+      }
     }
+  }
 };
 ```
 
@@ -1501,6 +1506,6 @@ The SequentialAgent design ensures smooth transitions—your application simply 
 
 In this part, you mastered event handling in ADK's Bidi-streaming architecture. We explored the different event types that agents generate—text responses, audio chunks, transcriptions, tool calls, and control signals—and learned how to process each event type effectively. You now understand how to handle interruptions and turn completion signals for natural conversation flow, serialize events for network transport using Pydantic's model serialization, leverage ADK's automatic tool execution to simplify agent workflows, and access InvocationContext for advanced state management scenarios. With these event handling patterns in place, you're equipped to build responsive streaming applications that provide real-time feedback to users. Next, you'll learn how to configure sophisticated streaming behaviors through RunConfig, including multimodal interactions, session resumption, and cost controls.
 
-______________________________________________________________________
+---
 
 ← [Previous: Part 2: Sending Messages with LiveRequestQueue](https://google.github.io/adk-docs/streaming/dev-guide/part2/index.md) | [Next: Part 4: Understanding RunConfig](https://google.github.io/adk-docs/streaming/dev-guide/part4/index.md) →

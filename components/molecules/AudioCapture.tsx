@@ -31,7 +31,11 @@ export function AudioCapture({
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: inputDeviceId
-          ? { deviceId: { exact: inputDeviceId }, echoCancellation: true, noiseSuppression: true }
+          ? {
+              deviceId: { exact: inputDeviceId },
+              echoCancellation: true,
+              noiseSuppression: true,
+            }
           : { echoCancellation: true, noiseSuppression: true },
         video: false,
       });
@@ -44,10 +48,15 @@ export function AudioCapture({
       audioContextRef.current = audioContext;
 
       // Load the AudioWorklet and connect the pipeline
-      await audioContext.audioWorklet.addModule("/worklets/pcm-capture-processor.js");
+      await audioContext.audioWorklet.addModule(
+        "/worklets/pcm-capture-processor.js",
+      );
 
       const source = audioContext.createMediaStreamSource(stream);
-      const workletNode = new AudioWorkletNode(audioContext, "pcm-capture-processor");
+      const workletNode = new AudioWorkletNode(
+        audioContext,
+        "pcm-capture-processor",
+      );
       workletNodeRef.current = workletNode;
 
       // Receive processed audio frames from the worklet thread

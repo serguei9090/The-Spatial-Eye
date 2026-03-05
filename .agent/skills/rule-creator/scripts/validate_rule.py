@@ -11,8 +11,9 @@ VALID_TRIGGERS = [
     "manual",
     "model_decision",
     "glob",
-    "(list)" # Supporting the list variant mentioned by user
+    "(list)",  # Supporting the list variant mentioned by user
 ]
+
 
 def validate_rule_content(content, filename="Unknown"):
     """
@@ -40,7 +41,10 @@ def validate_rule_content(content, filename="Unknown"):
     if trigger not in VALID_TRIGGERS:
         # Check if it's a dynamic list or something similar
         if not isinstance(trigger, (str, list)):
-            return False, f"Invalid trigger type: {type(trigger)}. Must be string or list."
+            return (
+                False,
+                f"Invalid trigger type: {type(trigger)}. Must be string or list.",
+            )
 
     # Validation per trigger type
     if trigger == "model_decision" or trigger == "(list)":
@@ -49,17 +53,19 @@ def validate_rule_content(content, filename="Unknown"):
 
     if trigger == "glob" or trigger == "(list)":
         if not header.get("globs"):
-             return False, f"Trigger '{trigger}' requires a 'globs' field."
+            return False, f"Trigger '{trigger}' requires a 'globs' field."
 
     return True, f"Rule '{filename}' is VALID [trigger: {trigger}]"
 
+
 def validate_file(filepath):
     try:
-        with open(filepath, 'r', encoding='utf-8') as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             content = f.read()
         return validate_rule_content(content, os.path.basename(filepath))
     except Exception as e:
         return False, f"Error reading file {filepath}: {e}"
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

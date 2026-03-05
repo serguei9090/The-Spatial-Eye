@@ -23,7 +23,10 @@ export function PremiumParticlesBackground() {
       fpsLimit: 60,
       background: { color: "transparent" },
       particles: {
-        number: { value: reduceMotion ? 28 : 62, density: { enable: true, area: 860 } },
+        number: {
+          value: reduceMotion ? 28 : 62,
+          density: { enable: true, area: 860 },
+        },
         color: { value: ["#22d3ee", "#38bdf8", "#0ea5e9", "#67e8f9"] },
         links: {
           enable: true,
@@ -62,7 +65,10 @@ export function PremiumParticlesBackground() {
   }
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+    <div
+      aria-hidden
+      className="pointer-events-none fixed inset-0 -z-10 overflow-hidden"
+    >
       <Particles className="h-full w-full" options={options} />
       <motion.div
         className="absolute -left-24 top-[-7rem] h-[28rem] w-[28rem] rounded-full bg-cyan-300/24 blur-3xl"
@@ -75,7 +81,11 @@ export function PremiumParticlesBackground() {
                 scale: [1, 1.08, 0.96, 1],
               }
         }
-        transition={{ duration: 18, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        transition={{
+          duration: 18,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "easeInOut",
+        }}
       />
 
       <motion.div
@@ -89,7 +99,11 @@ export function PremiumParticlesBackground() {
                 scale: [1, 0.95, 1.1, 1],
               }
         }
-        transition={{ duration: 24, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        transition={{
+          duration: 24,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "easeInOut",
+        }}
       />
 
       <motion.div
@@ -103,18 +117,27 @@ export function PremiumParticlesBackground() {
                 scale: [1, 1.12, 0.94, 1],
               }
         }
-        transition={{ duration: 28, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        transition={{
+          duration: 28,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "easeInOut",
+        }}
       />
 
       <motion.div
         className="absolute inset-0 opacity-35"
         animate={reduceMotion ? undefined : { opacity: [0.24, 0.38, 0.24] }}
-        transition={{ duration: 7, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        transition={{
+          duration: 7,
+          repeat: Number.POSITIVE_INFINITY,
+          ease: "easeInOut",
+        }}
         style={{
           backgroundImage:
             "linear-gradient(rgba(148,163,184,0.11) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,0.11) 1px, transparent 1px)",
           backgroundSize: "56px 56px",
-          maskImage: "radial-gradient(circle at center, black 42%, transparent 88%)",
+          maskImage:
+            "radial-gradient(circle at center, black 42%, transparent 88%)",
         }}
       />
 

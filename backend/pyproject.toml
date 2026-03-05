@@ -5,15 +5,15 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "fastapi>=0.131.0",
-    "firebase-admin>=7.2.0",
-    "google-adk[a2a]>=1.25.1",
-    "google-genai>=1.64.0",
-    "loguru>=0.7.3",
-    "Pillow>=11.0.0",
-    "python-dotenv>=1.2.1",
-    "uvicorn>=0.41.0",
-    "websockets>=15.0.1",
+  "fastapi>=0.131.0",
+  "firebase-admin>=7.2.0",
+  "google-adk[a2a]>=1.25.1",
+  "google-genai>=1.64.0",
+  "loguru>=0.7.3",
+  "Pillow>=11.0.0",
+  "python-dotenv>=1.2.1",
+  "uvicorn>=0.41.0",
+  "websockets>=15.0.1",
 ]
 
 [tool.ruff]
@@ -28,6 +28,4 @@ ignore = []
 quote-style = "double"
 
 [dependency-groups]
-dev = [
-    "ruff>=0.15.2",
-]
+dev = ["ruff>=0.15.2"]

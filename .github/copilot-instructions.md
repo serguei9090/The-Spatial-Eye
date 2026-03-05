@@ -11,20 +11,21 @@
 
 ## Tech Stack & Architecture
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Framework** | Next.js 15 + React 19 | Full-stack app with server/client separation |
-| **Styling** | Tailwind CSS + shadcn/ui | Rapid component development with pre-built UI elements |
-| **AI API** | google-generative-ai (v1beta) | Gemini 2.0 Multimodal Live API over WebSockets |
-| **State Management** | React hooks + Context API | Manage active highlights, recording state, UI state |
-| **Hosting** | Firebase Hosting | Serverless deployment |
-| **Database** | Firestore | Session logs, pinned object locations, user preferences |
-| **Animations** | Framer Motion | Smooth pulsing circle overlays, AI orb indicators |
-| **Media** | MediaRecorder API | Audio input capture and streaming |
+| Layer                | Technology                    | Purpose                                                 |
+| -------------------- | ----------------------------- | ------------------------------------------------------- |
+| **Framework**        | Next.js 15 + React 19         | Full-stack app with server/client separation            |
+| **Styling**          | Tailwind CSS + shadcn/ui      | Rapid component development with pre-built UI elements  |
+| **AI API**           | google-generative-ai (v1beta) | Gemini 2.0 Multimodal Live API over WebSockets          |
+| **State Management** | React hooks + Context API     | Manage active highlights, recording state, UI state     |
+| **Hosting**          | Firebase Hosting              | Serverless deployment                                   |
+| **Database**         | Firestore                     | Session logs, pinned object locations, user preferences |
+| **Animations**       | Framer Motion                 | Smooth pulsing circle overlays, AI orb indicators       |
+| **Media**            | MediaRecorder API             | Audio input capture and streaming                       |
 
 ## Code Style & Patterns
 
 ### File Organization
+
 - Place page routes in `app/` (Next.js 15 App Router)
 - Store reusable hooks in `lib/hooks/`
 - Store custom components in `components/`
@@ -32,6 +33,7 @@
 - Store types in `lib/types.ts`
 
 ### Component Patterns
+
 - Use functional components with React hooks
 - Use TypeScript for all new code
 - Use shadcn/ui components as base; avoid re-implementing UI elements
@@ -39,12 +41,14 @@
 - Use Framer Motion for animations (pulsing highlight circles, AI orb breathing effects)
 
 ### Naming Conventions
+
 - Components: PascalCase (`SpatialOverlay.tsx`, `VideoFeed.tsx`)
 - Hooks: camelCase with `use` prefix (`useGeminiLive.ts`, `useHighlightDetection.ts`)
 - Events/callbacks: `on{Action}` pattern (`onDetectionComplete`, `onFrameCapture`)
 - API utilities: snake_case (`gemini_websocket.ts`, `camera_utils.ts`)
 
 ### State Management Example
+
 ```typescript
 // Good: Use hooks for related state
 const [activeHighlights, setActiveHighlights] = useState<Highlight[]>([]);
@@ -56,19 +60,21 @@ const [videoRef] = useRef<HTMLVideoElement>(null);
 const [uiState, setUiState] = useState({
   isListening: false,
   isConnected: false,
-  error: null
+  error: null,
 });
 ```
 
 ## Core Components & Responsibilities
 
 ### 1. Video Feed Component (`components/VideoFeed.tsx`)
+
 - Displays live webcam video
 - Provider ref for canvas frame capture
 - Handles video constraints and permissions
 - Must resize SVG overlay on window resize events
 
 ### 2. Spatial Overlay Component (`components/SpatialOverlay.tsx`)
+
 - **Input**: array of normalized coordinates `[ymin, xmin, ymax, xmax]` (0-1000 range)
 - **Output**: SVG circles with neon-green color, pulsing animation
 - **Responsibility**: Convert normalized coords to pixel space based on video dimensions
@@ -76,6 +82,7 @@ const [uiState, setUiState] = useState({
 - **Responsive**: Re-calculate pixel positions on video resize
 
 ### 3. Gemini Live Hook (`lib/hooks/useGeminiLive.ts`)
+
 - Establish WebSocket connection to Gemini 2.0 Multimodal Live API
 - Manage audio input via MediaRecorder API
 - Capture frames from hidden canvas every 500-1000ms as base64
@@ -84,7 +91,9 @@ const [uiState, setUiState] = useState({
 - Handle connection errors and reconnection logic
 
 ### 4. System Instruction (Gemini Prompt)
+
 The system instruction must include:
+
 ```
 When identifying objects, output coordinates in the format:
 [ymin, xmin, ymax, xmax] normalized to 0-1000 range
@@ -95,6 +104,7 @@ Example: "The red cup is located at [150, 200, 350, 450]"
 ## Gemini Live API Integration
 
 ### WebSocket Communication Flow
+
 1. **Auth**: Use API key from environment (`NEXT_PUBLIC_GOOGLE_API_KEY`)
 2. **Connection URL**: `wss://generativelanguage.googleapis.com/google.ai.generativelanguage.v1alpha.GenerativeService/BidiGenerateContent?key={API_KEY}`
 3. **Frame Encoding**: Send video frames as base64 in `content.inline_data.data`
@@ -104,6 +114,7 @@ Example: "The red cup is located at [150, 200, 350, 450]"
    - Update `activeHighlights` array
 
 ### Example Message Structure
+
 ```json
 {
   "realtime_input": {
@@ -118,33 +129,41 @@ Example: "The red cup is located at [150, 200, 350, 450]"
 ## Build & Deployment
 
 ### Install Dependencies
+
 ```bash
 npm install
 ```
 
 ### Development Server
+
 ```bash
 npm run dev
 ```
+
 Runs on `http://localhost:3000` by default.
 
 ### Build for Production
+
 ```bash
 npm run build
 npm run start
 ```
 
 ### Deploy to Firebase Hosting
+
 ```bash
 firebase deploy --only hosting
 ```
+
 Set environment variables in `.env.local`:
+
 - `NEXT_PUBLIC_GOOGLE_API_KEY` - Gemini API key (public, safe for client-side)
 - `GOOGLE_API_KEY` - (if using server-side calls)
 
 ## Project Conventions
 
 ### Coordinate System
+
 - **Normalized Range**: 0-1000 (not 0-1.0) for precision
 - **Order**: `[ymin, xmin, ymax, xmax]` (top, left, bottom, right)
 - **Conversion to Pixels**:
@@ -153,11 +172,12 @@ Set environment variables in `.env.local`:
     top: (ymin / 1000) * videoHeight,
     left: (xmin / 1000) * videoWidth,
     bottom: (ymax / 1000) * videoHeight,
-    right: (xmax / 1000) * videoWidth
+    right: (xmax / 1000) * videoWidth,
   };
   ```
 
 ### Highlight Data Structure
+
 ```typescript
 interface Highlight {
   id: string;
@@ -172,12 +192,14 @@ interface Highlight {
 ```
 
 ### Error Handling
+
 - Catch WebSocket errors and implement exponential backoff reconnection
 - Display user-friendly error messages via toast notifications (use shadcn/ui)
 - Log errors to browser console for debugging
 - Store last 10 errors in Firestore for telemetry
 
 ### Performance Considerations
+
 - Throttle frame capture to 1-2 fps to reduce bandwidth
 - Use `requestAnimationFrame` for SVG overlay rendering
 - Implement virtual Canvas for frame capture (hidden from DOM)
@@ -187,12 +209,14 @@ interface Highlight {
 ## Integration Points
 
 ### External Dependencies
+
 - **google-generative-ai**: Multimodal Live API client
 - **Firebase**: Auth, Hosting, Firestore
 - **Framer Motion**: Animations
 - **shadcn/ui**: Component library
 
 ### Data Flow
+
 ```
 User Browser
   ↓
@@ -212,24 +236,29 @@ Firestore (logs sessions)
 ## Security & Auth
 
 ### API Key Management
+
 - **Never** commit `NEXT_PUBLIC_GOOGLE_API_KEY` to version control
 - Store in `.env.local` (git-ignored)
 - In production, use Firebase environment variables
 - Rotate keys periodically
 
 ### User Privacy
+
 - Do not store raw video frames in Firestore
 - Only persist object detection metadata (coordinates, object names, timestamps)
 - Clear session data after 30 days
 - Allow users to delete their session history
 
 ### WebSocket Security
+
 - Always use `wss://` (secure WebSocket)
 - Validate incoming coordinate ranges (must be 0-1000)
 - Rate-limit API calls per user (implement in backend if needed)
 
 ### Client-Side API Architecture
+
 **Important**: The Gemini API is accessed **directly from the client browser**, not through a backend server. The user provides their own `NEXT_PUBLIC_GOOGLE_API_KEY` for their session:
+
 - User's API key is **never stored** on our servers
 - User authenticates with Firebase for session/metadata storage only
 - Each user's Gemini API usage is billed to their own Google Cloud account
@@ -241,33 +270,42 @@ Firestore (logs sessions)
 The project follows atomic design principles for component hierarchy:
 
 ### Atoms (Base Components)
+
 Small, reusable foundational components in `components/atoms/`:
+
 - `Button.tsx` – shadcn/ui button wrapper
 - `Spinner.tsx` – Loading indicator
 - `Badge.tsx` – Status/label display
 - `Icon.tsx` – SVG icon wrapper
 
 ### Molecules (Composite Components)
+
 Small functional groups in `components/molecules/`:
+
 - `AIOrb.tsx` – Breathing AI indicator with Framer Motion
 - `CoordinateDisplay.tsx` – Shows [ymin, xmin, ymax, xmax] values
 - `HighlightCircle.tsx` – Single SVG circle overlay
 - `ErrorToast.tsx` – Notification component
 
 ### Organisms (Complex Features)
+
 Full-featured sections in `components/organisms/`:
+
 - `VideoFeed.tsx` – Live webcam video stream with constraints
 - `SpatialOverlay.tsx` – Container for multiple highlight circles
 - `AudioCapture.tsx` – MediaRecorder integration for voice input
 - `HUDPanel.tsx` – Control panel for commands/settings
 
 ### Templates & Pages
+
 Page-level layouts in `app/`:
+
 - `app/page.tsx` – Main spatial eye interface (HUD layout)
 - `app/settings/page.tsx` – Configuration and preferences
 - `app/sessions/page.tsx` – History of detected objects
 
 ### Styling with Atomic Design
+
 - Atoms use minimal Tailwind (base spacing, colors)
 - Molecules compose atoms with clear responsibilities
 - Organisms orchestrate molecules into feature sections
@@ -276,6 +314,7 @@ Page-level layouts in `app/`:
 ## Testing Patterns
 
 ### Unit Testing Setup
+
 - **Framework**: Jest + React Testing Library
 - **Test Location**: `__tests__/` folder mirrors source structure
 - **Example Structure**:
@@ -291,9 +330,11 @@ Page-level layouts in `app/`:
   ```
 
 ### Testing Utilities
+
 - **Coordinate Conversion**: Test pixel ↔ normalized coordinate transformations
+
   ```typescript
-  test('converts normalized coords to pixels', () => {
+  test("converts normalized coords to pixels", () => {
     const result = normalizedToPixels([150, 200, 350, 450], 1920, 1080);
     expect(result.top).toBe(162); // (150/1000)*1080
     expect(result.left).toBe(384); // (200/1000)*1920
@@ -301,11 +342,12 @@ Page-level layouts in `app/`:
   ```
 
 - **WebSocket Mocking**: Mock Gemini API responses for testing
+
   ```typescript
-  jest.mock('google-generative-ai', () => ({
+  jest.mock("google-generative-ai", () => ({
     GenerativeServiceClient: jest.fn(() => ({
-      bidiGenerateContent: jest.fn()
-    }))
+      bidiGenerateContent: jest.fn(),
+    })),
   }));
   ```
 
@@ -319,16 +361,19 @@ Page-level layouts in `app/`:
   ```
 
 ### Snapshot Testing
+
 - SVG overlays can use snapshots for regression detection
 - Keep snapshots minimal—only test critical rendering paths
 - Update snapshots only after visual review (`jest -u`)
 
 ### E2E Testing (Optional)
+
 - Consider Playwright for full user flows (camera → detection → overlay)
 - Requires test fixtures for Gemini mock responses
 - Test video playback, frame capture, and overlay rendering
 
 ### Test Dependencies
+
 ```json
 {
   "devDependencies": {
@@ -360,10 +405,11 @@ Page-level layouts in `app/`:
    - Create Web app if not exists
    - Copy Firebase config object
    - Add to `lib/firebase/config.ts`:
+
    ```typescript
-   import { initializeApp } from 'firebase/app';
-   import { getFirestore } from 'firebase/firestore';
-   import { getAuth } from 'firebase/auth';
+   import { initializeApp } from "firebase/app";
+   import { getFirestore } from "firebase/firestore";
+   import { getAuth } from "firebase/auth";
 
    const firebaseConfig = {
      apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -377,6 +423,7 @@ Page-level layouts in `app/`:
    ```
 
 4. **Environment Variables (.env.local)**
+
    ```
    # Gemini API (user's own key - never stored on server)
    NEXT_PUBLIC_GOOGLE_API_KEY=user_provides_this
@@ -389,6 +436,7 @@ Page-level layouts in `app/`:
    ```
 
 5. **Firestore Security Rules** (development → test mode)
+
    ```javascript
    rules_version = '2';
    service cloud.firestore {
@@ -405,6 +453,7 @@ Page-level layouts in `app/`:
    ```
 
 6. **Install Firebase Locally**
+
    ```bash
    npm install firebase
    npm install -D @types/firebase
@@ -417,6 +466,7 @@ Page-level layouts in `app/`:
 ### Firestore Collections Schema
 
 **`sessions` collection**
+
 ```typescript
 {
   id: string;           // Auto-generated
@@ -429,6 +479,7 @@ Page-level layouts in `app/`:
 ```
 
 **`detections` collection (nested under sessions)**
+
 ```typescript
 {
   id: string;           // Auto-generated
@@ -443,6 +494,7 @@ Page-level layouts in `app/`:
 ## Common Tasks for AI Agents
 
 ### Adding a New Feature
+
 1. Create the React component in `components/`
 2. Import and use in appropriate page/component
 3. Add types to `lib/types.ts` if introducing new data structures
@@ -450,12 +502,14 @@ Page-level layouts in `app/`:
 5. Test with live Gemini API before committing
 
 ### Debugging Coordinates
+
 - Log incoming coordinates to browser console: `console.log('Raw coords:', coords)`
 - Visually verify overlay position during development
 - Test with known objects at different distances/angles
 - Create unit tests in `__tests__/` for coordinate conversion functions
 
 ### Adding Firestore Integration
+
 - Create utility functions in `lib/firestore/`
 - Export typed collection references in `lib/types.ts`
 - Handle Firebase auth in app root

@@ -299,7 +299,6 @@ ADK Bidi-streaming integrates Live API session into the ADK framework's applicat
 - **Phase 1: Application Initialization** (Once at Startup)
 
 - ADK Application initialization
-
   - Create an [Agent](https://google.github.io/adk-docs/agents/): for interacting with users, utilize external tools, and coordinate with other agents.
   - Create a [SessionService](https://google.github.io/adk-docs/sessions/session/#managing-sessions-with-a-sessionservice): for getting or creating ADK `Session`
   - Create a [Runner](https://google.github.io/adk-docs/runtime/): for providing a runtime for the Agent
@@ -307,11 +306,9 @@ ADK Bidi-streaming integrates Live API session into the ADK framework's applicat
 - **Phase 2: Session Initialization** (Once per User Session)
 
 - ADK `Session` initialization:
-
   - Get or Create an ADK `Session` using the `SessionService`
 
 - ADK Bidi-streaming initialization:
-
   - Create a [RunConfig](https://google.github.io/adk-docs/streaming/dev-guide/part4/index.md) for configuring ADK Bidi-streaming
   - Create a [LiveRequestQueue](https://google.github.io/adk-docs/streaming/dev-guide/part2/index.md) for sending user messages to the `Agent`
   - Start a [run_live()](https://google.github.io/adk-docs/streaming/dev-guide/part3/index.md) event loop
@@ -924,6 +921,6 @@ While this guide covers ADK-specific concepts thoroughly, familiarity with these
 
 In this introduction, you learned how ADK transforms complex real-time streaming infrastructure into a developer-friendly framework. We covered the fundamentals of Live API's bidirectional streaming capabilities, examined how ADK simplifies the streaming complexity through abstractions like `LiveRequestQueue`, `Runner`, and `run_live()`, and explored the complete application lifecycle from initialization through session termination. You now understand how ADK handles the heavy lifting—LLM-side streaming connection management, state persistence, platform differences, and event coordination—so you can focus on building intelligent agent experiences. With this foundation in place, you're ready to dive into the specifics of sending messages, handling events, configuring sessions, and implementing multimodal features in the following parts.
 
-______________________________________________________________________
+---
 
 [Next: Part 2: Sending Messages with LiveRequestQueue](https://google.github.io/adk-docs/streaming/dev-guide/part2/index.md) →

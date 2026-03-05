@@ -1,7 +1,15 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { BrainCircuit, Cloud, Eye, Mic, Server, Sparkles, Wrench } from "lucide-react";
+import {
+  BrainCircuit,
+  Cloud,
+  Eye,
+  Mic,
+  Server,
+  Sparkles,
+  Wrench,
+} from "lucide-react";
 
 export function TechArchitectureVisual() {
   return (
@@ -132,7 +140,11 @@ export function TechArchitectureVisual() {
         <motion.div
           className="absolute top-0 left-[20%] w-[60%] h-[1px] bg-gradient-to-r from-transparent via-pink-400 to-transparent"
           animate={{ opacity: [0.3, 1, 0.3], width: ["40%", "80%", "40%"] }}
-          transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+          transition={{
+            duration: 3,
+            repeat: Number.POSITIVE_INFINITY,
+            ease: "easeInOut",
+          }}
         />
 
         <div className="flex gap-4 items-center relative z-10">
@@ -166,7 +178,11 @@ export function TechArchitectureVisual() {
                 key={`bar-${bar}`}
                 className="w-1 bg-pink-500/60 rounded-t-sm"
                 animate={{ height: ["4px", "16px", "4px"] }}
-                transition={{ duration: 1, repeat: Number.POSITIVE_INFINITY, delay: bar * 0.2 }}
+                transition={{
+                  duration: 1,
+                  repeat: Number.POSITIVE_INFINITY,
+                  delay: bar * 0.2,
+                }}
               />
             ))}
           </div>

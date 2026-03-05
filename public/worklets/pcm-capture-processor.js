@@ -31,7 +31,10 @@ class PcmCaptureProcessor extends AudioWorkletProcessor {
     }
 
     if (this._buffer.length >= this._bufferSize) {
-      this.port.postMessage({ type: "pcm", samples: new Float32Array(this._buffer) });
+      this.port.postMessage({
+        type: "pcm",
+        samples: new Float32Array(this._buffer),
+      });
       this._buffer = [];
     }
 

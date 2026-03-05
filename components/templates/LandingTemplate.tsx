@@ -71,7 +71,13 @@ interface IssueSolutionItem {
   color: string;
 }
 
-function AccordionItem({ item, idx }: { item: IssueSolutionItem; idx: number }) {
+function AccordionItem({
+  item,
+  idx,
+}: {
+  item: IssueSolutionItem;
+  idx: number;
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const Icon = item.icon;
 
@@ -117,14 +123,18 @@ function AccordionItem({ item, idx }: { item: IssueSolutionItem; idx: number }) 
                     <div className="w-2 h-2 rounded-full bg-red-500" />
                     The Issue
                   </h4>
-                  <p className="text-white/80 leading-relaxed text-sm">{item.issue}</p>
+                  <p className="text-white/80 leading-relaxed text-sm">
+                    {item.issue}
+                  </p>
                 </div>
                 <div>
                   <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-2 flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-green-500" />
                     Our Solution
                   </h4>
-                  <p className="text-white/80 leading-relaxed text-sm">{item.solution}</p>
+                  <p className="text-white/80 leading-relaxed text-sm">
+                    {item.solution}
+                  </p>
                 </div>
               </div>
             </div>
@@ -149,13 +159,21 @@ export function LandingTemplate() {
               <motion.div
                 className="absolute inset-0 rounded-full border border-primary/30 group-hover:border-primary/60 transition-colors"
                 animate={{ rotate: 360 }}
-                transition={{ duration: 8, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                transition={{
+                  duration: 8,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "linear",
+                }}
               />
               {/* Inner dashed rotating ring */}
               <motion.div
                 className="absolute inset-[3px] rounded-full border border-dashed border-primary/50 group-hover:border-primary transition-colors"
                 animate={{ rotate: -360 }}
-                transition={{ duration: 12, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                transition={{
+                  duration: 12,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "linear",
+                }}
               />
               {/* Core 'Eye' Pupil */}
               <div className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary))] group-hover:scale-150 transition-transform duration-500" />
@@ -165,7 +183,10 @@ export function LandingTemplate() {
             </span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-muted-foreground mr-10">
-            <a href="#features" className="hover:text-primary transition-colors">
+            <a
+              href="#features"
+              className="hover:text-primary transition-colors"
+            >
               Project Modules
             </a>
             <a href="#tech" className="hover:text-white transition-colors">
@@ -195,10 +216,13 @@ export function LandingTemplate() {
         {/* Features Grid */}
         <section id="features" className="py-24">
           <div className="mb-16 text-center">
-            <h2 className="text-3xl md:text-5xl font-bold mb-4">Unified Intelligence</h2>
+            <h2 className="text-3xl md:text-5xl font-bold mb-4">
+              Unified Intelligence
+            </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Experience the future of real-time environmental awareness. The Spatial Eye leverages
-              Gemini&apos;s multimodal power to bridge the gap between AI and physical reality.
+              Experience the future of real-time environmental awareness. The
+              Spatial Eye leverages Gemini&apos;s multimodal power to bridge the
+              gap between AI and physical reality.
             </p>
           </div>
 
@@ -216,8 +240,9 @@ export function LandingTemplate() {
               Challenges & Architecture Decisions
             </h2>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Building a real-time multimodal agent requires solving complex synchronization and
-              state management challenges. Here&apos;s how we tackled them.
+              Building a real-time multimodal agent requires solving complex
+              synchronization and state management challenges. Here&apos;s how
+              we tackled them.
             </p>
           </div>
 
@@ -237,19 +262,36 @@ export function LandingTemplate() {
               </h2>
               <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
                 Built for the{" "}
-                <span className="text-white font-semibold">Gemini Live Agent Challenge</span>, our
-                infrastructure leverages high-performance Google Cloud services to ensure sub-second
-                latency and global scalability.
+                <span className="text-white font-semibold">
+                  Gemini Live Agent Challenge
+                </span>
+                , our infrastructure leverages high-performance Google Cloud
+                services to ensure sub-second latency and global scalability.
               </p>
 
               <ul className="space-y-4">
                 {[
-                  { label: "Gemini 2.5 Live", detail: "Low-latency WebSocket interaction" },
-                  { label: "Google Cloud Run", detail: "Serverless backend orchestration" },
+                  {
+                    label: "Gemini 2.5 Live",
+                    detail: "Low-latency WebSocket interaction",
+                  },
+                  {
+                    label: "Google Cloud Run",
+                    detail: "Serverless backend orchestration",
+                  },
                   { label: "Firebase Auth", detail: "Secure Google Sign-In" },
-                  { label: "Firebase Hosting", detail: "Managed CDN & Static Assets" },
-                  { label: "Terraform", detail: "Automated IaC for reliability" },
-                  { label: "Next.js 15", detail: "Cutting-edge frontend performance" },
+                  {
+                    label: "Firebase Hosting",
+                    detail: "Managed CDN & Static Assets",
+                  },
+                  {
+                    label: "Terraform",
+                    detail: "Automated IaC for reliability",
+                  },
+                  {
+                    label: "Next.js 15",
+                    detail: "Cutting-edge frontend performance",
+                  },
                   { label: "shadcn/ui", detail: "Atomic design components" },
                 ].map((item, idx) => (
                   <motion.li
@@ -260,7 +302,9 @@ export function LandingTemplate() {
                     className="flex items-center gap-3 text-sm"
                   >
                     <div className="h-2 w-2 rounded-full bg-primary shadow-[0_0_10px_var(--color-primary)]" />
-                    <span className="font-bold text-white/90">{item.label}:</span>
+                    <span className="font-bold text-white/90">
+                      {item.label}:
+                    </span>
                     <span className="text-muted-foreground">{item.detail}</span>
                   </motion.li>
                 ))}
@@ -326,9 +370,20 @@ function Link({
   children,
   className,
   title,
-}: { href: string; children: React.ReactNode; className?: string; title?: string }) {
+}: {
+  href: string;
+  children: React.ReactNode;
+  className?: string;
+  title?: string;
+}) {
   return (
-    <a href={href} target="_blank" className={className} rel="noreferrer" title={title}>
+    <a
+      href={href}
+      target="_blank"
+      className={className}
+      rel="noreferrer"
+      title={title}
+    >
       {children}
     </a>
   );

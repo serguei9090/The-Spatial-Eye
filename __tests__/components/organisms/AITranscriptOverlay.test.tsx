@@ -9,7 +9,10 @@ jest.mock("@/lib/store/settings-context", () => ({
 }));
 
 describe("AITranscriptOverlay", () => {
-  let mockSettings: { showTranscript: boolean; t: { status: { aiAssistant: string } } };
+  let mockSettings: {
+    showTranscript: boolean;
+    t: { status: { aiAssistant: string } };
+  };
 
   beforeEach(() => {
     mockSettings = {

@@ -1,24 +1,38 @@
-# -*- coding: utf-8 -*-
+# -_- coding: utf-8 -_-
+
 # Copyright 2026 Google LLC
+
 #
+
 # Licensed under the Apache License, Version 2.0 (the "License");
+
 # you may not use this file except in compliance with the License.
+
 # You may obtain a copy of the License at
+
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+
+# http://www.apache.org/licenses/LICENSE-2.0
+
 #
+
 # Unless required by applicable law or agreed to in writing, software
+
 # distributed under the License is distributed on an "AS IS" BASIS,
+
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+
 # See the License for the specific language governing permissions and
+
 # limitations under the License.
 
 """
+
 ## Setup
 
 To install the dependencies for this script, run:
 
-``` 
+```
 pip install google-genai opencv-python pyaudio pillow mss
 ```
 
@@ -27,7 +41,7 @@ variable is set to the api-key you obtained from Google AI Studio.
 
 Important: **Use headphones**. This script uses the system default audio
 input and output, which often won't include echo cancellation. So to prevent
-the model from interrupting itself it is important that you use headphones. 
+the model from interrupting itself it is important that you use headphones.
 
 ## Run
 
@@ -43,6 +57,7 @@ The default is "camera". To share your screen run:
 ```
 python Get_started_LiveAPI.py --mode screen
 ```
+
 """
 
 import asyncio
@@ -62,12 +77,13 @@ from google import genai
 from google.genai import types
 
 if sys.version_info < (3, 11, 0):
-    import taskgroup, exceptiongroup
+import taskgroup, exceptiongroup
 
     asyncio.TaskGroup = taskgroup.TaskGroup
     asyncio.ExceptionGroup = exceptiongroup.ExceptionGroup
 
 # --- Audio Configuration ---
+
 FORMAT = pyaudio.paInt16
 CHANNELS = 1
 SEND_SAMPLE_RATE = 16000
@@ -75,37 +91,39 @@ RECEIVE_SAMPLE_RATE = 24000
 CHUNK_SIZE = 1024
 
 # --- Model Configuration ---
+
 MODEL = "models/gemini-2.5-flash-native-audio-preview-12-2025"
 DEFAULT_MODE = "camera"
 
-
 client = genai.Client(
-    api_key=os.environ.get("GEMINI_API_KEY"),
-    http_options={"api_version": "v1beta"},
+api_key=os.environ.get("GEMINI_API_KEY"),
+http_options={"api_version": "v1beta"},
 )
 
 # Live session configuration
+
 # Trigger tokens sent so that model does not hallucinate in long conversations
+
 # Sliding window to retain the context within the context window limit
+
 CONFIG = types.LiveConnectConfig(
-    response_modalities=["AUDIO"],
-    speech_config=types.SpeechConfig(
-        voice_config=types.VoiceConfig(
-            prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name = "Zephyr")
-        )
-    ),
-    context_window_compression=types.ContextWindowCompressionConfig(
-        trigger_tokens = 25600,
-        sliding_window = types.SlidingWindow(target_tokens=12800),
-    ),
+response_modalities=["AUDIO"],
+speech_config=types.SpeechConfig(
+voice_config=types.VoiceConfig(
+prebuilt_voice_config=types.PrebuiltVoiceConfig(voice_name = "Zephyr")
+)
+),
+context_window_compression=types.ContextWindowCompressionConfig(
+trigger_tokens = 25600,
+sliding_window = types.SlidingWindow(target_tokens=12800),
+),
 )
 
 pya = pyaudio.PyAudio()
 
-
 class AudioVideoLoop:
-    def __init__(self, video_mode=DEFAULT_MODE):
-        self.video_mode = video_mode
+def **init**(self, video_mode=DEFAULT_MODE):
+self.video_mode = video_mode
 
         self.audio_in_queue = asyncio.Queue()
         self.out_queue = asyncio.Queue(maxsize = 5) # Limit size to avoid excess memory use
@@ -130,7 +148,7 @@ class AudioVideoLoop:
             kwargs = {"exception_on_overflow": False}
         else:
             kwargs = {}
-        
+
         try:
             while True:
                 data = await asyncio.to_thread(self.audio_stream.read, CHUNK_SIZE, **kwargs)
@@ -143,7 +161,7 @@ class AudioVideoLoop:
                 try:
                     self.out_queue.put_nowait(payload)
                 except asyncio.QueueFull:
-                    _ = self.out_queue.get_nowait()  
+                    _ = self.out_queue.get_nowait()
                     self.out_queue.put_nowait(payload)
 
         except asyncio.CancelledError:
@@ -238,9 +256,9 @@ class AudioVideoLoop:
     def _capture_screen(self):
         sct = mss.mss()
         monitor = sct.monitors[0]
-        
+
         i = sct.grab(monitor)
-        
+
         img = PIL.Image.frombytes("RGB", i.size, i.rgb)
 
         image_io = io.BytesIO()
@@ -309,7 +327,7 @@ class AudioVideoLoop:
                 send_text_task = tg.create_task(self.send_text())
                 tg.create_task(self.send_realtime())
                 tg.create_task(self.listen_audio())
-                
+
                 if self.video_mode == "camera":
                     tg.create_task(self.capture_frames())
                 elif self.video_mode == "screen":
@@ -327,16 +345,15 @@ class AudioVideoLoop:
             self.audio_stream.close()
             traceback.print_exception(EG)
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--mode",
-        type=str,
-        default=DEFAULT_MODE,
-        help="pixels to stream from",
-        choices=["camera", "screen", "none"],
-    )
-    args = parser.parse_args()
-    main = AudioVideoLoop(video_mode=args.mode)
-    asyncio.run(main.run())
+if **name** == "**main**":
+parser = argparse.ArgumentParser()
+parser.add_argument(
+"--mode",
+type=str,
+default=DEFAULT_MODE,
+help="pixels to stream from",
+choices=["camera", "screen", "none"],
+)
+args = parser.parse_args()
+main = AudioVideoLoop(video_mode=args.mode)
+asyncio.run(main.run())

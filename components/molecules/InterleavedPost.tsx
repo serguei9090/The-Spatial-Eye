@@ -100,7 +100,11 @@ export function InterleavedPost({ group }: InterleavedPostProps) {
               // Shimmer state while the real title is in transit
               <motion.span
                 animate={{ opacity: [0.3, 0.8, 0.3] }}
-                transition={{ duration: 1.4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+                transition={{
+                  duration: 1.4,
+                  repeat: Number.POSITIVE_INFINITY,
+                  ease: "easeInOut",
+                }}
                 className="font-mono text-sm tracking-[0.4em] text-cyan-400/50"
               >
                 ···
@@ -135,7 +139,9 @@ export function InterleavedPost({ group }: InterleavedPostProps) {
         </div>
       )}
 
-      {item.type === "audio_event" && <AudioTrigger description={item.content} />}
+      {item.type === "audio_event" && (
+        <AudioTrigger description={item.content} />
+      )}
 
       {item.type === "rule_event" && (
         <div className="my-10 mx-auto max-w-md text-center">

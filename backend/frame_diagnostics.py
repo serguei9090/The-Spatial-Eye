@@ -48,7 +48,9 @@ class FrameDiagnostics:
                 f"[{session_id}] 🔬 Frame Diagnostics ENABLED → {self._session_dir}"
             )
 
-    def capture_frame(self, raw_jpeg_bytes: bytes, width: int = 0, height: int = 0) -> None:
+    def capture_frame(
+        self, raw_jpeg_bytes: bytes, width: int = 0, height: int = 0
+    ) -> None:
         """Store the most recently received video frame."""
         if not DIAGNOSTICS_ENABLED:
             return
@@ -79,7 +81,9 @@ class FrameDiagnostics:
             return
 
         if not self._latest_frame_bytes:
-            logger.warning(f"[{self.session_id}] Diagnostics: No frame available for annotation.")
+            logger.warning(
+                f"[{self.session_id}] Diagnostics: No frame available for annotation."
+            )
             return
 
         box_2d = tool_args.get("box_2d", [])
@@ -134,7 +138,12 @@ class FrameDiagnostics:
 
             # Draw Method B: RED (Square-padded mapping)
             draw.rectangle(
-                [unpad_x_min, unpad_y_min, unpad_x_min + 1, unpad_y_min + 1], # Small marker at corner
+                [
+                    unpad_x_min,
+                    unpad_y_min,
+                    unpad_x_min + 1,
+                    unpad_y_min + 1,
+                ],  # Small marker at corner
                 outline="red",
                 width=8,
             )

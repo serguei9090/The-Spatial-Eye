@@ -6,11 +6,22 @@ interface NarrativeTextProps {
   readonly isStreaming?: boolean;
 }
 
-export function NarrativeText({ text, className, isStreaming }: NarrativeTextProps) {
+export function NarrativeText({
+  text,
+  className,
+  isStreaming,
+}: NarrativeTextProps) {
   return (
-    <p className={cn("leading-relaxed text-white/90 font-serif italic text-lg", className)}>
+    <p
+      className={cn(
+        "leading-relaxed text-white/90 font-serif italic text-lg",
+        className,
+      )}
+    >
       &ldquo;{text}&rdquo;
-      {isStreaming && <span className="ml-1 inline-block h-4 w-2 animate-pulse bg-cyan-400/50" />}
+      {isStreaming && (
+        <span className="ml-1 inline-block h-4 w-2 animate-pulse bg-cyan-400/50" />
+      )}
     </p>
   );
 }

@@ -1,9 +1,19 @@
-import { collection, getDocs, limit, orderBy, query, where } from "firebase/firestore";
+import {
+  collection,
+  getDocs,
+  limit,
+  orderBy,
+  query,
+  where,
+} from "firebase/firestore";
 
 import { getFirebaseServices } from "@/lib/firebase/config";
 import type { SessionRecord } from "@/lib/types";
 
-export async function listSessions(userId: string, maxItems = 20): Promise<SessionRecord[]> {
+export async function listSessions(
+  userId: string,
+  maxItems = 20,
+): Promise<SessionRecord[]> {
   const { db } = getFirebaseServices();
 
   const sessionQuery = query(

@@ -9,7 +9,8 @@ import { useAudioDeviceContext } from "@/lib/store/audio-context";
 import { useStudioContext } from "@/lib/store/studio-context";
 
 export function SpatialView() {
-  const { videoRef, activeHighlights, updateVideoSize, videoSize } = useStudioContext();
+  const { videoRef, activeHighlights, updateVideoSize, videoSize } =
+    useStudioContext();
   const { selectedVideoId } = useAudioDeviceContext();
   const visibleHighlights = useHighlightDetection(activeHighlights);
 

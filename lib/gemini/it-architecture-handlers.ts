@@ -12,23 +12,29 @@ export const IT_ARCHITECTURE_TOOLS: Tool[] = [
       },
       {
         name: "add_node",
-        description: "Adds a new node (e.g., server, database, cloud) to the architecture diagram.",
+        description:
+          "Adds a new node (e.g., server, database, cloud) to the architecture diagram.",
         parameters: {
           type: Type.OBJECT,
           properties: {
             id: {
               type: Type.STRING,
-              description: "Unique identifier for this node, e.g. 'web-server-1'",
+              description:
+                "Unique identifier for this node, e.g. 'web-server-1'",
             },
             type: {
               type: Type.STRING,
               description:
                 "Must be one of: server, database, cloud, internet, mobile, laptop, compute, storage, network.",
             },
-            label: { type: Type.STRING, description: "Human readable label, e.g. 'API Gateway'" },
+            label: {
+              type: Type.STRING,
+              description: "Human readable label, e.g. 'API Gateway'",
+            },
             x: {
               type: Type.NUMBER,
-              description: "Horizontal position. Space nodes out by at least 250 units.",
+              description:
+                "Horizontal position. Space nodes out by at least 250 units.",
             },
             y: {
               type: Type.NUMBER,
@@ -47,10 +53,17 @@ export const IT_ARCHITECTURE_TOOLS: Tool[] = [
           properties: {
             id: {
               type: Type.STRING,
-              description: "Unique identifier for this edge, e.g. 'edge-web-db'",
+              description:
+                "Unique identifier for this edge, e.g. 'edge-web-db'",
             },
-            source: { type: Type.STRING, description: "The ID of the source node" },
-            target: { type: Type.STRING, description: "The ID of the target node" },
+            source: {
+              type: Type.STRING,
+              description: "The ID of the source node",
+            },
+            target: {
+              type: Type.STRING,
+              description: "The ID of the target node",
+            },
             label: {
               type: Type.STRING,
               description: "Optional text on the arrow, e.g. 'HTTPS', 'TCP'",
@@ -68,7 +81,8 @@ export const IT_ARCHITECTURE_TOOLS: Tool[] = [
           properties: {
             id: {
               type: Type.STRING,
-              description: "Unique identifier for the node to delete, e.g. 'web-server-1'",
+              description:
+                "Unique identifier for the node to delete, e.g. 'web-server-1'",
             },
           },
           required: ["id"],
@@ -83,7 +97,8 @@ export const IT_ARCHITECTURE_TOOLS: Tool[] = [
           properties: {
             id: {
               type: Type.STRING,
-              description: "Unique identifier for the edge to remove, e.g. 'edge-web-db'",
+              description:
+                "Unique identifier for the edge to remove, e.g. 'edge-web-db'",
             },
           },
           required: ["id"],
@@ -100,9 +115,18 @@ export const IT_ARCHITECTURE_TOOLS: Tool[] = [
               type: Type.STRING,
               description: "Unique identifier for the node to update.",
             },
-            label: { type: Type.STRING, description: "New human readable label (optional)." },
-            x: { type: Type.NUMBER, description: "New horizontal position (optional)." },
-            y: { type: Type.NUMBER, description: "New vertical position (optional)." },
+            label: {
+              type: Type.STRING,
+              description: "New human readable label (optional).",
+            },
+            x: {
+              type: Type.NUMBER,
+              description: "New horizontal position (optional).",
+            },
+            y: {
+              type: Type.NUMBER,
+              description: "New vertical position (optional).",
+            },
           },
           required: ["id"],
         },
@@ -187,7 +211,10 @@ function processDeleteNode(
   setEdges((prev) => prev.filter((e) => e.source !== id && e.target !== id));
 }
 
-function processRemoveEdge(args: { id: string }, setEdges: Dispatch<SetStateAction<Edge[]>>) {
+function processRemoveEdge(
+  args: { id: string },
+  setEdges: Dispatch<SetStateAction<Edge[]>>,
+) {
   if (!args.id) return;
   const id = String(args.id).trim();
   console.log("[Architecture] Removing edge:", id);
@@ -240,7 +267,10 @@ export function handleArchitectureToolCall(
   }
 }
 
-function processAddNode(args: AddNodeArgs, setNodes: Dispatch<SetStateAction<Node[]>>) {
+function processAddNode(
+  args: AddNodeArgs,
+  setNodes: Dispatch<SetStateAction<Node[]>>,
+) {
   if (!args.id || !args.label) return;
 
   const id = String(args.id).trim();
@@ -268,7 +298,10 @@ function processAddNode(args: AddNodeArgs, setNodes: Dispatch<SetStateAction<Nod
   });
 }
 
-function processUpdateNode(args: UpdateNodeArgs, setNodes: Dispatch<SetStateAction<Node[]>>) {
+function processUpdateNode(
+  args: UpdateNodeArgs,
+  setNodes: Dispatch<SetStateAction<Node[]>>,
+) {
   if (!args.id) return;
 
   const id = String(args.id).trim();
@@ -279,7 +312,8 @@ function processUpdateNode(args: UpdateNodeArgs, setNodes: Dispatch<SetStateActi
       if (node.id !== id) return node;
 
       const updatedNode = { ...node };
-      if (args.label) updatedNode.data = { ...node.data, label: String(args.label).trim() };
+      if (args.label)
+        updatedNode.data = { ...node.data, label: String(args.label).trim() };
       if (args.x !== undefined || args.y !== undefined) {
         updatedNode.position = {
           x: args.x === undefined ? node.position.x : Number(args.x),

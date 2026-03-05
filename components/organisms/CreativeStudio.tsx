@@ -196,7 +196,10 @@ export function CreativeStudio({ stream, videoRef }: CreativeStudioProps) {
         >
           <div className="flex flex-col gap-2 pb-20">
             {grouped.map((group, i) => (
-              <InterleavedPost key={group.raw?.id ?? group.text?.id ?? `g-${i}`} group={group} />
+              <InterleavedPost
+                key={group.raw?.id ?? group.text?.id ?? `g-${i}`}
+                group={group}
+              />
             ))}
           </div>
         </div>
