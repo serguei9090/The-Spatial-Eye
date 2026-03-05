@@ -9,7 +9,7 @@ The project is built as a high-performance Next.js 15 application backed by a Py
 
 * **Live Core**: We implemented a Secure WebSocket architecture (WSS) that streams audio and video frames directly from the frontend to securely route through our Python backend to the Gemini 2.5 Live API.
 * **Spatial Grounding**: By instructing the AI to utilize a function-calling tool (`track_and_highlight`) and parsing its normalized coordinate outputs (0-1000 range), the frontend dynamically renders animated SVG highlight circles over real-world objects in real-time.
-* **Infrastructure**: The backend is containerized and deployed on Google Cloud Run, leveraging Firebase for authentication and session management, using Terraform/Pulumi for Infrastructure as Code to ensure a scalable and secure (Bring-Your-Own-Key) environment.
+* **Infrastructure**: The backend is containerized and deployed on Google Cloud Run, leveraging Firebase for authentication and session management, using Terraform for Infrastructure as Code to ensure a scalable and secure (Bring-Your-Own-Key) environment.
 
 ## Challenges we ran into
 * **Prompt Engineering & Grounding**: Forcing the AI to reliably act as a spatial reasoning engine—outputting precise coordinate tool calls instead of just conversational text—required rigorous system instruction tuning.
@@ -22,7 +22,7 @@ The project is built as a high-performance Next.js 15 application backed by a Py
 ## Accomplishments that we're proud of
 * **Seamless Visual Integration**: Achieving a real-time "seeing" loop where the AI can identify and point to physical objects with minimal latency, breaking the paradigm of traditional text/voice-only chat.
 * **Secure Agent Architecture**: Creating a system that safely acts as a broker for the Live API by using backend-validated ephemeral JWTs, ensuring the user's API key is never exposed.
-* **Automated Cloud Native Deployment**: Implementing a robust architecture ready for Google Cloud Run deployment using Terraform/Pulumi tools.
+* **Automated Cloud Native Deployment**: Implementing a robust architecture ready for Google Cloud Run deployment using Terraform.
 
 ## What we learned
 Building this project taught us the nuances of agentic workflows, specifically how to handle "function-calling tool use" seamlessly within a live audio/video streaming context. We gained deep experience in designing secure WSS proxy architectures for real-time AI services on Google Cloud and managing ephemeral authentication tokens to protect user API keys while maintaining a "Bring Your Own Key" architecture.

@@ -26,7 +26,7 @@ The project is architected for resilience, featuring a robust error-handling sys
 | **Authentication** | [Firebase Auth](https://firebase.google.com/docs/auth) | Google Sign-In. |
 | **Database** | [Firestore](https://firebase.google.com/docs/firestore) | Session memory and persistence. |
 | **Deployment** | [Google Cloud Run](https://cloud.google.com/run) | Automated via GitHub Actions. |
-| **IaC** | [Terraform](https://www.terraform.io/) / [Pulumi](https://www.pulumi.com/) | `IaC/` directory contains infrastructure code. |
+| **IaC** | [Terraform](https://www.terraform.io/) | `IaC/` directory contains infrastructure code. |
 | **Testing** | [Jest](https://jestjs.io/), [React Testing Library](https://testing-library.com/react) | Unit and component testing. |
 | **Linting/Formatting**| [BiomeJS](https://biomejs.dev/) (Frontend), [Ruff](https://docs.astral.sh/ruff/) (Backend) | Enforced via `lefthook` pre-commit hooks. |
 

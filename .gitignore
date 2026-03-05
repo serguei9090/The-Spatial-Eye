@@ -45,3 +45,22 @@ firebasekey.json
 # Python
 __pycache__
 backend/diagnostics/
+backend/.venv
+backend/uv.lock
+*.py[cod]
+*$py.class
+
+# Terraform
+.terraform/
+*.tfstate*
+*.tfstate.backup
+.terraform.lock.hcl
+*.tfvars
+*.tfvars.json
+
+# Node/Bun
+node_modules/
+.next/
+out/
+bun.lockb
+*.log

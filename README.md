@@ -152,7 +152,7 @@ lib/
   firebase/             Firebase init
   firestore/            Session and detection persistence
   types.ts              Shared TypeScript types
-IaC/                    Terraform + Pulumi (GCP deployment)
+IaC/                    Terraform (GCP deployment infrastructure)
 __tests__/              Jest + React Testing Library
 ```
 
