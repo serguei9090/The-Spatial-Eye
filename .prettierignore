@@ -1,0 +1,27 @@
+# Ignore files handled by Biome (JS/TS/JSON)
+**/*.js
+**/*.jsx
+**/*.ts
+**/*.tsx
+**/*.json
+**/*.jsonc
+
+# Ignore files handled by specialized tools (Ruff/Black/Terraform)
+**/*.py
+**/*.tf
+
+# Ignore Lock files and dependencies
+node_modules/
+bun.lock
+package-lock.json
+
+# Ignore build artifacts and directories ignored by Biome
+.next/
+dist/
+out/
+coverage/
+ExampleCode/
+.vscode/
+.venv/
+docs/
+.trunk/
