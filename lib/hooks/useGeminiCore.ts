@@ -1,15 +1,10 @@
 "use client";
 
-import {
-  type GoogleGenAI,
-  type LiveServerMessage,
-  Modality,
-} from "@google/genai";
+import type { LiveServerMessage } from "@google/genai";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DEFAULT_GEMINI_LIVE_MODEL } from "@/lib/api/gemini_websocket";
 import { useAuth } from "@/lib/auth/auth-context";
-import { notifyModelError } from "@/lib/gemini/model-error";
 import { useSettings } from "@/lib/store/settings-context";
 import { decode, decodeAudioData } from "@/lib/utils/audio";
 import { toast } from "sonner";
@@ -56,7 +51,7 @@ const logInfo = (msg: string, ...args: unknown[]) => {
 
 export interface UseGeminiCoreProps {
   systemInstruction: string;
-  mode?: "spatial" | "director" | "it-architecture" | string;
+  mode?: string;
   onToolCall?: (
     toolCall: LiveServerMessage["toolCall"],
     metadata: { invocationId?: string },
@@ -181,7 +176,7 @@ export function useGeminiCore({
       const relayUrl = process.env.NEXT_PUBLIC_RELAY_URL ?? "";
       const backendBase = relayUrl
         ? relayUrl.replace(/^wss?:/, "http:").replace(/\/ws\/live$/, "")
-        : "http://localhost:8000"; // dev fallback
+        : ""; // Use relative paths if no explicit relay URL is provided. Works with Next.js rewrites/proxies.
       const res = await fetch(`${backendBase}/api/status`);
       if (res.ok) {
         const data = (await res.json()) as { has_server_key: boolean };

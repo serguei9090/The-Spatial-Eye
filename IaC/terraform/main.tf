@@ -69,6 +69,11 @@ resource "google_cloud_run_v2_service" "default" {
       }
 
       env {
+        name  = "CORS_ALLOWED_ORIGINS"
+        value = "https://spatial-eye-xq2wd6aihq-uc.a.run.app,https://spatial-eye-436683994206.us-central1.run.app,http://localhost:3000"
+      }
+
+      env {
         name  = "FIREBASE_ADMIN_CLIENT_EMAIL"
         value = "firebase-adminsdk-fbsvc@gemini-live-agent-487720.iam.gserviceaccount.com"
       }

@@ -44,6 +44,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3=3.11.2-
 ENV NODE_ENV=production
 ENV PORT=3000
 
+# Install proxy dependencies in the runner
+RUN npm install http-proxy
+
 # Copy Next.js standalone build
 COPY --from=frontend-builder /app/.next/standalone ./
 COPY --from=frontend-builder /app/.next/static ./.next/static

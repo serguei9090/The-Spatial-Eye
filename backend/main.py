@@ -18,6 +18,7 @@ from typing import Any
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
 from google.adk import Agent, Runner
 from google.adk.agents.live_request_queue import LiveRequestQueue
 from google.adk.agents.run_config import RunConfig, StreamingMode
@@ -52,6 +53,19 @@ logger.add(
 )
 
 app = FastAPI(title="The Spatial Eye - Gemini Relay Backend")
+
+# Configure CORS
+# In production, this should include your Cloud Run service URL.
+origins_str = os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:3001")
+origins = [o.strip() for o in origins_str.split(",") if o.strip()]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Initialize ADK globals (can be shared across sessions)
 session_service = InMemorySessionService()

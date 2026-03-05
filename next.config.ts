@@ -19,6 +19,14 @@ const nextConfig: NextConfig = {
         source: "/ws/:path*",
         destination: "http://127.0.0.1:8000/ws/:path*",
       },
+      {
+        source: "/api/:path*",
+        destination: "http://127.0.0.1:8000/api/:path*",
+      },
+      {
+        source: "/diagnostics/:path*",
+        destination: "http://127.0.0.1:8000/diagnostics/:path*",
+      },
     ];
   },
 };
