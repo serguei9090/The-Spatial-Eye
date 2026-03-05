@@ -25,14 +25,15 @@ from google.adk.models.google_llm import Gemini
 from google.adk.sessions import InMemorySessionService
 from google.genai import Client, types
 from loguru import logger
+from pydantic import Field
 
 # Resolve the path to the root .env.local file (load BEFORE local imports that read env)
 ENV_PATH = Path(__file__).resolve().parent.parent / ".env.local"
 load_dotenv(ENV_PATH)
 
-import tools_config
-from firebase_auth import initialize_firebase, verify_token
-from frame_diagnostics import FrameDiagnostics
+import tools_config  # type: ignore # noqa: E402, I001
+from firebase_auth import initialize_firebase, verify_token  # type: ignore # noqa: E402, I001
+from frame_diagnostics import FrameDiagnostics  # type: ignore # noqa: E402, I001
 
 DEBUG_MODE: bool = os.getenv("DEBUG", "false").lower() == "true"
 
@@ -69,7 +70,7 @@ initialize_firebase()
 # which defaults to an endpoint that rejects tool calls with 1008.
 # The AI Studio sandbox uses v1beta — we match that here.
 # ---------------------------------------------------------------------------
-from pydantic import Field
+
 
 
 class GeminiBeta(Gemini):
@@ -333,9 +334,12 @@ async def websocket_endpoint(
                                         role="user",
                                         parts=[
                                             types.Part.from_text(
-                                                text="[SYSTEM RESET]: Disregard ALL previous video frames and object positions. "
-                                                "The environment has changed. Completely clear your spatial memory and re-analyze "
-                                                "only the most recent frame for future requests."
+                                                text=(
+                                                    "[SYSTEM RESET]: Disregard ALL previous video frames and object "
+                                                    "positions. The environment has changed. Completely clear your "
+                                                    "spatial memory and re-analyze only the most recent frame for "
+                                                    "future requests."
+                                                )
                                             )
                                         ],
                                     ),

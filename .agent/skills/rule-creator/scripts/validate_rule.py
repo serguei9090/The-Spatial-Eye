@@ -1,7 +1,7 @@
 import os
 import sys
+
 import yaml
-import re
 
 # Standard Antigravity Rules Directory
 RULES_DIR = r"i:\01-Master_Code\Apps\Gusto\.agent\rules"
@@ -79,7 +79,7 @@ if __name__ == "__main__":
         sys.exit(0 if success else 1)
     elif os.path.isdir(path):
         all_success = True
-        for root, dirs, files in os.walk(path):
+        for root, _dirs, files in os.walk(path):
             for file in files:
                 if file.endswith(".md"):
                     f_path = os.path.join(root, file)
