@@ -15,7 +15,8 @@ describe("Home Page", () => {
     expect(getByTestId("mock-landing-template")).toBeInTheDocument();
 
     // Check if main tag has expected classes
-    const mainElement = container.querySelector("main");
+    // Check if container has expected classes
+    const mainElement = container.firstChild as HTMLElement;
     expect(mainElement).toHaveClass(
       "relative",
       "min-h-screen",

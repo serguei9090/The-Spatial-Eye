@@ -1,36 +1,24 @@
 import { ConnectionMenu } from "@/components/organisms/ConnectionMenu";
 import { useSettings } from "@/lib/store/settings-context";
 import { fireEvent, render, screen } from "@testing-library/react";
+import type { ReactNode } from "react";
 
 jest.mock("@/lib/store/settings-context", () => ({
   useSettings: jest.fn(),
 }));
 
 // Mock the UI components that are hard to test in JSDOM Popovers
-jest.mock("@/components/atoms/Popover", () => ({
-  Popover: ({
-    children,
-    open,
-    onOpenChange,
-  }: { children: React.ReactNode; open?: boolean; onOpenChange?: (open: boolean) => void }) => (
-    <button
-      type="button"
-      data-testid="popover"
-      onClick={() => onOpenChange?.(!open)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") onOpenChange?.(!open);
-      }}
-    >
-      {children}
-    </button>
-  ),
-  PopoverContent: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="popover-content">{children}</div>
-  ),
-  PopoverTrigger: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="popover-trigger">{children}</div>
-  ),
-}));
+jest.mock("@/components/atoms/Popover", () => {
+  const React = require("react");
+  return {
+    Popover: ({ children }: { children: ReactNode }) =>
+      React.createElement(React.Fragment, null, children),
+    PopoverContent: ({ children }: { children: ReactNode }) =>
+      React.createElement("div", { "data-testid": "popover-content" }, children),
+    PopoverTrigger: ({ children }: { children: ReactNode }) =>
+      React.createElement("div", { "data-testid": "popover-trigger" }, children),
+  };
+});
 
 describe("ConnectionMenu", () => {
   let mockSetByokKey: jest.Mock;

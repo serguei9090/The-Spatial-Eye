@@ -15,11 +15,9 @@ const customJestConfig = {
     "components/**/*.{ts,tsx}",
     "lib/**/*.{ts,tsx}",
     "!**/*.d.ts",
-    "!**/node_modules/**"
+    "!**/node_modules/**",
   ],
-  transformIgnorePatterns: [
-    "/node_modules/(?!@google/genai)/"
-  ],
+  transformIgnorePatterns: ["/node_modules/(?!@google/genai)/"],
 };
 
 export default createJestConfig(customJestConfig);

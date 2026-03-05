@@ -15,14 +15,20 @@ describe("HighlightCircle Component", () => {
 
   it("renders correctly with given highlight data", () => {
     const { getByTestId } = render(
-      <HighlightCircle id="test-1" label="test label" type="circle" geometry={mockGeometry} />,
+      <svg>
+        <title>Highlight Test</title>
+        <HighlightCircle id="test-1" label="test label" type="circle" geometry={mockGeometry} />
+      </svg>,
     );
     expect(getByTestId("highlight-circle-test-1")).toBeDefined();
   });
 
   it("calculates position correctly based on normalized coordinates", () => {
     const { container } = render(
-      <HighlightCircle id="test-1" label="test label" type="circle" geometry={mockGeometry} />,
+      <svg>
+        <title>Highlight Test</title>
+        <HighlightCircle id="test-1" label="test label" type="circle" geometry={mockGeometry} />
+      </svg>,
     );
 
     const motionCircle = container.querySelector("circle");
