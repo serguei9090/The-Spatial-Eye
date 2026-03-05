@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**The Spatial Eye** is a real-time, multimodal AI assistant built as a submission for the "Gemini Live Agent Challenge (Hakentoch)". It uses the **Gemini 2.5 Live API** to create a high-fidelity cognitive link between the user's physical reality and AI intelligence. The application is a full-stack project with a Next.js frontend, a Python (FastAPI) backend, and is deployed on Google Cloud Platform using Terraform for IaC and GitHub Actions for CI/CD.
+**The Spatial Eye** is a real-time, multimodal AI assistant built as a submission for the "Gemini Live Agent Challenge (Hackathon)". It uses the **Gemini 2.5 Live API** to create a high-fidelity cognitive link between the user's physical reality and AI intelligence. The application is a full-stack project with a Next.js frontend, a Python (FastAPI) backend, and is deployed on Google Cloud Platform using Terraform for IaC and GitHub Actions for CI/CD.
 
 The application features three distinct operational modes:
 1.  **🔵 Spatial Live:** The AI analyzes a live camera feed and can highlight and identify real-world objects with surgical precision.

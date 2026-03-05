@@ -1,6 +1,6 @@
-# Gemini Live Agent Challenge (Hakentoch) Compliance Checklist
+# Gemini Live Agent Challenge (Hackathon) Compliance Checklist
 
-This document tracks "The Spatial Eye" against the official eligibility and submission requirements from the `hakentoch.md` rules, giving us a clear path to 100% compliance.
+This document tracks "The Spatial Eye" against the official eligibility and submission requirements from the `hackathon.md` rules, giving us a clear path to 100% compliance.
 
 ---
 

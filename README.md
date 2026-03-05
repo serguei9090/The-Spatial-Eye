@@ -1,6 +1,6 @@
 # 👁️ The Spatial Eye
 
-> **Gemini Live Agent Challenge (Hakentoch) Submission**
+> **Gemini Live Agent Challenge (Hackathon) Submission**
 > A real-time multimodal AI assistant that sees, listens, and acts — built entirely with the **Gemini 2.5 Live API**.
 
 ### ⚠️ Legal & Educational Disclaimer
@@ -52,7 +52,7 @@ Google Cloud Platform
   └─ Cloud Run + Terraform → Automated deployment
 ```
 
-> 🗺️ **[View the full System Flowchart and Architecture Diagrams here (`architecture.md`)](./architecture.md)**
+> 🗺️ **[View the full System Flowchart and Architecture Diagrams here (`architecture.md`)](./docs/submission/architecture.md)**
 
 ---
 
@@ -152,6 +152,8 @@ lib/
   firebase/             Firebase init
   firestore/            Session and detection persistence
   types.ts              Shared TypeScript types
+docs/
+  submission/          Event-specific documentation (Architecture, Deployment, Presentation)
 IaC/                    Terraform (GCP deployment infrastructure)
 __tests__/              Jest + React Testing Library
 ```
@@ -194,15 +196,15 @@ CI/CD via GitHub Actions (`.github/workflows/deploy.yml`) — pushes to `main` a
 
 ---
 
-## 🏆 Hakentoch Challenge Compliance
+## 🏆 Hackathon Challenge Compliance
 
 | Requirement | Status |
 |-------------|--------|
 | Uses Gemini Live API | ✅ |
 | Hosted on Google Cloud | ✅ Firebase + Cloud Run |
 | Public repo | ✅ `.env` gitignored |
-| Architecture diagram | ✅ [`architecture.md`](./architecture.md) |
-| Proof of GCP deployment | ✅ [`IaC/terraform/`](./IaC/terraform) |
+| Architecture diagram | ✅ [`docs/submission/architecture.md`](./docs/submission/architecture.md) |
+| Proof of GCP deployment | ✅ [`IaC/terraform/`](./IaC/terraform) & [`docs/submission/DEPLOYMENT.md`](./docs/submission/DEPLOYMENT.md) |
 | Automated CI/CD | ✅ GitHub Actions |
 | Landing page | ✅ Particle-animated hero at `/` |
 | Demo video | ⚠️ Record `< 4 min` walkthrough |
