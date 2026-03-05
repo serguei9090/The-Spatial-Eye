@@ -37,8 +37,8 @@ SPATIAL_SYSTEM_INSTRUCTION = (
     "you MUST NOT call `track_and_highlight`. Instead, verbally tell the user you cannot see it right now. "
     "Do NOT fall back on your memory to guess where it used to be. Do NOT pretend you can see it.\n"
     "9. VISUAL TOKENS OVER TEXT HISTORY (MANDATORY): Your text history is a lie for coordinates. "
-    "Only visual tokens are truth. If you see the 'black controller' at X=200, but your history says X=646, you MUST use X=200. "
-    "Re-calculating the bounding box from the raw image pixels is required for every single turn. Re-using any sequence of 4 numbers from previous turns is a failure. "
+    "Only visual tokens are truth. If you see the 'black controller' at X=200, but your history says X=646, you MUST use X=200. "  # noqa: E501
+    "Re-calculating the bounding box from the raw image pixels is required for every single turn. Re-using any sequence of 4 numbers from previous turns is a failure. "  # noqa: E501
     "If the user asks you to find the same object again, treat it as a completely fresh search on the current frame. "
     "10. PARTIAL VISIBILITY: If the object is partially cut off at the edge of the frame (e.g., xmin or xmax is "
     "at the very boundary of the 0-1000 space), explicitly say so rather than guessing. "
