@@ -8,7 +8,7 @@ This document tracks "The Spatial Eye" against the official eligibility and subm
 
 - [x] **Category Selection:** **Live Agents** (Focus on Real-time Interaction Audio/Vision).
 - [x] **Mandatory Tech:** Uses Gemini Live API (via our new Python backend).
-- [ ] **Hosting:** Agents _must_ be hosted on Google Cloud. _(Pending Cloud Run deployment and infrastructure setup)_
+- [x] **Hosting:** Agents _must_ be hosted on Google Cloud. _(Deployed to Cloud Run)_
 - [x] **New Project:** Created specifically for this hackathon.
 - [x] **Language:** All UI, instructions, and video must be in English.
 
@@ -26,9 +26,9 @@ This document tracks "The Spatial Eye" against the official eligibility and subm
 
 ### B. Proof of Google Cloud
 
-- [ ] **Proof of GCP Deployment:** We MUST provide either:
+- [x] **Proof of GCP Deployment:** We MUST provide either:
   1. A short screen recording (separate from the main demo) showing the GCP console (e.g., Cloud Run deployment logs).
-  2. A direct link to the GitHub repository file that demonstrates GCP service usage.
+  2. A direct link to the GitHub repository file that demonstrates GCP service usage. _(Created `docs/submission/GCP_PROOF.md` with deep links, logs, and visual evidence)_
 
 ### C. Demonstration Video
 
@@ -45,10 +45,10 @@ This document tracks "The Spatial Eye" against the official eligibility and subm
 
 These directly increase the final judging score:
 
-- [ ] **Automating Cloud Deployment (+0.2 pts):**
+- [x] **Automating Cloud Deployment (+0.2 pts):**
   - Demonstrate automated deployment using scripts or Infrastructure-as-Code (Terraform/Pulumi/GitHub Actions).
-  - Code must be in the public repo.
-- [ ] **Publishing Content (+0.6 pts):**
+  - Code must be in the public repo. _(Implemented via Terraform and GitHub Actions)_
+- [x] **Publishing Content (+0.6 pts):**
   - Write a blog post, podcast, or tutorial video covering how the project was built using Google AI/Cloud.
   - Post on a public platform (Medium, Dev.to, YouTube).
   - Must include the disclaimer: _"Created for the purposes of entering the Gemini Live Agent Challenge."_
@@ -61,7 +61,8 @@ These directly increase the final judging score:
 
 ## 🚀 Immediate Next Steps
 
-1. **Cloud Deployment:** Set up the Terraform/GitHub Actions pipeline and deploy the FastAPI backend to Google Cloud Run and the Next.js frontend frontend (e.g. Firebase Hosting or Vercel if allowed, though backend _must_ be on GCP).
-2. **GCP Proof:** Record the brief GCP console walkthrough.
+1. ~~**Cloud Deployment:** Set up the Terraform/GitHub Actions pipeline and deploy the FastAPI backend to Google Cloud Run and the Next.js frontend frontend (e.g. Firebase Hosting or Vercel if allowed, though backend _must_ be on GCP).~~ (DONE)
+2. ~~**GCP Proof:** Provide a direct link to the GitHub repository file that demonstrates GCP service usage (or a 15-30 second screen recording scrolling through the Cloud Run logs).~~ (DONE)
 3. **Demo Video:** Script, record, and edit the 4-minute demo showcasing the Spatial Eye in action.
-4. **Content Publication:** Draft a quick Dev.to or Medium article explaining the continuous state grounding architecture we built to prevent hallucinations.
+4. ~~**Content Publication:** Draft a quick Dev.to or Medium article explaining the continuous state grounding architecture we built to prevent hallucinations.~~ (DONE)
+

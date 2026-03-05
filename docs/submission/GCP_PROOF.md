@@ -2,44 +2,53 @@
 
 This document serves as proof of our application's deployment and deep integration with **Google Cloud Platform (GCP)** and **Google AI Services**, fulfilling the hackathon requirement.
 
-Our application leverages several Google Cloud services, demonstrated through both infrastructure-as-code and direct API integrations within our codebase.
+## 1. Codebase Evidence (Linkable Proof)
 
-## 1. Codebase Demonstrations (Direct Links)
+The following files demonstrate the use of Google Cloud services and APIs:
 
-The following files in our repository demonstrate the use of Google Cloud services and APIs:
+- **Google Cloud Run (Unified Architecture):**
+  - [`Dockerfile`](../../Dockerfile) - Defines the container strategy for running the Next.js frontend and FastAPI backend together on a single Cloud Run instance.
+  - [`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) - Automates the build and deployment process to Google Cloud Run using **Workload Identity Federation**.
 
-- **Gemini 2.5 Live API Integration:**
-  - [`lib/gemini/registry.ts`](../../lib/gemini/registry.ts) - Defines the Gemini model configurations and rate limits used by the application.
-  - [`lib/gemini/handlers.ts`](../../lib/gemini/handlers.ts) - Handles the core interaction and tool calls bounding our app to the Multimodal Live API.
-  - [`lib/hooks/useGeminiCore.ts`](../../lib/hooks/useGeminiCore.ts) & [`lib/hooks/useGeminiLive.ts`](../../lib/hooks/useGeminiLive.ts) - Manages the WebSocket connection and audio/video streaming with the Gemini Live API.
+- **Gemini Multimodal Live API Integration:**
+  - [`backend/main.py`](../../backend/main.py) - Implements the `GeminiBeta` class to force the `v1beta` API version and custom API key handling (L90-130).
+  - [`backend/main.py`](../../backend/main.py) - Configures the **Google ADK (Agent Development Kit)** for bidirectional streaming (L221-255).
 
-- **Google Cloud Infrastructure & Automated Deployment (Cloud Run & Artifact Registry):**
-  - [`IaC/terraform/main.tf`](../../IaC/terraform/main.tf) - Terraform configuration provisioning our Google Cloud Run v2 service and Google Artifact Registry.
-  - [`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml) - GitHub Actions workflow authenticating via Google Workload Identity Federation, building, and pushing the unified Docker container to Artifact Registry and deploying to Cloud Run.
+- **Firebase (Secure Identity & Persistence):**
+  - [`backend/firebase_auth.py`](../../backend/firebase_auth.py) - Implements server-side token verification using the **Firebase Admin SDK**.
+  - [`lib/firebase/config.ts`](../../lib/firebase/config.ts) - Client-side initialization for Firebase Authentication.
 
-- **Firebase Integration (Auth & Firestore):**
-  - [`lib/firebase/config.ts`](../../lib/firebase/config.ts) - Initializes the Firebase app, connecting to Firestore for session memory and Firebase Auth for secure login.
-  - [`app/api/session/route.ts`](../../app/api/session/route.ts) - Backend logic using Firebase Admin SDK to mint ephemeral session tokens.
+- **Infrastructure as Code:**
+  - [`IaC/terraform/main.tf`](../../IaC/terraform/main.tf) - Terraform scripts that provision the **Cloud Run** service and **Artifact Registry** repository.
 
-## 2. Platform Screenshots & Recordings
+## 2. Verified Live Logs (Cloud Run Snapshot)
 
-_(Note: Replace these placeholders with actual screenshots and screen recordings before final submission.)_
+The following log snippet from our active Cloud Run instance proves the system is initialized and successfully executing **Gemini Live** tool calls (full logs available in [**`cloud.run.md`**](./logs/cloud.run.md)):
 
-### Screen Recording
+```text
+# Excerpt from logs/cloud.run.md
+17:47:34 | 🚀 Starting The Spatial Eye Unified Service Gateway...
+17:47:54 | SUCCESS | firebase_auth:initialize_firebase - Firebase Admin initialized
+18:10:44 | INFO | main:websocket_endpoint - [[REDACTED_SESSION_ID]] New Session - User: [REDACTED_USER_ID] - Mode: spatial
+18:10:59 | SUCCESS | main:downstream_task - Tool Call Sent -> track_and_highlight({'label': 'headphone', ...})
+```
 
-- **Walkthrough of Deployment:** [Link to screen recording / YouTube video placeholder] - _Shows the behind-the-scenes of the app running on GCP, including the Cloud Run revisions and Artifact Registry._
+## 3. Visual Infrastructure Evidence
 
-### GCP Console Screenshots
+The following snapshots from the Google Cloud Console provide visual verification of the managed environment:
 
-- **Google Cloud Run Service:**
-  ![Google Cloud Run Service Status](./screenshots/placeholder_cloud_run.png)
-- **Google Artifact Registry:**
-  ![Artifact Registry Docker Images](./screenshots/placeholder_artifact_registry.png)
-- **Firebase Authentication & Firestore:**
-  ![Firebase Console View](./screenshots/placeholder_firebase_console.png)
+- **Cloud Run Service Dashboard:**
+  ![Cloud Run Setup](./screenshots/cloud.run.png)
+  *Displays the active service, regional deployment, and production URL.*
 
-## 3. Server Logs
+- **Artifact Registry & CI/CD:**
+  ![Artifact Registry](./screenshots/Artifact%20Registry.png)
+  *Shows the containerized versions of the app built and pushed via GitHub Actions.*
 
-If required to examine real-time tracing and functionality, a snapshot of the backend logs from Cloud Run is provided here.
+- **Firebase Project Overview:**
+  ![Firebase Console](./screenshots/firebaseaAuth.png)
+  *Verification of project-linked identity and store.*
 
-- **Backend / Cloud Run Logs:** [View Logs Here](./logs/placeholder_cloud_run_logs.txt)
+---
+> [!TIP]
+> **To the Judges:** You can verify the live deployment by visiting the [Production URL](https://spatial-eye-xq2wd6aihq-uc.a.run.app) and opening the Network tab to witness the secure WebSocket relay in action.

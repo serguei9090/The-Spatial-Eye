@@ -74,6 +74,8 @@ jobs:
           service: ${{ env.SERVICE }}
           region: ${{ env.REGION }}
           image: ${{ env.REGION }}-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.REPO_NAME }}/${{ env.SERVICE }}:${{ env.IMAGE_TAG }}
+          # ⚠️ TO PROTECT/BLOCK PUBLIC ACCESS: 
+          # Remove `--allow-unauthenticated` from the flags below and add `--no-allow-unauthenticated`
           flags: --allow-unauthenticated --port 3000 --timeout 3600 --session-affinity
           env_vars: |-
             NODE_ENV=production

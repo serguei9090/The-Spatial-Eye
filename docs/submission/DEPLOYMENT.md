@@ -10,18 +10,18 @@ We have fully automated the cloud deployment process using Infrastructure-as-Cod
 
 We use Terraform to define and provision our GCP infrastructure, which ensures consistency and reproducibility.
 
-- **Location:** [`IaC/terraform/`](./IaC/terraform/)
-- **Core Configuration:** [`IaC/terraform/main.tf`](./IaC/terraform/main.tf) defines the primary resources, including:
+- **Location:** [`../../IaC/terraform/`](../../IaC/terraform/)
+- **Core Configuration:** [`../../IaC/terraform/main.tf`](../../IaC/terraform/main.tf) defines the primary resources, including:
   - Google Artifact Registry repository for storing Docker images.
   - A unified Google Cloud Run (v2) service running the application.
-  - IAM bindings to allow public, unauthenticated access.
-- **Variables:** [`IaC/terraform/variables.tf`](./IaC/terraform/variables.tf) contains the required configuration variables.
+  - IAM bindings to allow public, unauthenticated access (with commented instructions on how to instantly block public access via `terraform apply`).
+- **Variables:** [`../../IaC/terraform/variables.tf`](../../IaC/terraform/variables.tf) contains the required configuration variables.
 
 ### CI/CD Pipeline (GitHub Actions)
 
 Our deployment pipeline is fully automated via GitHub Actions, triggering on every push to the `main` branch.
 
-- **Location:** [`deploy.yml`](./.github/workflows/deploy.yml)
+- **Location:** [`../../.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml)
 - **Process:** The workflow authenticates with Google Cloud using Workload Identity Federation, builds a unified Docker container for the Next.js and FastAPI stack, pushes the image to Artifact Registry, and deploys the new revision to Cloud Run.
 
 ---

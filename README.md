@@ -73,7 +73,8 @@ Google Cloud Platform
 
 ### Prerequisites
 
-- **Bun** (package manager) — `npm install -g bun`
+- **Bun** (JS Package Manager) — `npm install -g bun`
+- **uv** (Python Package Manager) — `curl -LsSf https://astral.sh/uv/install.sh | sh` or `pip install uv`
 - A **Google Gemini API Key** — [Get one here](https://aistudio.google.com/apikey)
 - A **Firebase Project** — [Create one here](https://console.firebase.google.com/)
 
@@ -113,10 +114,16 @@ NEXT_PUBLIC_GEMINI_LIVE_MODEL=
 NEXT_PUBLIC_GEMINI_MODEL_IMAGE=
 ```
 
-### 3. Start development server
+### 3. Start development servers
+
+The application requires both the frontend and backend servers to run concurrently:
 
 ```bash
+# Terminal 1: Start the Next.js frontend (UI)
 bun run dev
+
+# Terminal 2: Start the FastAPI Gemini Relay (Backend)
+bun run backend:dev
 ```
 
 Opens at `http://localhost:3000`.

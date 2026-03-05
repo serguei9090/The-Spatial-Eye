@@ -70,7 +70,7 @@ resource "google_cloud_run_v2_service" "default" {
 
       env {
         name  = "CORS_ALLOWED_ORIGINS"
-        value = "https://spatial-eye-xq2wd6aihq-uc.a.run.app,https://spatial-eye-436683994206.us-central1.run.app,http://localhost:3000"
+        value = "https://spatial-eye-xq2wd6aihq-uc.a.run.app,http://localhost:3000"
       }
 
       env {
@@ -132,6 +132,9 @@ resource "google_cloud_run_v2_service" "default" {
 }
 
 # 3. Allow Public (Unauthenticated) Access
+# By default, the service is accessible to everyone.
+# ⚠️ TO PROTECT/BLOCK PUBLIC ACCESS: Comment out this entire block below
+# and run `terraform apply`. This will require Google Cloud IAM authentication to visit the URL.
 # trunk-ignore(checkov/CKV_GCP_102)
 resource "google_cloud_run_service_iam_binding" "public" {
   location = google_cloud_run_v2_service.default.location
