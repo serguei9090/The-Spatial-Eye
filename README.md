@@ -42,16 +42,19 @@ Users face significant barriers when interacting with complex physical environme
 ## 🏗️ Architecture
 
 ```
-Browser (Next.js 15)
-  ├─ Camera + Microphone → Fast API Backend Server → Gemini 2.5 Live API (WebSocket)
-  ├─ Audio/Video Stream  → AI responses (audio + tool calls)
-  ├─ Mode Handlers       → UI updates (spatial overlays)
-  └─ Connection Menu     → Dynamically connects users via Bring Your Own Key (API Auth)
-         ↓
-Google Cloud Platform
-  ├─ Firebase Auth       → User authentication
-  ├─ Firestore           → Session memory
-  └─ Cloud Run + Terraform → Automated deployment
+Static Frontend (Next.js 15) -> [Firebase Hosting]
+  ├─ 🌐 Clean Routing (Next.js Export)
+  ├─ ⚡ Multi-Model Status Reporting (UI Toasts)
+  └─ 🚀 Direct WSS connection to Backend
+             ↓
+AI Relay Gateway (Python FastAPI) -> [Google Cloud Run]
+  ├─ 🛰️ Gemini 2.5 Live WebSocket Bridge
+  ├─ 🔐 Ephemeral Session Token Minting
+  └─ 🛠️ Mode-Specific Tool Processing (Spatial/Architecture)
+             ↓
+Google AI Studio Gateway
+  ├─ 👁️ Gemini 2.5 Flash Multimodal Live
+  └─ 🧠 Project-Specific System Instructions
 ```
 
 > 🗺️ **[View the full System Flowchart and Architecture Diagrams here (`architecture.md`)](./docs/submission/architecture.md)**
@@ -116,17 +119,35 @@ NEXT_PUBLIC_GEMINI_MODEL_IMAGE=
 
 ### 3. Start development servers
 
-The application requires both the frontend and backend servers to run concurrently:
+The application requires both the frontend and backend servers to run concurrently for local development:
 
 ```bash
 # Terminal 1: Start the Next.js frontend (UI)
+# Uses http://localhost:3000
 bun run dev
 
 # Terminal 2: Start the FastAPI Gemini Relay (Backend)
+# Uses http://localhost:8000
 bun run backend:dev
 ```
 
-Opens at `http://localhost:3000`.
+### 4. Local Production Test
+
+To verify the **Production Build** (Static Export + Final Routing):
+
+> [!NOTE]
+> Testing with a simple `npx serve` will use the `NEXT_PUBLIC_RELAY_URL` defined in your `.env.local`. Ensure it is set to `ws://localhost:8000/ws/live` for local tests.
+
+```bash
+# 1. Build the static frontend
+bun run build
+
+# 2. Start the backend
+bun run backend:dev
+
+# 3. Serve the static export
+npx serve out --listen 3000
+```
 
 ### 4. Validate
 
@@ -194,15 +215,28 @@ The app stays functional even when models are unavailable (billing, quota limits
 
 ## ☁️ Cloud Deployment (GCP)
 
-Infrastructure is fully automated via Terraform in `IaC/terraform/`.
+This project uses a specialized **Split Deployment** strategy for maximum performance:
+
+1.  **Frontend**: Deployed to **Firebase Hosting** for rapid CDN edge delivery.
+2.  **Backend**: Deployed to **Google Cloud Run** for dynamic, auto-scaling WebSocket support.
+
+### Automated Deployment
+
+CI/CD is fully automated via GitHub Actions (`.github/workflows/deploy.yml`):
+
+- Pushing to `main` triggers two parallel jobs:
+  - `deploy-frontend`: Builds the static Next.js export and pushes to Firebase.
+  - `deploy-backend`: Builds the Python Docker container and pushes to Cloud Run.
+
+### Manual Infrastructure (Terraform)
+
+Infrastructure is managed via Terraform in `IaC/terraform/`.
 
 ```bash
 cd IaC/terraform
 terraform init
 terraform apply
 ```
-
-CI/CD via GitHub Actions (`.github/workflows/deploy.yml`) — pushes to `main` automatically build and deploy to **Cloud Run**.
 
 ---
 
