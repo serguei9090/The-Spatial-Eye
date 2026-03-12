@@ -296,7 +296,7 @@ export function useGeminiCore({
       }
 
       return new Promise((resolve) => {
-        let baseUrl = process.env.NEXT_PUBLIC_RELAY_WS_URL;
+        let baseUrl = process.env.NEXT_PUBLIC_RELAY_URL;
         if (!baseUrl) {
           const protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
           baseUrl = `${protocol}//${globalThis.location.host}/ws/live`;

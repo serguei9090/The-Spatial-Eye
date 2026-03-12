@@ -70,7 +70,7 @@ resource "google_cloud_run_v2_service" "default" {
 
       env {
         name  = "CORS_ALLOWED_ORIGINS"
-        value = "https://spatial-eye-xq2wd6aihq-uc.a.run.app,http://localhost:3000"
+        value = "https://gemini-live-agent-487720.web.app,https://gemini-live-agent-487720.firebaseapp.com,https://spatial-eye-xq2wd6aihq-uc.a.run.app,http://localhost:3000,https://thespatialeye.aiopsforge.com"
       }
 
       env {
