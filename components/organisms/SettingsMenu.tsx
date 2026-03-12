@@ -106,13 +106,19 @@ export function SettingsMenu({ mode, onDownload, onUpload }: SettingsMenuProps) 
                     <SelectValue placeholder="Select Camera" className="truncate" />
                   </SelectTrigger>
                   <SelectContent className="max-w-[350px]">
-                    {videoDevices.map((device) => (
-                      <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs">
-                        <span className="truncate">
-                          {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
-                        </span>
-                      </SelectItem>
-                    ))}
+                    {videoDevices
+                      .filter((d) => d.deviceId)
+                      .map((device) => (
+                        <SelectItem
+                          key={device.deviceId}
+                          value={device.deviceId}
+                          className="text-xs"
+                        >
+                          <span className="truncate">
+                            {device.label || `Camera ${videoDevices.indexOf(device) + 1}`}
+                          </span>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -129,13 +135,15 @@ export function SettingsMenu({ mode, onDownload, onUpload }: SettingsMenuProps) 
                   <SelectValue placeholder="Select Microphone" className="truncate" />
                 </SelectTrigger>
                 <SelectContent className="max-w-[350px]">
-                  {inputDevices.map((device) => (
-                    <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs">
-                      <span className="truncate">
-                        {device.label || `Microphone ${inputDevices.indexOf(device) + 1}`}
-                      </span>
-                    </SelectItem>
-                  ))}
+                  {inputDevices
+                    .filter((d) => d.deviceId)
+                    .map((device) => (
+                      <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs">
+                        <span className="truncate">
+                          {device.label || `Microphone ${inputDevices.indexOf(device) + 1}`}
+                        </span>
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
@@ -152,13 +160,19 @@ export function SettingsMenu({ mode, onDownload, onUpload }: SettingsMenuProps) 
                     <SelectValue placeholder="Select Speaker" className="truncate" />
                   </SelectTrigger>
                   <SelectContent className="max-w-[350px]">
-                    {outputDevices.map((device) => (
-                      <SelectItem key={device.deviceId} value={device.deviceId} className="text-xs">
-                        <span className="truncate">
-                          {device.label || `Speaker ${outputDevices.indexOf(device) + 1}`}
-                        </span>
-                      </SelectItem>
-                    ))}
+                    {outputDevices
+                      .filter((d) => d.deviceId)
+                      .map((device) => (
+                        <SelectItem
+                          key={device.deviceId}
+                          value={device.deviceId}
+                          className="text-xs"
+                        >
+                          <span className="truncate">
+                            {device.label || `Speaker ${outputDevices.indexOf(device) + 1}`}
+                          </span>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>

@@ -165,7 +165,10 @@ export function useGeminiCore({
       //                       → http://localhost:8000
       const relayUrl = process.env.NEXT_PUBLIC_RELAY_URL ?? "";
       const backendBase = relayUrl
-        ? relayUrl.replace(/^wss?:/, "http:").replace(/\/ws\/live$/, "")
+        ? relayUrl
+            .replace(/^wss:/, "https:")
+            .replace(/^ws:/, "http:")
+            .replace(/\/ws\/live$/, "")
         : ""; // Use relative paths if no explicit relay URL is provided. Works with Next.js rewrites/proxies.
       const res = await fetch(`${backendBase}/api/status`);
       if (res.ok) {
