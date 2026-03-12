@@ -185,6 +185,14 @@ resource "google_project_iam_member" "gha_run_viewer" {
   member  = "serviceAccount:${var.gha_deployer_email}"
 }
 
+# Grant the Firebase Admin account permission to VIEW Cloud Run (Needed for Hosting integration)
+# This account is often used in the FIREBASE_SERVICE_ACCOUNT secret
+resource "google_project_iam_member" "firebase_admin_run_viewer" {
+  project = var.project_id
+  role    = "roles/run.viewer"
+  member  = "serviceAccount:firebase-adminsdk-fbsvc@${var.project_id}.iam.gserviceaccount.com"
+}
+
 # Grant the GHA service account permission to push to Artifact Registry
 resource "google_project_iam_member" "gha_artifact_writer" {
   project = var.project_id
@@ -193,10 +201,17 @@ resource "google_project_iam_member" "gha_artifact_writer" {
 }
 
 # Required to solve "Caller does not have required permission to use project"
+# Grant this to both potential deployer accounts
 resource "google_project_iam_member" "gha_service_usage_consumer" {
   project = var.project_id
   role    = "roles/serviceusage.serviceUsageConsumer"
   member  = "serviceAccount:${var.gha_deployer_email}"
+}
+
+resource "google_project_iam_member" "firebase_admin_service_usage_consumer" {
+  project = var.project_id
+  role    = "roles/serviceusage.serviceUsageConsumer"
+  member  = "serviceAccount:firebase-adminsdk-fbsvc@${var.project_id}.iam.gserviceaccount.com"
 }
 
 # Grant the GHA service account permission to act as the Cloud Run service account
