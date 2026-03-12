@@ -44,20 +44,20 @@ resource "google_artifact_registry_repository" "repo" {
 # 2. Unified Cloud Run Service (v2)
 # Terraform will CREATE this once you run 'apply'.
 resource "google_cloud_run_v2_service" "default" {
-  name     = var.service_name
-  location = var.region
-  ingress  = "INGRESS_TRAFFIC_ALL"
+  name                = var.service_name
+  location            = var.region
+  ingress             = "INGRESS_TRAFFIC_ALL"
   deletion_protection = false
 
   template {
-    timeout          = "3600s"
-    session_affinity = true
+    timeout                          = "3600s"
+    session_affinity                 = true
     max_instance_request_concurrency = 80
 
     containers {
       # This points to the image that GitHub Actions will eventually push
       image = "${var.region}-docker.pkg.dev/${var.project_id}/${var.service_name}-repo/${var.service_name}:latest"
-      
+
       env {
         name  = "NODE_ENV"
         value = "production"
@@ -107,11 +107,11 @@ resource "google_cloud_run_v2_service" "default" {
           }
         }
       }
-      
+
       ports {
         container_port = 8000
       }
-      
+
       resources {
         limits = {
           cpu    = "2000m"

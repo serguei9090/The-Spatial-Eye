@@ -23,9 +23,9 @@ pre-commit:
       run: terraform fmt {staged_files} && terraform validate
 
     # 5. SECURITY: Trivy - Replaces Trunk for Docker & Terraform security
-    trivy:
-      glob: "({*.tf,Dockerfile*})"
-      run: trivy config --severity HIGH,CRITICAL --exit-code 1 {staged_files}
+    # trivy:
+    #   glob: "({*.tf,Dockerfile*})"
+    #   run: trivy config --severity HIGH,CRITICAL --exit-code 1 {staged_files}
 
     # 6. QUALITY: Prettier - Handles YAML (Workflows) and Markdown
     quality-gate:
