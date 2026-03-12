@@ -161,7 +161,16 @@ resource "google_secret_manager_secret_iam_member" "google_api_key_access" {
   member    = "serviceAccount:${data.google_compute_default_service_account.default.email}"
 }
 
-# 5. GitHub Actions Deployer Permissions
+# 5. Firebase Service Agent Permissions (Needed for Cloud Run Rewrites)
+data "google_project" "project" {}
+
+resource "google_project_iam_member" "firebase_service_agent_run_viewer" {
+  project = var.project_id
+  role    = "roles/run.viewer"
+  member  = "serviceAccount:service-${data.google_project.project.number}@gcp-sa-firebase.iam.gserviceaccount.com"
+}
+
+# 6. GitHub Actions Deployer Permissions
 # Grant the GHA service account permission to deploy to Cloud Run (Least Privilege)
 resource "google_project_iam_member" "gha_run_developer" {
   project = var.project_id
@@ -173,6 +182,13 @@ resource "google_project_iam_member" "gha_run_developer" {
 resource "google_project_iam_member" "gha_artifact_writer" {
   project = var.project_id
   role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:${var.gha_deployer_email}"
+}
+
+# Required to solve "Caller does not have required permission to use project"
+resource "google_project_iam_member" "gha_service_usage_consumer" {
+  project = var.project_id
+  role    = "roles/serviceusage.serviceUsageConsumer"
   member  = "serviceAccount:${var.gha_deployer_email}"
 }
 

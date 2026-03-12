@@ -5,33 +5,33 @@ pre-commit:
     # 1. WEB: Biome (JS/TS/JSON) - Instant formatting and linting
     biome:
       glob: "*.{js,ts,jsx,tsx,json}"
-      run: npx biome check --write --no-errors-on-unmatched {staged_files} && git add {staged_files}
+      run: bun x biome check --write --no-errors-on-unmatched {staged_files} && git add {staged_files}
 
     # 2. WEB: Type Check - Catch logic errors Biome misses
     type-check:
       glob: "*.{ts,tsx}"
-      run: npx tsc --noEmit
+      run: bun x tsc --noEmit
 
     # 3. PYTHON: Ruff - The fastest Python linter/formatter
     ruff:
       glob: "*.py"
-      run: npx ruff check --fix {staged_files} && npx ruff format {staged_files} && git add {staged_files}
+      run: uv run ruff check --fix {staged_files} && uv run ruff format {staged_files} && git add {staged_files}
 
     # 4. INFRASTRUCTURE: Terraform - Auto-format and basic lint
     terraform:
       glob: "*.tf"
-      run: terraform fmt {staged_files} && tflint {staged_files} && git add {staged_files}
+      run: terraform fmt {staged_files} && terraform validate
 
     # 5. SECURITY: Trivy - Replaces Trunk for Docker & Terraform security
     trivy:
-      glob: (*.tf|Dockerfile*)
+      glob: "({*.tf,Dockerfile*})"
       run: trivy config --severity HIGH,CRITICAL --exit-code 1 {staged_files}
 
     # 6. QUALITY: Prettier - Handles YAML (Workflows) and Markdown
     quality-gate:
       glob: "*.{yml,yaml,md}"
-      run: npx prettier --write {staged_files} && git add {staged_files}
+      run: bun x prettier --write {staged_files} && git add {staged_files}
 
-    # 7. SECRETS: ggshield - Prevent GCP API key leaks
+    # 7. SECRETS: Gitleaks - Prevent GCP API key leaks
     secrets:
-      run: gitleaks protect --staged --verbose
+      run: bun x gitleaks protect --staged --verbose

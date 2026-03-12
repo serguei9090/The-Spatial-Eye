@@ -1,6 +1,6 @@
 "use client";
 
-import type { LiveServerMessage } from "@google/genai";
+import type { GoogleGenAI, LiveServerMessage } from "@google/genai";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { DEFAULT_GEMINI_LIVE_MODEL } from "@/lib/api/gemini_websocket";
