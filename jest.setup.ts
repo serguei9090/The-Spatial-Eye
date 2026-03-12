@@ -31,3 +31,13 @@ Object.defineProperty(globalThis, "matchMedia", {
     dispatchEvent: jest.fn(),
   })),
 });
+
+// Mock fetch globally
+globalThis.fetch = jest.fn().mockImplementation(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+    text: () => Promise.resolve(""),
+    blob: () => Promise.resolve(new Blob()),
+  }),
+);

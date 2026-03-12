@@ -20,14 +20,6 @@ jest.mock("@tsparticles/slim", () => ({
   loadSlim: jest.fn(),
 }));
 
-// Mock fetch for warm-up call in LandingTemplate
-global.fetch = jest.fn().mockImplementation(() =>
-  Promise.resolve({
-    ok: true,
-    json: () => Promise.resolve({}),
-  }),
-) as jest.Mock;
-
 describe("Accessibility Check", () => {
   it("Landing Page should have no accessibility violations", async () => {
     const { container } = render(
