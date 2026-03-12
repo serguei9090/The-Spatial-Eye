@@ -6,7 +6,7 @@ import { LandingHero } from "@/components/organisms/LandingHero";
 import { TechArchitectureVisual } from "@/components/organisms/TechArchitectureVisual";
 import { AnimatePresence, motion } from "framer-motion";
 import { Bug, ChevronDown, Cpu, Eye, Github, Terminal } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const FEATURES = [
   {
@@ -142,6 +142,13 @@ function AccordionItem({
 }
 
 export function LandingTemplate() {
+  // Silent warm-up of Cloud Run backend instance
+  useEffect(() => {
+    fetch("/api/hello").catch(() => {
+      /* Silent fail - just a warm-up */
+    });
+  }, []);
+
   return (
     <div className="relative min-h-screen w-full overflow-x-hidden text-white">
       <ParticleBackground />

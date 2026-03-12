@@ -1,39 +1,36 @@
-# Use a lightweight Python base image
-FROM python:3.13-slim
+# --- Stage 1: Build dependencies ---
+FROM python:3.13-slim AS builder
 
-# Set environment variables for Python
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    # Ensure uv caches don't bloat the image
-    UV_COMPILE_BYTECODE=1 \
-    UV_LINK_MODE=copy
-
-# Set the working directory
 WORKDIR /app
 
-# Create a non-privileged user and install uv
-RUN groupadd -r appgroup && useradd -r -g appgroup -m appuser \
-    && chown -R appuser:appgroup /app \
-    && pip install --no-cache-dir uv==0.10.8
+# Install uv for fast dependency management
+RUN pip install --no-cache-dir uv==0.10.8
 
-# Copy the dependency files first (for caching)
-COPY --chown=appuser:appgroup pyproject.toml uv.lock ./
+# Copy dependency files
+COPY pyproject.toml uv.lock ./
 
-# Sync dependencies using uv (fast, deterministic installs)
+# Sync dependencies into a virtual environment
 RUN uv sync --frozen --no-dev
 
-# Copy the rest of the application code
-COPY --chown=appuser:appgroup . .
+# --- Stage 2: Final Runtime ---
+FROM python:3.13-slim AS runner
 
-# Switch to the non-privileged user
-USER appuser
+WORKDIR /app
 
-# Expose the port Cloud Run uses
+# Copy the virtual environment from the builder
+COPY --from=builder /app/.venv /app/.venv
+
+# Copy the application code
+COPY . .
+
+# Set environment variables
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PORT=8000
+
+# Expose the port Cloud Run will use
 EXPOSE 8000
 
-# Health check to ensure the FastAPI server is responding
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/')" || exit 1
-
-# Start the FastAPI server using the environment created by uv
-CMD ["uv", "run", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Start the FastAPI application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

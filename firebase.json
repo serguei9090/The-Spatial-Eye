@@ -1,5 +1,40 @@
 {
   "firestore": {
     "rules": "firestore.rules"
+  },
+  "hosting": {
+    "public": "out",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "/ws/**",
+        "run": {
+          "serviceId": "the-spatial-eye",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/api/**",
+        "run": {
+          "serviceId": "the-spatial-eye",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "/diagnostics/**",
+        "run": {
+          "serviceId": "the-spatial-eye",
+          "region": "us-central1"
+        }
+      },
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
   }
 }

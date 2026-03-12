@@ -134,6 +134,15 @@ def read_root() -> dict[str, str]:
     return {"status": "online", "live_model": agent_model}
 
 
+@app.get("/api/hello")
+def hello_warmup() -> dict[str, str]:
+    """
+    Minimal endpoint to wake up the Cloud Run instance.
+    Called by the frontend landing page on mount.
+    """
+    return {"message": "The Spatial Eye Backend is awake", "status": "ready"}
+
+
 @app.get("/api/status")
 def api_status() -> dict:
     """Reports whether the backend has a server-side API key configured.
