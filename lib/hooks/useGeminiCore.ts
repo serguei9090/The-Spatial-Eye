@@ -556,15 +556,13 @@ export function useGeminiCore({
           socketRef.current = null;
           isConnectedRef.current = false;
           setIsConnected(false);
-          setIsConnecting(false);
-          stopAudio(0);
 
           if (!manualCloseRef.current) {
             if (e.code === 1008) {
               if (e.reason) {
                 toast.error(e.reason, { duration: 6000 });
               }
-              // Explicitly signal this connection run failed to the caller
+              setIsConnecting(false);
               resolve(false);
               return;
             }
@@ -584,6 +582,7 @@ export function useGeminiCore({
             }
 
             if (reconnectAttemptRef.current < 3) {
+              setIsConnecting(true); // <--- Maintain isConnecting to bridge the gap!
               reconnectAttemptRef.current += 1;
               toast.warning(
                 t.toasts.reconnecting.replace("{attempt}", reconnectAttemptRef.current.toString()),
@@ -603,6 +602,7 @@ export function useGeminiCore({
             toast.error(t.toasts.reconnectFailed);
           }
 
+          setIsConnecting(false);
           resolve(false);
         };
       });
