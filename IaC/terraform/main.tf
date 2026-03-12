@@ -178,6 +178,13 @@ resource "google_project_iam_member" "gha_run_developer" {
   member  = "serviceAccount:${var.gha_deployer_email}"
 }
 
+# Grant the GHA service account permission to VIEW Cloud Run (Needed for Firebase integration)
+resource "google_project_iam_member" "gha_run_viewer" {
+  project = var.project_id
+  role    = "roles/run.viewer"
+  member  = "serviceAccount:${var.gha_deployer_email}"
+}
+
 # Grant the GHA service account permission to push to Artifact Registry
 resource "google_project_iam_member" "gha_artifact_writer" {
   project = var.project_id
