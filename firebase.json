@@ -9,21 +9,21 @@
       {
         "source": "/ws/**",
         "run": {
-          "serviceId": "the-spatial-eye",
+          "serviceId": "spatial-eye",
           "region": "us-central1"
         }
       },
       {
         "source": "/api/**",
         "run": {
-          "serviceId": "the-spatial-eye",
+          "serviceId": "spatial-eye",
           "region": "us-central1"
         }
       },
       {
         "source": "/diagnostics/**",
         "run": {
-          "serviceId": "the-spatial-eye",
+          "serviceId": "spatial-eye",
           "region": "us-central1"
         }
       },
